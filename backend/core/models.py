@@ -106,12 +106,50 @@ class AppSettings(BaseModel):
 
 
 class DailyCheckIn(BaseModel):
-    """Tracks daily check-ins separately from domain logs."""
+    """Tracks daily check-ins and preserves the raw input from all 7 questions.
+
+    Raw fields are stored here exactly as submitted so the check-in can be
+    replayed or audited later. Domain models (HealthLog, MoodLog, etc.) are
+    populated by CheckInService from these values.
+    """
 
     date = models.DateField(unique=True)
-    inbox_text = models.TextField(blank=True)
-    blockers_text = models.TextField(blank=True)
-    briefing_text = models.TextField(blank=True)
+
+    # Raw inputs from the 7 check-in questions (PRD §6)
+    sleep_hours = models.DecimalField(
+        max_digits=4, decimal_places=1, null=True, blank=True,
+        help_text="Q1: How many hours did you sleep?",
+    )
+    sleep_quality = models.IntegerField(
+        null=True, blank=True,
+        help_text="Q2: Sleep quality 1-5.",
+    )
+    energy_level = models.IntegerField(
+        null=True, blank=True,
+        help_text="Q3: Energy level right now 1-5.",
+    )
+    exercise_done = models.BooleanField(
+        null=True, blank=True,
+        help_text="Q4: Did you exercise yesterday?",
+    )
+    exercise_type = models.CharField(
+        max_length=255, blank=True,
+        help_text="Q4: Exercise type if done.",
+    )
+    inbox_text = models.TextField(
+        blank=True,
+        help_text="Q6: Any new thought or idea to capture?",
+    )
+    blockers_text = models.TextField(
+        blank=True,
+        help_text="Q7: Anything blocking you today?",
+    )
+
+    # AI-generated output
+    briefing_text = models.TextField(
+        blank=True,
+        help_text="AI-generated morning briefing from this check-in.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
