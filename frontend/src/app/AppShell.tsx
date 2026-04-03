@@ -1,5 +1,6 @@
 import { useState, type PropsWithChildren } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
+import { ChatPanel } from '../components/chat/ChatPanel'
 
 type NavItem = {
   href: string
@@ -113,6 +114,9 @@ export function AppShell({ children }: PropsWithChildren) {
 
         <main className="page-grid">{children}</main>
       </div>
+
+      {/* Floating AI chat — accessible from every page */}
+      <ChatPanel />
     </div>
   )
 }

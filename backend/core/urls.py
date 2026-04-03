@@ -9,6 +9,7 @@ Registers:
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
+from core.chat_views import ChatView
 from core.export import FullExportView
 from core.views import AppSettingsViewSet, DashboardView, ProfileViewSet
 
@@ -19,5 +20,6 @@ router.register("settings", AppSettingsViewSet, basename="app-settings")
 urlpatterns = [
     path("dashboard/", DashboardView.as_view(), name="dashboard"),
     path("export/", FullExportView.as_view(), name="full-export"),
+    path("chat/", ChatView.as_view(), name="ai-chat"),
     path("", include(router.urls)),
 ]

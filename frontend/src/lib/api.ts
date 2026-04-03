@@ -3,6 +3,7 @@ import type {
   AchievementPayload,
   AISuggestion,
   AnalyticsOverviewPayload,
+  ChatResponse,
   CheckInPayload,
   CheckInResponse,
   DashboardPayload,
@@ -393,4 +394,21 @@ export function updateLearning(id: string, payload: Partial<LearningPayload>) {
 
 export function deleteLearning(id: string) {
   return deleteResource(`/analytics/learnings/${id}/`)
+}
+
+// ---------------------------------------------------------------------------
+// AI Chat
+// ---------------------------------------------------------------------------
+
+/**
+ * Send the full conversation history to the AI chat endpoint.
+ * Returns Claude's reply text and a list of actions that were executed.
+ */
+export async function sendChatMessage(
+  messages: Array<{ role: 'user' | 'assistant'; content: string }>,
+): Promise<ChatResponse> {
+  return request<ChatResponse>('/core/chat/', {
+    method: 'POST',
+    body: JSON.stringify({ messages }),
+  })
 }
