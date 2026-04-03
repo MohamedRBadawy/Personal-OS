@@ -1,0 +1,51 @@
+:root {
+  --bg: #f3ede1;
+  --bg-elevated: rgba(255, 250, 243, 0.9);
+  --bg-strong: #11323e;
+  --surface: #fffaf3;
+  --surface-muted: #f1e7d6;
+  --border: rgba(17, 50, 62, 0.14);
+  --text: #193743;
+  --text-muted: #5f6f76;
+  --accent: #d3643b;
+  --accent-soft: rgba(211, 100, 59, 0.16);
+  --accent-strong: #9f4321;
+  --success: #3c7a55;
+  --warning: #b06729;
+  --shadow: 0 20px 60px rgba(17, 50, 62, 0.12);
+  --radius: 24px;
+  --radius-sm: 16px;
+  --sans: 'IBM Plex Sans', 'Trebuchet MS', sans-serif;
+  --heading: 'Space Grotesk', 'Arial Black', sans-serif;
+  --mono: 'IBM Plex Mono', Consolas, monospace;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(211, 100, 59, 0.22), transparent 28%),
+    radial-gradient(circle at top right, rgba(17, 50, 62, 0.14), transparent 24%),
+    linear-gradient(180deg, #f7f1e7 0%, #f0e5d2 100%);
+  font: 16px/1.5 var(--sans);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+}

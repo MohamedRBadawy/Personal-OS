@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Claude_Preview__preview_start",
+      "Bash(python -m venv venv)",
+      "Bash(source venv/Scripts/activate)",
+      "Bash(pip install:*)",
+      "Bash(python manage.py check)",
+      "Bash(python manage.py makemigrations)",
+      "Bash(python manage.py makemigrations goals finance health schedule pipeline analytics)",
+      "Bash(python -c \":*)",
+      "Bash(find '/f/Personal OS/backend' -path */migrations/*.py ! -name __init__.py)",
+      "Bash(python manage.py makemigrations --check)",
+      "Bash(echo \"Exit: $?\")",
+      "Bash(xargs wc:*)"
+    ]
+  }
+}
