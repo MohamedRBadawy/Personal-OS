@@ -1,0 +1,13 @@
+Watching for file changes with StatReloader
+Not Found: /
+[04/Apr/2026 09:04:40] "GET / HTTP/1.1" 404 3417
+[04/Apr/2026 09:04:40,478] - Broken pipe from ('127.0.0.1', 62482)
+Method Not Allowed: /api/checkin/
+[04/Apr/2026 09:04:46] "GET /api/checkin/ HTTP/1.1" 405 40
+[04/Apr/2026 09:04:46,714] - Broken pipe from ('127.0.0.1', 62483)
+[04/Apr/2026 09:05:14] "OPTIONS /api/core/dashboard/ HTTP/1.1" 200 0
+[04/Apr/2026 09:05:14] "GET /api/core/dashboard/ HTTP/1.1" 200 5745
+Not Found: /
+[04/Apr/2026 09:05:18] "GET / HTTP/1.1" 404 3417
+Not Found: /favicon.ico
+[04/Apr/2026 09:05:19] "GET /favicon.ico HTTP/1.1" 404 3468

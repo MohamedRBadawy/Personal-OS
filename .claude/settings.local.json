@@ -12,7 +12,17 @@
       "Bash(find '/f/Personal OS/backend' -path */migrations/*.py ! -name __init__.py)",
       "Bash(python manage.py makemigrations --check)",
       "Bash(echo \"Exit: $?\")",
-      "Bash(xargs wc:*)"
+      "Bash(xargs wc:*)",
+      "Bash(python manage.py makemigrations core --name=\"checkin_raw_fields\")",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)",
+      "Bash(curl -s http://127.0.0.1:8000/api/core/dashboard/)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(list\\(d.keys\\(\\)\\)\\)\")",
+      "Bash(curl -sv http://127.0.0.1:8000/api/core/dashboard/)",
+      "Bash(python manage.py migrate)",
+      "Bash(python manage.py seed_initial_data)",
+      "Bash(python -c \"import anthropic; print\\(anthropic.__version__\\)\")",
+      "Bash(ls \"F:\\\\Personal OS\\\\backend\"\" && cat \"F:Personal OSbackend.env\" 2>/dev/null || echo \"No .env file found \")"
     ]
   }
 }
