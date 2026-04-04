@@ -17,6 +17,7 @@ import type {
   GoalContext,
   GoalMapPayload,
   GoalNode,
+  GoalNodeCreatePayload,
   GoalNodeUpdatePayload,
   GoalTreeNode,
   HabitLog,
@@ -146,11 +147,19 @@ export function getGoalContext(id: string) {
   return request<GoalContext>(`/goals/nodes/${id}/context/`)
 }
 
+export function createGoalNode(payload: GoalNodeCreatePayload) {
+  return createResource<GoalNode, GoalNodeCreatePayload>('/goals/nodes/', payload)
+}
+
 export function updateGoalNode(id: string, payload: GoalNodeUpdatePayload) {
   return request<GoalNode>(`/goals/nodes/${id}/`, {
     method: 'PATCH',
     body: JSON.stringify(payload),
   })
+}
+
+export function deleteGoalNode(id: string) {
+  return deleteResource(`/goals/nodes/${id}/`)
 }
 
 export function getFinanceSummary() {

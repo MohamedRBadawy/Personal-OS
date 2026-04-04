@@ -8,9 +8,10 @@ import { useRef, useState } from 'react'
 interface Props {
   onSend: (text: string) => void
   disabled?: boolean
+  placeholder?: string
 }
 
-export function ChatInput({ onSend, disabled }: Props) {
+export function ChatInput({ onSend, disabled, placeholder }: Props) {
   const [value, setValue] = useState('')
   const ref = useRef<HTMLTextAreaElement>(null)
 
@@ -37,7 +38,7 @@ export function ChatInput({ onSend, disabled }: Props) {
         value={value}
         onChange={e => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Log sleep, mark habits, ask anything…"
+        placeholder={placeholder ?? "Log sleep, mark habits, ask anything…"}
         rows={2}
         disabled={disabled}
       />

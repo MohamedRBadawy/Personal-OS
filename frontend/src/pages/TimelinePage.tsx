@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { EmptyState } from '../components/EmptyState'
 import { MetricCard } from '../components/MetricCard'
 import { Panel } from '../components/Panel'
-import { getTimeline } from '../lib/api'
+import { getTimeline, sendChatMessage } from '../lib/api'
 import { formatDate } from '../lib/formatters'
 
 function startOfWeekIso(referenceDate = new Date()) {
@@ -39,10 +39,31 @@ export function TimelinePage() {
   }, [timelineQuery.data])
 
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [aiDayNotes, setAiDayNotes] = useState<Record<string, string>>({})
 
   useEffect(() => {
     setSelectedDate(selectedDefault)
   }, [selectedDefault])
+
+  const dayAnalysisMutation = useMutation({
+    mutationFn: (date: string) => {
+      const day = timelineQuery.data?.days.find((d) => d.date === date)
+      const isFuture = day?.is_future
+      const detailSummary = day?.detail_rows
+        .map((r) => `${r.domain}: ${r.label} = ${r.value}`)
+        .join('; ') || 'no data logged'
+      const prompt = isFuture
+        ? `[Context: Timeline - ${date}] Give me a short AI preparation note for ${date}. What should I focus on? What should I prepare? Based on my active goals and current situation. 3-4 sentences.`
+        : `[Context: Timeline - ${date}] Give me a short honest debrief of ${date}. Detail: ${detailSummary}. Score: ${day?.score ?? 0}/100. What went well? What didn't? 3-4 sentences.`
+      return sendChatMessage([{ role: 'user', content: prompt }]).then((r) => ({
+        date,
+        reply: r.reply,
+      }))
+    },
+    onSuccess: ({ date, reply }) => {
+      setAiDayNotes((prev) => ({ ...prev, [date]: reply }))
+    },
+  })
 
   if (timelineQuery.isLoading) {
     return <section className="loading-state">Loading timeline...</section>
@@ -109,6 +130,21 @@ export function TimelinePage() {
         <Panel
           title={selectedDay?.is_future ? 'Prepare this day' : 'Debrief this day'}
           description={selectedDay ? formatDate(selectedDay.date) : 'No day selected'}
+          aside={
+            selectedDay ? (
+              <button
+                disabled={dayAnalysisMutation.isPending}
+                type="button"
+                onClick={() => dayAnalysisMutation.mutate(selectedDay.date)}
+              >
+                {dayAnalysisMutation.isPending
+                  ? 'Analyzing...'
+                  : selectedDay.is_future
+                    ? 'AI prepare'
+                    : 'AI debrief'}
+              </button>
+            ) : null
+          }
         >
           {selectedDay ? (
             <div className="stack">
@@ -116,6 +152,12 @@ export function TimelinePage() {
                 <p className="eyebrow">{selectedDay.is_future ? 'Prepare' : 'Debrief'}</p>
                 <h3>{selectedDay.ai_note}</h3>
               </div>
+              {aiDayNotes[selectedDay.date] && (
+                <div className="callout">
+                  <p className="eyebrow">AI {selectedDay.is_future ? 'preparation' : 'analysis'}</p>
+                  <p style={{ whiteSpace: 'pre-wrap' }}>{aiDayNotes[selectedDay.date]}</p>
+                </div>
+              )}
               <div className="summary-strip">
                 <div>
                   <strong>{selectedDay.score}</strong>

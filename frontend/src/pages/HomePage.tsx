@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { CheckInForm } from '../components/CheckInForm'
@@ -5,7 +6,7 @@ import { EmptyState } from '../components/EmptyState'
 import { MetricCard } from '../components/MetricCard'
 import { Panel } from '../components/Panel'
 import { StatusPill } from '../components/StatusPill'
-import { getDashboard, submitCheckIn } from '../lib/api'
+import { getDashboard, sendChatMessage, submitCheckIn } from '../lib/api'
 import { formatCurrency, formatDate, formatPercent, formatTime, titleCase } from '../lib/formatters'
 
 function greetingForNow() {
@@ -38,6 +39,22 @@ export function HomePage() {
     },
   })
 
+  const [aiBriefing, setAiBriefing] = useState<string | null>(null)
+
+  const briefingMutation = useMutation({
+    mutationFn: () =>
+      sendChatMessage([
+        {
+          role: 'user',
+          content:
+            'Give me a morning briefing for today. Be direct. Cover: 1) single most important focus today, 2) one cross-domain observation, 3) one honest challenge or encouragement. Max 4 sentences.',
+        },
+      ]),
+    onSuccess: (result) => {
+      setAiBriefing(result.reply)
+    },
+  })
+
   if (dashboardQuery.isLoading) {
     return <section className="loading-state">Loading dashboard...</section>
   }
@@ -59,11 +76,19 @@ export function HomePage() {
             {greetingForNow()}, {displayName}.
           </h2>
           <p className="hero-summary">
-            {briefing.briefing_text}
+            {aiBriefing ?? briefing.briefing_text}
           </p>
           <p className="muted">
             Updated for {formatDate(dashboard.date)}. {briefing.encouragement}
           </p>
+          <button
+            className="button-muted"
+            disabled={briefingMutation.isPending}
+            type="button"
+            onClick={() => briefingMutation.mutate()}
+          >
+            {briefingMutation.isPending ? 'Generating...' : aiBriefing ? 'Refresh briefing' : 'Generate AI briefing'}
+          </button>
         </div>
         <div className="hero-status">
           <StatusPill label={dashboard.overwhelm.reduced_mode ? 'Reduced mode' : 'Full mode'} />

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { EmptyState } from '../components/EmptyState'
 import { MetricCard } from '../components/MetricCard'
@@ -6,6 +7,7 @@ import { StatusPill } from '../components/StatusPill'
 import {
   createScheduleLog,
   getTodaySchedule,
+  sendChatMessage,
   updateGoalNode,
   updateScheduleLog,
 } from '../lib/api'
@@ -60,6 +62,28 @@ export function SchedulePage() {
     },
   })
 
+  const [aiSuggestions, setAiSuggestions] = useState<string | null>(null)
+
+  const aiAdjustMutation = useMutation({
+    mutationFn: () => {
+      const data = scheduleQuery.data!
+      const adjustableBlocks = data.blocks
+        .filter((b) => !b.is_fixed)
+        .map((b) => ({
+          id: b.id,
+          time: b.time,
+          label: b.label,
+          type: b.type,
+          duration_mins: b.duration_mins,
+        }))
+      const prompt = `[Context: Schedule adjustment] Here are today's adjustable schedule blocks: ${JSON.stringify(adjustableBlocks)}. Low energy: ${data.low_energy_today}. Reduced mode: ${data.reduced_mode}. Done: ${data.summary.done_count}, pending: ${data.summary.pending_count}. Suggest specific adjustments — what to prioritize, swap, or skip. Be concise and actionable.`
+      return sendChatMessage([{ role: 'user', content: prompt }])
+    },
+    onSuccess: (result) => {
+      setAiSuggestions(result.reply)
+    },
+  })
+
   if (scheduleQuery.isLoading) {
     return <section className="loading-state">Loading today&apos;s schedule...</section>
   }
@@ -78,7 +102,18 @@ export function SchedulePage() {
           <h2>Daily operating loop</h2>
           <p>Shape the day around real anchors, then record what actually happened.</p>
         </div>
-        <StatusPill label={schedule.reduced_mode ? 'Reduced mode' : 'Standard mode'} />
+        <div className="button-row">
+          <StatusPill label={schedule.reduced_mode ? 'Reduced mode' : 'Standard mode'} />
+          {schedule.template && (
+            <button
+              disabled={aiAdjustMutation.isPending}
+              type="button"
+              onClick={() => aiAdjustMutation.mutate()}
+            >
+              {aiAdjustMutation.isPending ? 'Generating...' : 'AI adjust'}
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="metric-grid">
@@ -136,6 +171,15 @@ export function SchedulePage() {
           </div>
         </Panel>
       </div>
+
+      {aiSuggestions && (
+        <Panel title="AI schedule suggestions" description="Recommendations based on your current energy and progress.">
+          <div className="callout">
+            <p className="eyebrow">AI adjustment</p>
+            <p style={{ whiteSpace: 'pre-wrap' }}>{aiSuggestions}</p>
+          </div>
+        </Panel>
+      )}
 
       <Panel title="Today&apos;s blocks" description="Log outcomes and optionally push linked work forward.">
         {!schedule.template ? (

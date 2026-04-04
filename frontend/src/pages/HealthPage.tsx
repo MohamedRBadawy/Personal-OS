@@ -1,31 +1,17 @@
+import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { HabitBoard } from '../components/HabitBoard'
 import { HealthLogForm } from '../components/HealthLogForm'
 import { MetricCard } from '../components/MetricCard'
-import { MoodLogForm } from '../components/MoodLogForm'
 import { Panel } from '../components/Panel'
 import { SparkBars } from '../components/SparkBars'
-import { SpiritualLogForm } from '../components/SpiritualLogForm'
 import {
-  createHabitLog,
   createHealthLog,
-  createMoodLog,
-  createSpiritualLog,
   getHealthToday,
   listHealthLogs,
   listMoodLogs,
-  updateHabitLog,
-  updateMoodLog,
-  updateSpiritualLog,
 } from '../lib/api'
 import { formatDate, formatPercent } from '../lib/formatters'
-import type {
-  HabitBoardItem,
-  HabitLogPayload,
-  HealthLogPayload,
-  MoodLogPayload,
-  SpiritualLogPayload,
-} from '../lib/types'
+import type { HealthLogPayload } from '../lib/types'
 
 export function HealthPage() {
   const queryClient = useQueryClient()
@@ -48,51 +34,6 @@ export function HealthPage() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['health-today'] }),
         queryClient.invalidateQueries({ queryKey: ['health-logs'] }),
-        queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
-      ])
-    },
-  })
-
-  const moodMutation = useMutation({
-    mutationFn: (payload: MoodLogPayload) => {
-      const existing = todayQuery.data?.mood_log
-      return existing ? updateMoodLog(existing.id, payload) : createMoodLog(payload)
-    },
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['health-today'] }),
-        queryClient.invalidateQueries({ queryKey: ['health-moods'] }),
-        queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
-      ])
-    },
-  })
-
-  const spiritualMutation = useMutation({
-    mutationFn: (payload: SpiritualLogPayload) => {
-      const existing = todayQuery.data?.spiritual_log
-      return existing ? updateSpiritualLog(existing.id, payload) : createSpiritualLog(payload)
-    },
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['health-today'] }),
-        queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
-      ])
-    },
-  })
-
-  const habitMutation = useMutation({
-    mutationFn: ({ item, done }: { item: HabitBoardItem; done: boolean }) => {
-      const payload: HabitLogPayload = {
-        habit: item.habit.id,
-        date: todayQuery.data?.date ?? new Date().toISOString().slice(0, 10),
-        done,
-        note: item.today_log?.note ?? '',
-      }
-      return item.today_log ? updateHabitLog(item.today_log.id, payload) : createHabitLog(payload)
-    },
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['health-today'] }),
         queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
       ])
     },
@@ -124,7 +65,7 @@ export function HealthPage() {
         <div>
           <p className="eyebrow">Health</p>
           <h2>Energy, sleep, and body trends</h2>
-          <p>Keep body, mood, habits, and spiritual consistency in one honest workspace.</p>
+          <p>Body metrics and trends. Mood, habits, and spiritual tracking have their own pages.</p>
         </div>
       </div>
 
@@ -189,127 +130,39 @@ export function HealthPage() {
       </div>
 
       <div className="two-column">
-        <Panel
-          aside={
-            <span className={`status-pill ${summary.low_mood_streak >= 1 ? 'warning' : 'success'}`}>
-              {summary.low_mood_streak >= 1 ? `${summary.low_mood_streak}-day low-mood streak` : 'Mood steady'}
-            </span>
-          }
-          title="Mood"
-          description="Track today quickly, then scan the last few entries for pattern instead of guesswork."
-        >
-          <div className="summary-strip">
-            <div>
-              <strong>{summary.avg_mood_7d ?? 0} / 5</strong>
-              <p className="muted">7d average</p>
-            </div>
-            <div>
-              <strong>{summary.avg_mood_30d ?? 0} / 5</strong>
-              <p className="muted">30d average</p>
-            </div>
-          </div>
-
-          <MoodLogForm
-            key={todayQuery.data.mood_log?.id ?? `mood-${todayQuery.data.date}`}
-            initialValue={todayQuery.data.mood_log}
-            isSubmitting={moodMutation.isPending}
-            today={todayQuery.data.date}
-            onSubmit={(payload) => moodMutation.mutate(payload)}
-          />
-          {moodMutation.isError ? <p className="error-text">We could not save today's mood log.</p> : null}
-
+        <Panel title="Related pages" description="Mood, habits, and spiritual tracking are now full pages.">
           <div className="stack">
-            <strong>Recent mood history</strong>
-            {moodLogsQuery.data.results.length === 0 ? (
-              <p className="muted">No mood history yet.</p>
-            ) : (
-              <ul className="plain-list">
-                {moodLogsQuery.data.results.slice(0, 5).map((log) => (
-                  <li key={log.id} className="context-item">
-                    <strong>{formatDate(log.date)}</strong>
-                    <p className="muted">
-                      {log.mood_score} / 5
-                      {log.notes ? ` - ${log.notes}` : ''}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <Link className="button-link" to="/mood">Mood and mental state</Link>
+            <Link className="button-link" to="/habits">Habit board</Link>
+            <Link className="button-link" to="/spiritual">Prayer and spiritual</Link>
           </div>
         </Panel>
 
-        <Panel
-          aside={
-            <span className={`status-pill ${summary.prayer_gap_streak >= 2 ? 'warning' : 'success'}`}>
-              {summary.prayer_gap_streak >= 2 ? `${summary.prayer_gap_streak} days under full prayers` : 'Spiritual anchor active'}
-            </span>
-          }
-          title="Spiritual"
-          description="Log the five prayers, Quran pages, and dhikr without opening a separate flow."
-        >
-          <div className="summary-strip">
-            <div>
-              <strong>{formatPercent(summary.prayer_completion_rate_7d ?? 0)}</strong>
-              <p className="muted">Prayer completion (7d)</p>
-            </div>
-            <div>
-              <strong>{formatPercent(summary.spiritual_consistency_7d ?? 0)}</strong>
-              <p className="muted">Consistency (7d)</p>
-            </div>
-            <div>
-              <strong>{summary.full_prayer_streak} days</strong>
-              <p className="muted">Full prayer streak</p>
-            </div>
+        <Panel title="Recent health logs" description="Latest seven body logs for quick review.">
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Sleep</th>
+                  <th>Energy</th>
+                  <th>Exercise</th>
+                </tr>
+              </thead>
+              <tbody>
+                {logsQuery.data.results.slice(0, 7).map((log) => (
+                  <tr key={log.id}>
+                    <td>{formatDate(log.date)}</td>
+                    <td>{log.sleep_hours} h</td>
+                    <td>{log.energy_level} / 5</td>
+                    <td>{log.exercise_done ? log.exercise_type || 'Yes' : 'No'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-
-          <SpiritualLogForm
-            key={todayQuery.data.spiritual_log?.id ?? `spiritual-${todayQuery.data.date}`}
-            initialValue={todayQuery.data.spiritual_log}
-            isSubmitting={spiritualMutation.isPending}
-            today={todayQuery.data.date}
-            onSubmit={(payload) => spiritualMutation.mutate(payload)}
-          />
-          {spiritualMutation.isError ? <p className="error-text">We could not save today's spiritual log.</p> : null}
         </Panel>
       </div>
-
-      <Panel
-        aside={`${summary.habits_completed_today}/${summary.active_habits_count} done today`}
-        title="Habit board"
-        description="Mark today's habits done or missed without leaving the page."
-      >
-        <HabitBoard
-          items={todayQuery.data.habit_board}
-          pendingHabitId={habitMutation.isPending ? (habitMutation.variables?.item.habit.id ?? null) : null}
-          onToggle={(item, done) => habitMutation.mutate({ item, done })}
-        />
-        {habitMutation.isError ? <p className="error-text">We could not save that habit update.</p> : null}
-      </Panel>
-
-      <Panel title="Recent health logs" description="Latest seven body logs for quick review.">
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Sleep</th>
-                <th>Energy</th>
-                <th>Exercise</th>
-              </tr>
-            </thead>
-            <tbody>
-              {logsQuery.data.results.slice(0, 7).map((log) => (
-                <tr key={log.id}>
-                  <td>{formatDate(log.date)}</td>
-                  <td>{log.sleep_hours} h</td>
-                  <td>{log.energy_level} / 5</td>
-                  <td>{log.exercise_done ? log.exercise_type || 'Yes' : 'No'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Panel>
     </section>
   )
 }

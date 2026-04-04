@@ -2,8 +2,10 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { AnalyticsPage } from '../pages/AnalyticsPage'
 import { FinancePage } from '../pages/FinancePage'
 import { GoalsPage } from '../pages/GoalsPage'
+import { HabitsPage } from '../pages/HabitsPage'
 import { HealthPage } from '../pages/HealthPage'
 import { HomePage } from '../pages/HomePage'
+import { MoodPage } from '../pages/MoodPage'
 import { PipelinePage } from '../pages/PipelinePage'
 import { SchedulePage } from '../pages/SchedulePage'
 import {
@@ -15,6 +17,7 @@ import {
   MarketingPage,
   RelationshipsPage,
 } from '../pages/SimpleWorkspacePages'
+import { SpiritualPage } from '../pages/SpiritualPage'
 import { TimelinePage } from '../pages/TimelinePage'
 
 export function AppRoutes() {
@@ -32,6 +35,9 @@ export function AppRoutes() {
       <Route path="/marketing" element={<MarketingPage />} />
       <Route path="/learning" element={<LearningPage />} />
       <Route path="/health" element={<HealthPage />} />
+      <Route path="/habits" element={<HabitsPage />} />
+      <Route path="/mood" element={<MoodPage />} />
+      <Route path="/spiritual" element={<SpiritualPage />} />
       <Route path="/ideas" element={<IdeasPage />} />
       <Route path="/decisions" element={<DecisionsPage />} />
       <Route path="/achievements" element={<AchievementsPage />} />

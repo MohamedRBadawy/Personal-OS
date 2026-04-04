@@ -62,7 +62,18 @@ export type GoalContext = {
 }
 
 export type GoalNodeUpdatePayload = Partial<Pick<GoalNode, 'status' | 'notes' | 'parent'>> & {
+  title?: string
   deps?: string[]
+}
+
+export type GoalNodeCreatePayload = {
+  title: string
+  type: GoalNodeType
+  category?: string | null
+  status?: GoalNodeStatus
+  parent?: string | null
+  notes?: string
+  code?: string
 }
 
 export type GoalMapNode = {

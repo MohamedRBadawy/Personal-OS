@@ -9,6 +9,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { sendChatMessage } from '../../lib/api'
+import { usePageContext } from '../../lib/usePageContext'
 import type { ChatMessage as ChatMessageType } from '../../lib/types'
 import { ChatInput } from './ChatInput'
 import { ChatMessage } from './ChatMessage'
@@ -24,6 +25,7 @@ export function ChatPanel() {
   const [messages, setMessages] = useState<ChatMessageType[]>([WELCOME])
   const [loading, setLoading] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const pageContext = usePageContext()
 
   // Scroll to bottom whenever messages update or panel opens
   useEffect(() => {
@@ -33,7 +35,7 @@ export function ChatPanel() {
   }, [messages, open])
 
   async function handleSend(text: string) {
-    // Add user message immediately
+    // Add user message immediately (show original text to the user)
     const userMsg: ChatMessageType = { role: 'user', content: text, actions: [] }
     const nextMessages = [...messages, userMsg]
     setMessages(nextMessages)
@@ -41,9 +43,15 @@ export function ChatPanel() {
 
     try {
       // Build history in Anthropic format (skip welcome message — it's synthetic)
+      // Prepend domain context hint to the latest message so AI tailors its response
       const history = nextMessages
         .slice(1) // skip welcome
-        .map(m => ({ role: m.role, content: m.content }))
+        .map((m, i, arr) => {
+          if (i === arr.length - 1 && m.role === 'user' && pageContext.contextHint) {
+            return { role: m.role, content: `${pageContext.contextHint} ${m.content}` }
+          }
+          return { role: m.role, content: m.content }
+        })
 
       const result = await sendChatMessage(history)
 
@@ -82,7 +90,7 @@ export function ChatPanel() {
         <div className="chat-panel">
           <div className="chat-panel__header">
             <span className="chat-panel__title">AI Assistant</span>
-            <span className="chat-panel__hint">Can log, create, and answer.</span>
+            <span className="chat-panel__hint">{pageContext.domain} · Can log, create, and answer.</span>
           </div>
 
           <div className="chat-panel__thread">
@@ -100,7 +108,7 @@ export function ChatPanel() {
             <div ref={bottomRef} />
           </div>
 
-          <ChatInput onSend={handleSend} disabled={loading} />
+          <ChatInput onSend={handleSend} disabled={loading} placeholder={pageContext.placeholder} />
         </div>
       )}
     </>

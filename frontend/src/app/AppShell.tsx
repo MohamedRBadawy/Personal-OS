@@ -41,7 +41,12 @@ const navGroups = [
   },
   {
     label: 'Health',
-    items: [{ href: '/health', label: 'Health' }],
+    items: [
+      { href: '/health', label: 'Health' },
+      { href: '/habits', label: 'Habits' },
+      { href: '/mood', label: 'Mood' },
+      { href: '/spiritual', label: 'Spiritual' },
+    ],
   },
   {
     label: 'Reflection',

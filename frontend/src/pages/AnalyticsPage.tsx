@@ -12,6 +12,7 @@ import {
   getWeeklyReviewPreview,
   listSuggestions,
   listWeeklyReviews,
+  sendChatMessage,
   updateWeeklyReview,
 } from '../lib/api'
 import { formatCurrency, formatDate, formatPercent, titleCase } from '../lib/formatters'
@@ -66,6 +67,22 @@ export function AnalyticsPage() {
   const dismissSuggestionMutation = useMutation({
     mutationFn: dismissSuggestion,
     onSuccess: invalidateReviewLoop,
+  })
+
+  const [aiPatternAnalysis, setAiPatternAnalysis] = useState<string | null>(null)
+
+  const analyzePatternsMutation = useMutation({
+    mutationFn: () =>
+      sendChatMessage([
+        {
+          role: 'user',
+          content:
+            '[Context: Analytics patterns] Analyze my cross-domain patterns. Look at health, mood, finance, habits, and pipeline data. What correlations and trends do you see? What\'s working? What\'s a warning sign? Be specific, direct, and actionable.',
+        },
+      ]),
+    onSuccess: (result) => {
+      setAiPatternAnalysis(result.reply)
+    },
   })
 
   if (
@@ -232,22 +249,50 @@ export function AnalyticsPage() {
       ) : null}
 
       {tab === 'patterns' ? (
-        <div className="two-column">
-          <Panel title="Pattern analysis" description="Deterministic AI summary, kept structured rather than chatty.">
-            <div className="callout">
-              <p className="eyebrow">Pattern note</p>
-              <h3>{overview.pattern_analysis}</h3>
-            </div>
-          </Panel>
+        <div className="stack">
+          <div className="two-column">
+            <Panel title="Pattern analysis" description="Deterministic AI summary, kept structured rather than chatty.">
+              <div className="callout">
+                <p className="eyebrow">Pattern note</p>
+                <h3>{overview.pattern_analysis}</h3>
+              </div>
+            </Panel>
 
-          <Panel title="Freshness check" description="What the current read model is grounded in right now.">
-            <ul className="plain-list">
-              <li className="context-item">Analytics date: {formatDate(overview.date)}</li>
-              <li className="context-item">History rows: {overview.history.length}</li>
-              <li className="context-item">Marketing actions: {counts.marketing_actions}</li>
-              <li className="context-item">Opportunities: {counts.opportunities ?? 0}</li>
-              <li className="context-item">Health logs: {counts.health_logs ?? 0}</li>
-            </ul>
+            <Panel title="Freshness check" description="What the current read model is grounded in right now.">
+              <ul className="plain-list">
+                <li className="context-item">Analytics date: {formatDate(overview.date)}</li>
+                <li className="context-item">History rows: {overview.history.length}</li>
+                <li className="context-item">Marketing actions: {counts.marketing_actions}</li>
+                <li className="context-item">Opportunities: {counts.opportunities ?? 0}</li>
+                <li className="context-item">Health logs: {counts.health_logs ?? 0}</li>
+              </ul>
+            </Panel>
+          </div>
+
+          <Panel
+            title="AI deep analysis"
+            description="Claude reads all your logged data and surfaces honest cross-domain patterns."
+            aside={
+              <button
+                disabled={analyzePatternsMutation.isPending}
+                type="button"
+                onClick={() => analyzePatternsMutation.mutate()}
+              >
+                {analyzePatternsMutation.isPending ? 'Analyzing...' : 'Analyze my patterns'}
+              </button>
+            }
+          >
+            {aiPatternAnalysis ? (
+              <div className="callout">
+                <p className="eyebrow">AI pattern analysis</p>
+                <p style={{ whiteSpace: 'pre-wrap' }}>{aiPatternAnalysis}</p>
+              </div>
+            ) : (
+              <EmptyState
+                title="No analysis yet"
+                body="Click the button to let the AI surface honest cross-domain patterns from your data."
+              />
+            )}
           </Panel>
         </div>
       ) : null}
