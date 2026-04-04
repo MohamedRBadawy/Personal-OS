@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, test, vi } from 'vitest'
 import * as api from './lib/api'
 import type {
   AnalyticsOverviewPayload,
+  CommandCenterPayload,
   DashboardPayload,
   GoalMapPayload,
   GoalTreeNode,
@@ -16,8 +17,10 @@ import type {
 import { renderRoute } from './test/test-utils'
 
 vi.mock('./lib/api', () => ({
+  getCommandCenter: vi.fn(),
   getDashboard: vi.fn(),
   submitCheckIn: vi.fn(),
+  sendChatMessage: vi.fn(),
   getGoalTree: vi.fn(),
   getGoalMap: vi.fn(),
   getGoalContext: vi.fn(),
@@ -30,6 +33,7 @@ vi.mock('./lib/api', () => ({
   listHealthLogs: vi.fn(),
   listMoodLogs: vi.fn(),
   createHealthLog: vi.fn(),
+  updateHealthLog: vi.fn(),
   createMoodLog: vi.fn(),
   updateMoodLog: vi.fn(),
   createSpiritualLog: vi.fn(),
@@ -37,6 +41,7 @@ vi.mock('./lib/api', () => ({
   createHabitLog: vi.fn(),
   updateHabitLog: vi.fn(),
   getTodaySchedule: vi.fn(),
+  updateScheduleBlock: vi.fn(),
   createScheduleLog: vi.fn(),
   updateScheduleLog: vi.fn(),
   getTimeline: vi.fn(),
@@ -684,6 +689,133 @@ const pipelineWorkspace: PipelineWorkspacePayload = {
   recent_clients: [],
 }
 
+const commandCenterPayload: CommandCenterPayload = {
+  date: '2026-04-03',
+  profile: baseDashboard.profile,
+  settings: baseDashboard.settings,
+  briefing: baseDashboard.briefing,
+  key_signals: baseDashboard.key_signals,
+  overwhelm: baseDashboard.overwhelm,
+  reentry: {
+    active: false,
+    days_away: 0,
+    message: '',
+    what_changed: [],
+    matters_now: [],
+    can_wait: [],
+  },
+  priorities: [
+    {
+      id: 'goal-1',
+      code: 'g2',
+      title: 'Reach EUR 1,000/month independent income',
+      type: 'goal',
+      category: 'Finance',
+      status: 'active',
+      parent: null,
+      parent_title: null,
+      notes: '',
+      deps: [],
+      blocked_by_titles: [],
+      ancestor_titles: [],
+      progress_pct: 25,
+      due_date: null,
+      manual_priority: null,
+      dependency_unblock_count: 1,
+      recommended_tool: 'Claude',
+      tool_reasoning: 'This work benefits from thinking, structuring, or drafting before execution.',
+      is_overdue: false,
+      due_in_days: null,
+    },
+  ],
+  top_priorities: [
+    {
+      id: 'goal-1',
+      code: 'g2',
+      title: 'Reach EUR 1,000/month independent income',
+      type: 'goal',
+      category: 'Finance',
+      status: 'active',
+      parent: null,
+      parent_title: null,
+      notes: '',
+      deps: [],
+      blocked_by_titles: [],
+      ancestor_titles: [],
+      progress_pct: 25,
+      due_date: null,
+      manual_priority: null,
+      dependency_unblock_count: 1,
+      recommended_tool: 'Claude',
+      tool_reasoning: 'This work benefits from thinking, structuring, or drafting before execution.',
+      is_overdue: false,
+      due_in_days: null,
+    },
+  ],
+  schedule: todaySchedule,
+  health_today: healthToday,
+  finance: {
+    summary: baseDashboard.finance_summary,
+    recent_entries: [
+      {
+        id: 'entry-1',
+        type: 'income',
+        source: 'K Line Europe',
+        amount: '700.00',
+        amount_eur: 700,
+        currency: 'EUR',
+        is_independent: false,
+        is_recurring: true,
+        date: '2026-04-01',
+        notes: '',
+      },
+    ],
+  },
+  pipeline: pipelineWorkspace,
+  weekly_review: {
+    status: baseDashboard.review_status,
+    preview: {
+      week_start: '2026-03-30',
+      week_end: '2026-04-05',
+      snippet: 'Weekly Review - Independent income this month: EUR 250',
+      report: 'Weekly Review',
+    },
+    pending_suggestions_count: 2,
+    pending_suggestions: [
+      {
+        id: 'suggestion-1',
+        topic: 'weekly_review',
+        module: 'analytics',
+        suggestion_text: 'Generate the weekly review before the week rolls over.',
+        shown_at: '2026-04-03T08:00:00Z',
+      },
+      {
+        id: 'suggestion-2',
+        topic: 'pipeline_follow_up',
+        module: 'pipeline',
+        suggestion_text: 'Close one follow-up loop today.',
+        shown_at: '2026-04-03T09:00:00Z',
+      },
+    ],
+  },
+  status_cards: [
+    { id: 'goals', label: 'Goals and tasks', value: 1, total: 3, status: 'clear', detail: '0 blocked - 2 ready now', route: '/goals' },
+    { id: 'schedule', label: "Today's schedule", value: 0, total: 2, status: 'attention', detail: '2 pending - 0 skipped', route: '/schedule' },
+    { id: 'finance', label: 'Independent income', value: 250, total: 1000, status: 'attention', detail: 'Net this month: 600 EUR', route: '/finance' },
+  ],
+  recent_progress: [
+    {
+      id: 'progress-1',
+      kind: 'win',
+      domain: 'Work',
+      title: 'Backend foundation shipped',
+      detail: 'Migrations and read models are live.',
+      date: '2026-04-01',
+    },
+  ],
+  latest_checkin: null,
+}
+
 const marketingActions = [
   {
     id: 'marketing-1',
@@ -768,6 +900,7 @@ const learnings = [
 ]
 
 beforeEach(() => {
+  vi.mocked(api.getCommandCenter).mockResolvedValue(commandCenterPayload)
   vi.mocked(api.getDashboard).mockResolvedValue(baseDashboard)
   vi.mocked(api.submitCheckIn).mockResolvedValue({
     checkin_id: 'checkin-1',
@@ -787,6 +920,11 @@ beforeEach(() => {
       ...baseDashboard.health_summary,
       low_energy_today: true,
     },
+  })
+  vi.mocked(api.sendChatMessage).mockResolvedValue({
+    reply: 'Captured that and updated the system.',
+    actions: [],
+    affected_modules: ['goals'],
   })
   vi.mocked(api.getGoalTree).mockResolvedValue(goalTree)
   vi.mocked(api.getGoalMap).mockResolvedValue(goalMap)
@@ -866,6 +1004,18 @@ beforeEach(() => {
     weight_kg: null,
     nutrition_notes: '',
   })
+  vi.mocked(api.updateHealthLog).mockResolvedValue({
+    id: 'health-2',
+    date: '2026-04-03',
+    sleep_hours: '6.5',
+    sleep_quality: 3,
+    energy_level: 3,
+    exercise_done: false,
+    exercise_type: '',
+    exercise_duration_mins: null,
+    weight_kg: null,
+    nutrition_notes: '',
+  })
   vi.mocked(api.createMoodLog).mockResolvedValue({
     id: 'mood-1',
     date: '2026-04-03',
@@ -919,6 +1069,16 @@ beforeEach(() => {
     note: '',
   })
   vi.mocked(api.getTodaySchedule).mockResolvedValue(todaySchedule)
+  vi.mocked(api.updateScheduleBlock).mockResolvedValue({
+    id: 'block-1',
+    label: 'Focused work slot',
+    type: 'work',
+    time: '09:00',
+    is_fixed: false,
+    is_adjustable: true,
+    duration_mins: 90,
+    sort_order: 30,
+  })
   vi.mocked(api.createScheduleLog).mockResolvedValue({
     id: 'schedule-log-1',
     date: '2026-04-03',
@@ -1034,7 +1194,7 @@ beforeEach(() => {
 
 describe('route smoke tests', () => {
   test.each([
-    ['/', /schedule preview/i],
+    ['/', /priority stack/i],
     ['/timeline', /week rhythm and daily debriefs/i],
     ['/analytics', /overview, history, patterns, and review/i],
     ['/goals', /dependency-aware map/i],
@@ -1056,13 +1216,12 @@ describe('route smoke tests', () => {
 })
 
 describe('core expanded flows', () => {
-  test('submits the check-in and shows the returned briefing', async () => {
+  test('prefills the command center capture box from a quick action', async () => {
     renderRoute('/')
     expect(await screen.findByText(/start with the income goal/i)).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: /submit morning check-in/i }))
+    await userEvent.click(screen.getByRole('button', { name: /^task$/i }))
 
-    await waitFor(() => expect(api.submitCheckIn).toHaveBeenCalledTimes(1))
-    expect(await screen.findByText(/keep today light/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/capture input/i)).toHaveValue('Create a task: ')
   })
 
   test('switches goals page to map view', async () => {
@@ -1090,9 +1249,9 @@ describe('core expanded flows', () => {
   test('shows the weekly loop card on the home page', async () => {
     renderRoute('/')
 
-    expect(await screen.findByText(/current week review/i)).toBeInTheDocument()
-    expect(screen.getByText(/pending suggestions/i)).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /open analytics review/i })).toBeInTheDocument()
+    expect(await screen.findByText(/this week review/i)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /pending suggestions/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /open analytics/i })).toBeInTheDocument()
   })
 })
 

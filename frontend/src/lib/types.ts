@@ -35,6 +35,7 @@ export type MorningBriefing = {
 
 export type GoalNodeType = 'goal' | 'project' | 'task' | 'sub_task' | 'idea' | 'burden'
 export type GoalNodeStatus = 'active' | 'available' | 'blocked' | 'done'
+export type GoalNodeManualPriority = 'high' | 'medium' | 'low' | null
 
 export type GoalNode = {
   id: string
@@ -46,8 +47,15 @@ export type GoalNode = {
   parent: string | null
   deps: string[]
   notes: string
+  due_date?: string | null
+  manual_priority?: GoalNodeManualPriority
   completed_at: string | null
   progress_pct: number
+  parent_title?: string | null
+  dependent_count?: number
+  blocked_by_titles?: string[]
+  recommended_tool?: string
+  tool_reasoning?: string
 }
 
 export type GoalTreeNode = GoalNode & {
@@ -61,7 +69,9 @@ export type GoalContext = {
   progress_pct: number
 }
 
-export type GoalNodeUpdatePayload = Partial<Pick<GoalNode, 'status' | 'notes' | 'parent'>> & {
+export type GoalNodeUpdatePayload = Partial<
+  Pick<GoalNode, 'status' | 'notes' | 'parent' | 'due_date' | 'manual_priority'>
+> & {
   title?: string
   deps?: string[]
 }
@@ -87,6 +97,10 @@ export type GoalMapNode = {
   progress_pct: number
   child_count: number
   blocked_by: string[]
+  due_date?: string | null
+  manual_priority?: GoalNodeManualPriority
+  recommended_tool?: string
+  tool_reasoning?: string
 }
 
 export type GoalMapEdge = {
@@ -445,6 +459,17 @@ export type TodayScheduleBlock = {
     goal_node: ScheduleSuggestionGoalNode | null
     marketing_action: ScheduleSuggestionMarketingAction | null
   } | null
+}
+
+export type ScheduleBlockPayload = {
+  template: string
+  time: string
+  label: string
+  type: string
+  is_fixed: boolean
+  duration_mins: number
+  is_adjustable: boolean
+  sort_order: number
 }
 
 export type TodaySchedulePayload = {
@@ -808,4 +833,103 @@ export type ChatMessage = {
 export type ChatResponse = {
   reply: string
   actions: ChatAction[]
+  affected_modules: string[]
+}
+
+export type CommandCenterPriorityItem = {
+  id: string
+  code: string | null
+  title: string
+  type: GoalNodeType
+  category: string | null
+  status: GoalNodeStatus
+  parent: string | null
+  parent_title: string | null
+  notes: string
+  deps: string[]
+  blocked_by_titles: string[]
+  ancestor_titles: string[]
+  progress_pct: number
+  due_date: string | null
+  manual_priority: GoalNodeManualPriority
+  dependency_unblock_count: number
+  recommended_tool: string
+  tool_reasoning: string
+  is_overdue: boolean
+  due_in_days: number | null
+}
+
+export type CommandCenterStatusCard = {
+  id: string
+  label: string
+  value: number
+  total: number
+  status: 'clear' | 'attention' | 'warning'
+  detail: string
+  route: string
+}
+
+export type CommandCenterRecentProgressItem = {
+  id: string
+  kind: 'completion' | 'win'
+  domain: string
+  title: string
+  detail: string
+  date: string
+}
+
+export type CommandCenterReentry = {
+  active: boolean
+  days_away: number
+  message: string
+  what_changed: string[]
+  matters_now: string[]
+  can_wait: string[]
+}
+
+export type CommandCenterSuggestionItem = {
+  id: string
+  topic: string
+  module: string
+  suggestion_text: string
+  shown_at: string
+}
+
+export type CommandCenterPayload = {
+  date: string
+  profile: Profile | null
+  settings: AppSettings | null
+  briefing: MorningBriefing
+  key_signals: string[]
+  overwhelm: OverwhelmSummary
+  reentry: CommandCenterReentry
+  priorities: CommandCenterPriorityItem[]
+  top_priorities: CommandCenterPriorityItem[]
+  schedule: TodaySchedulePayload
+  health_today: HealthTodayPayload
+  finance: {
+    summary: FinanceSummary
+    recent_entries: FinanceEntry[]
+  }
+  pipeline: PipelineWorkspacePayload
+  weekly_review: {
+    status: {
+      week_start: string
+      week_end: string
+      review_exists: boolean
+      current_review_id: string | null
+      latest_review_id: string | null
+    }
+    preview: WeeklyReviewPreview
+    pending_suggestions_count: number
+    pending_suggestions: CommandCenterSuggestionItem[]
+  }
+  status_cards: CommandCenterStatusCard[]
+  recent_progress: CommandCenterRecentProgressItem[]
+  latest_checkin: {
+    id: string
+    date: string
+    inbox_text: string
+    blockers_text: string
+  } | null
 }

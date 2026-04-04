@@ -1,10 +1,3 @@
-/**
- * usePageContext — derives domain-specific AI chat context from the current route.
- *
- * Returns a placeholder, hint label, and a context prefix that gets prepended
- * to user messages so the AI tailors its responses to the active page.
- */
-
 import { useLocation } from 'react-router-dom'
 
 export type PageContext = {
@@ -15,13 +8,13 @@ export type PageContext = {
 
 const PAGE_MAP: Record<string, PageContext> = {
   '/': {
-    domain: 'Dashboard',
-    placeholder: 'What should I focus on today? How is my Kyrgyzstan progress?',
-    contextHint: '[Context: Dashboard/Today page]',
+    domain: 'Command Center',
+    placeholder: 'Log something, capture a task, or ask what matters most today...',
+    contextHint: '[Context: Command Center page]',
   },
   '/goals': {
     domain: 'Goals',
-    placeholder: 'Ask about your goal hierarchy, what\'s blocking you, how to restructure...',
+    placeholder: "Ask about your goal hierarchy, what's blocking you, how to restructure...",
     contextHint: '[Context: Goals page]',
   },
   '/finance': {
@@ -41,17 +34,17 @@ const PAGE_MAP: Record<string, PageContext> = {
   },
   '/mood': {
     domain: 'Mood',
-    placeholder: 'Talk about how you\'re feeling, detect patterns...',
+    placeholder: "Talk about how you're feeling, detect patterns...",
     contextHint: '[Context: Mood page]',
   },
   '/spiritual': {
     domain: 'Spiritual',
     placeholder: 'Reflect spiritually, connect faith to your goals...',
-    contextHint: '[Context: Spiritual/Prayer page]',
+    contextHint: '[Context: Spiritual page]',
   },
   '/schedule': {
     domain: 'Schedule',
-    placeholder: 'Ask about today\'s schedule, time allocation, energy management...',
+    placeholder: "Ask about today's schedule, time allocation, energy management...",
     contextHint: '[Context: Schedule page]',
   },
   '/pipeline': {
@@ -108,7 +101,7 @@ const PAGE_MAP: Record<string, PageContext> = {
 
 const DEFAULT_CONTEXT: PageContext = {
   domain: 'General',
-  placeholder: 'Log sleep, mark habits, ask anything…',
+  placeholder: 'Log sleep, mark habits, ask anything...',
   contextHint: '',
 }
 

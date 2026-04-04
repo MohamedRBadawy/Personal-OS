@@ -35,6 +35,7 @@ export function HealthPage() {
         queryClient.invalidateQueries({ queryKey: ['health-today'] }),
         queryClient.invalidateQueries({ queryKey: ['health-logs'] }),
         queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+        queryClient.invalidateQueries({ queryKey: ['command-center'] }),
       ])
     },
   })

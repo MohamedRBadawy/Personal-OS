@@ -30,6 +30,7 @@ export function SpiritualPage() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['health-today'] }),
         queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+        queryClient.invalidateQueries({ queryKey: ['command-center'] }),
       ])
     },
   })

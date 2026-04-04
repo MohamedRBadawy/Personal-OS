@@ -1,23 +1,17 @@
-"""Routing for shared core APIs.
-
-Registers:
-  /api/core/profiles/   — Profile CRUD
-  /api/core/settings/   — AppSettings CRUD
-  /api/core/dashboard/  — Composite home-screen payload
-  /api/core/export/     — Full JSON export of all 15 domain tables (Logic Spec §15)
-"""
+"""Routing for shared core APIs."""
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from core.chat_views import ChatView
 from core.export import FullExportView
-from core.views import AppSettingsViewSet, DashboardView, ProfileViewSet
+from core.views import AppSettingsViewSet, CommandCenterView, DashboardView, ProfileViewSet
 
 router = DefaultRouter()
 router.register("profiles", ProfileViewSet, basename="profile")
 router.register("settings", AppSettingsViewSet, basename="app-settings")
 
 urlpatterns = [
+    path("command-center/", CommandCenterView.as_view(), name="command-center"),
     path("dashboard/", DashboardView.as_view(), name="dashboard"),
     path("export/", FullExportView.as_view(), name="full-export"),
     path("chat/", ChatView.as_view(), name="ai-chat"),

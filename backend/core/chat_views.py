@@ -1,8 +1,4 @@
-"""API view for the AI chat endpoint.
-
-Accepts the full conversation history and returns Claude's reply
-plus a list of actions that were executed inside the app.
-"""
+"""API view for the AI chat endpoint."""
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -19,7 +15,8 @@ class ChatView(APIView):
             {"role": "user", "content": "Log my sleep as 7.5 hours, quality 4"},
             {"role": "assistant", "content": "Done! Health log saved for today."},
             {"role": "user", "content": "Also mark cold shower as done"}
-        ]
+        ],
+        "context": {"surface": "command_center"}
     }
 
     Response:
@@ -27,13 +24,15 @@ class ChatView(APIView):
         "reply": "Cold shower marked as done for today.",
         "actions": [
             {"tool": "mark_habit_done", "result": {"status": "marked done", "habit": "Cold shower"}}
-        ]
+        ],
+        "affected_modules": ["health"]
     }
     """
 
     def post(self, request):
         """Run the agentic chat loop and return the AI reply + actions taken."""
         messages = request.data.get("messages", [])
+        context = request.data.get("context")
 
         if not messages:
             return Response(
@@ -54,5 +53,11 @@ class ChatView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        result = run_chat(messages)
+        if context is not None and not isinstance(context, dict):
+            return Response(
+                {"error": "context must be an object when provided."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        result = run_chat(messages, context=context)
         return Response(result, status=status.HTTP_200_OK)

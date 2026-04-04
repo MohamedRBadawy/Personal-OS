@@ -17,7 +17,7 @@ import {
 import { titleCase } from '../lib/formatters'
 import type { GoalNodeCreatePayload, GoalNodeUpdatePayload } from '../lib/types'
 
-const GOAL_QUERY_KEYS = ['goal-tree', 'goal-map', 'dashboard']
+const GOAL_QUERY_KEYS = ['goal-tree', 'goal-map', 'dashboard', 'command-center']
 
 export function GoalsPage() {
   const queryClient = useQueryClient()

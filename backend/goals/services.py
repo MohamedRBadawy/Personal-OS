@@ -130,6 +130,34 @@ class NodeStatusService:
         cls.refresh_all()
 
 
+class TaskRecommendationService:
+    """Return deterministic tool recommendations for actionable nodes."""
+
+    automation_terms = {"automation", "automate", "webhook", "sync", "workflow", "integration", "pipeline", "n8n"}
+    coding_terms = {"build", "code", "api", "backend", "frontend", "feature", "bug", "test", "refactor", "app"}
+    ui_terms = {"ui", "screen", "layout", "design", "component", "interaction", "style", "visual"}
+    thinking_terms = {"strategy", "diagnose", "diagnostic", "review", "plan", "proposal", "message", "write", "brief"}
+    manual_terms = {"call", "meeting", "prayer", "family", "walk", "exercise", "read", "errand", "visit"}
+
+    @classmethod
+    def recommend(cls, node):
+        """Choose a deterministic tool recommendation from node title and notes."""
+        haystack = f"{node.title} {node.notes}".lower()
+        tokens = set(haystack.replace("/", " ").replace("-", " ").split())
+
+        if tokens & cls.automation_terms:
+            return "n8n", "Automation-heavy work is best handled through a repeatable workflow."
+        if tokens & cls.ui_terms:
+            return "Cursor", "UI and interaction work benefit from a design-aware editing loop."
+        if tokens & cls.coding_terms:
+            return "Codex", "Implementation-heavy work is best handled in the coding workspace."
+        if tokens & cls.thinking_terms or node.type in {Node.NodeType.GOAL, Node.NodeType.PROJECT}:
+            return "Claude", "This work benefits from thinking, structuring, or drafting before execution."
+        if tokens & cls.manual_terms:
+            return "Manual", "This is best done directly in real life rather than through a software tool."
+        return "Claude", "Start with structured thinking, then move into execution once the path is clear."
+
+
 class GoalMapService:
     """Build the graph-style read model for the Goals map view."""
 
@@ -151,6 +179,10 @@ class GoalMapService:
                 "progress_pct": NodeStatusService.progress_pct(node),
                 "child_count": node.children.count(),
                 "blocked_by": [dep.title for dep in node.deps.exclude(status=Node.Status.DONE)],
+                "due_date": node.due_date.isoformat() if node.due_date else None,
+                "manual_priority": node.manual_priority,
+                "recommended_tool": TaskRecommendationService.recommend(node)[0],
+                "tool_reasoning": TaskRecommendationService.recommend(node)[1],
             }
             for node in nodes
         ]

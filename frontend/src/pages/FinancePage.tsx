@@ -25,6 +25,7 @@ export function FinancePage() {
         queryClient.invalidateQueries({ queryKey: ['finance-summary'] }),
         queryClient.invalidateQueries({ queryKey: ['finance-entries'] }),
         queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+        queryClient.invalidateQueries({ queryKey: ['command-center'] }),
       ])
     },
   })

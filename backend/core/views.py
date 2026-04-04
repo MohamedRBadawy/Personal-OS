@@ -9,7 +9,7 @@ from core.serializers import (
     DailyCheckInRequestSerializer,
     ProfileSerializer,
 )
-from core.services import CheckInService, DashboardService
+from core.services import CheckInService, CommandCenterService, DashboardService
 
 
 class ProfileViewSet(viewsets.ModelViewSet):
@@ -52,3 +52,10 @@ class DashboardView(APIView):
 
     def get(self, request):
         return Response(DashboardService.payload(), status=status.HTTP_200_OK)
+
+
+class CommandCenterView(APIView):
+    """GET endpoint returning the unified command-center payload."""
+
+    def get(self, request):
+        return Response(CommandCenterService.payload(), status=status.HTTP_200_OK)

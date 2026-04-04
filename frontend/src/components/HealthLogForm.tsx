@@ -1,22 +1,26 @@
 import { useState } from 'react'
-import type { HealthLogPayload } from '../lib/types'
+import type { HealthLog, HealthLogPayload } from '../lib/types'
 
 type HealthLogFormProps = {
+  today?: string
+  initialValue?: HealthLog | null
   onSubmit: (payload: HealthLogPayload) => void
   isSubmitting: boolean
 }
 
-export function HealthLogForm({ onSubmit, isSubmitting }: HealthLogFormProps) {
-  const today = new Date().toISOString().slice(0, 10)
-  const [date, setDate] = useState(today)
-  const [sleepHours, setSleepHours] = useState('7.0')
-  const [sleepQuality, setSleepQuality] = useState(4)
-  const [energyLevel, setEnergyLevel] = useState(3)
-  const [exerciseDone, setExerciseDone] = useState(false)
-  const [exerciseType, setExerciseType] = useState('')
-  const [exerciseDuration, setExerciseDuration] = useState('')
-  const [weight, setWeight] = useState('')
-  const [nutritionNotes, setNutritionNotes] = useState('')
+export function HealthLogForm({ today, initialValue, onSubmit, isSubmitting }: HealthLogFormProps) {
+  const defaultDate = today ?? new Date().toISOString().slice(0, 10)
+  const [date, setDate] = useState(initialValue?.date ?? defaultDate)
+  const [sleepHours, setSleepHours] = useState(initialValue?.sleep_hours ?? '7.0')
+  const [sleepQuality, setSleepQuality] = useState(initialValue?.sleep_quality ?? 4)
+  const [energyLevel, setEnergyLevel] = useState(initialValue?.energy_level ?? 3)
+  const [exerciseDone, setExerciseDone] = useState(initialValue?.exercise_done ?? false)
+  const [exerciseType, setExerciseType] = useState(initialValue?.exercise_type ?? '')
+  const [exerciseDuration, setExerciseDuration] = useState(
+    initialValue?.exercise_duration_mins != null ? String(initialValue.exercise_duration_mins) : '',
+  )
+  const [weight, setWeight] = useState(initialValue?.weight_kg ?? '')
+  const [nutritionNotes, setNutritionNotes] = useState(initialValue?.nutrition_notes ?? '')
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -126,7 +130,7 @@ export function HealthLogForm({ onSubmit, isSubmitting }: HealthLogFormProps) {
       </div>
       <div className="field span-2 form-actions">
         <button disabled={isSubmitting} type="submit">
-          {isSubmitting ? 'Saving health log...' : 'Save health log'}
+          {isSubmitting ? 'Saving health log...' : initialValue ? 'Update health log' : 'Save health log'}
         </button>
       </div>
     </form>

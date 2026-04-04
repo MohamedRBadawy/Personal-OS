@@ -6,6 +6,7 @@ import type {
   ChatResponse,
   CheckInPayload,
   CheckInResponse,
+  CommandCenterPayload,
   DashboardPayload,
   DecisionLog,
   DecisionLogPayload,
@@ -40,6 +41,7 @@ import type {
   PipelineWorkspacePayload,
   Relationship,
   RelationshipPayload,
+  ScheduleBlockPayload,
   ScheduleBlockLog,
   ScheduleLogPayload,
   SpiritualLog,
@@ -128,6 +130,10 @@ export function getDashboard() {
   return request<DashboardPayload>('/core/dashboard/')
 }
 
+export function getCommandCenter() {
+  return request<CommandCenterPayload>('/core/command-center/')
+}
+
 export function submitCheckIn(payload: CheckInPayload) {
   return request<CheckInResponse>('/checkin/', {
     method: 'POST',
@@ -190,6 +196,10 @@ export function createHealthLog(payload: HealthLogPayload) {
   return createResource<HealthLog, HealthLogPayload>('/health/logs/', payload)
 }
 
+export function updateHealthLog(id: string, payload: Partial<HealthLogPayload>) {
+  return updateResource<HealthLog, Partial<HealthLogPayload>>(`/health/logs/${id}/`, payload)
+}
+
 export function listMoodLogs() {
   return listResource<MoodLog>('/health/moods/')
 }
@@ -220,6 +230,10 @@ export function updateHabitLog(id: string, payload: Partial<HabitLogPayload>) {
 
 export function getTodaySchedule() {
   return request<TodaySchedulePayload>('/schedule/today/')
+}
+
+export function updateScheduleBlock(id: string, payload: Partial<ScheduleBlockPayload>) {
+  return updateResource(`/schedule/blocks/${id}/`, payload)
 }
 
 export function createScheduleLog(payload: ScheduleLogPayload) {
@@ -415,9 +429,10 @@ export function deleteLearning(id: string) {
  */
 export async function sendChatMessage(
   messages: Array<{ role: 'user' | 'assistant'; content: string }>,
+  context?: Record<string, unknown>,
 ): Promise<ChatResponse> {
   return request<ChatResponse>('/core/chat/', {
     method: 'POST',
-    body: JSON.stringify({ messages }),
+    body: JSON.stringify({ messages, context }),
   })
 }

@@ -85,6 +85,24 @@ h3 {
   gap: 8px;
 }
 
+.nav-disclosure {
+  display: grid;
+  gap: 10px;
+}
+
+.nav-disclosure summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.nav-disclosure summary::-webkit-details-marker {
+  display: none;
+}
+
+.nav-group-links-secondary {
+  padding-top: 4px;
+}
+
 .nav-link {
   display: block;
   padding: 12px 14px;

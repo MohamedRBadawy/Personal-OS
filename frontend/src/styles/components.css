@@ -6,6 +6,8 @@
 .summary-strip,
 .hero-panel,
 .glance-card,
+.command-status-card,
+.command-priority-card,
 .record-card,
 .timeline-day {
   border: 1px solid var(--border);
@@ -88,10 +90,39 @@
 
 .glance-strip,
 .metric-grid,
-.summary-strip {
+.summary-strip,
+.command-status-grid {
   display: grid;
   gap: 16px;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.command-status-card {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  color: inherit;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.command-status-card__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: start;
+}
+
+.command-status-card strong {
+  font-family: var(--heading);
+  font-size: 1.7rem;
+  line-height: 1;
+}
+
+.command-status-card__total {
+  color: var(--text-muted);
+  font-size: 1rem;
+  font-family: var(--sans);
 }
 
 .glance-card {
@@ -201,6 +232,28 @@
 .record-card {
   padding: 16px;
   background: rgba(255, 255, 255, 0.68);
+}
+
+.command-priority-card {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.command-inline-note {
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: rgba(17, 50, 62, 0.05);
+}
+
+.command-inline-note p,
+.command-inline-note strong {
+  margin: 0;
+}
+
+.command-inline-note p {
+  margin-top: 8px;
 }
 
 .record-card-header,
@@ -401,6 +454,22 @@ th {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.command-capture__actions,
+.command-checkbox-grid,
+.command-reentry-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.command-reentry-grid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  margin-top: 16px;
+}
+
+.command-hero .signal-list {
+  margin-top: 8px;
 }
 
 .timeline-strip {

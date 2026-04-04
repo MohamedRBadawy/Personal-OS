@@ -1,5 +1,6 @@
 """Tests for core orchestration flows."""
 import os
+from datetime import timedelta
 from decimal import Decimal
 from unittest.mock import patch
 
@@ -436,3 +437,86 @@ class AIRuntimeTests(TestCase):
 
         self.assertIn("briefing_text", briefing)
         self.assertTrue(briefing["observations"])
+
+
+class CommandCenterTests(TestCase):
+    """Coverage for the command center payload and smart capture contract."""
+
+    def setUp(self):
+        self.client = APIClient()
+        AppSettings.objects.create()
+
+    def test_command_center_endpoint_returns_expected_sections(self):
+        call_command("seed_initial_data")
+
+        response = self.client.get("/api/core/command-center/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("briefing", response.data)
+        self.assertIn("priorities", response.data)
+        self.assertIn("schedule", response.data)
+        self.assertIn("health_today", response.data)
+        self.assertIn("finance", response.data)
+        self.assertIn("pipeline", response.data)
+        self.assertIn("weekly_review", response.data)
+        self.assertIn("status_cards", response.data)
+        self.assertIn("recent_progress", response.data)
+        self.assertIn("reentry", response.data)
+        self.assertIn("top_priorities", response.data)
+        self.assertIsInstance(response.data["status_cards"], list)
+
+    def test_command_center_reentry_activates_after_gap(self):
+        income_goal = Node.objects.create(
+            code="g2",
+            title="Reach EUR 1,000/month independent income",
+            type=Node.NodeType.GOAL,
+            category=Node.Category.FINANCE,
+            status=Node.Status.ACTIVE,
+        )
+        Node.objects.create(
+            title="Send outreach messages",
+            type=Node.NodeType.TASK,
+            category=Node.Category.CAREER,
+            status=Node.Status.AVAILABLE,
+            parent=income_goal,
+        )
+        DailyCheckIn.objects.create(
+            date=timezone.localdate() - timedelta(days=4),
+            inbox_text="Old inbox",
+            blockers_text="Old blocker",
+            briefing_text="Old briefing",
+        )
+
+        response = self.client.get("/api/core/command-center/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["reentry"]["active"])
+        self.assertEqual(response.data["reentry"]["days_away"], 4)
+        self.assertTrue(response.data["reentry"]["matters_now"])
+
+    @patch("core.chat_views.run_chat")
+    def test_chat_endpoint_returns_affected_modules(self, mock_run_chat):
+        mock_run_chat.return_value = {
+            "reply": "Logged the expense and captured the idea.",
+            "actions": [
+                {"tool": "add_finance_entry", "result": {"status": "saved"}},
+                {"tool": "capture_idea", "result": {"status": "captured"}},
+            ],
+            "affected_modules": ["finance", "analytics"],
+        }
+
+        response = self.client.post(
+            "/api/core/chat/",
+            {
+                "messages": [{"role": "user", "content": "Log a taxi expense and capture a product idea."}],
+                "context": {"surface": "command_center", "capture_mode": "smart_inbox"},
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["affected_modules"], ["finance", "analytics"])
+        mock_run_chat.assert_called_once_with(
+            [{"role": "user", "content": "Log a taxi expense and capture a product idea."}],
+            context={"surface": "command_center", "capture_mode": "smart_inbox"},
+        )

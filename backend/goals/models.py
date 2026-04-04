@@ -44,6 +44,12 @@ class Node(BaseModel):
         BLOCKED = "blocked", "Blocked"
         DONE = "done", "Done"
 
+    class ManualPriority(models.TextChoices):
+        """Manual priority override for actionable task work."""
+        HIGH = "high", "High"
+        MEDIUM = "medium", "Medium"
+        LOW = "low", "Low"
+
     code = models.CharField(
         max_length=32,
         unique=True,
@@ -66,6 +72,18 @@ class Node(BaseModel):
         related_name="dependents", help_text="Nodes this node depends on.",
     )
     notes = models.TextField(blank=True, help_text="Free-text notes.")
+    due_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Optional due date for task and sub-task items.",
+    )
+    manual_priority = models.CharField(
+        max_length=10,
+        choices=ManualPriority.choices,
+        null=True,
+        blank=True,
+        help_text="Optional manual priority for task and sub-task items.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     completed_at = models.DateTimeField(null=True, blank=True)

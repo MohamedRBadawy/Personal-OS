@@ -47,6 +47,7 @@ export function SchedulePage() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['today-schedule'] }),
         queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+        queryClient.invalidateQueries({ queryKey: ['command-center'] }),
       ])
     },
   })
@@ -57,6 +58,7 @@ export function SchedulePage() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['today-schedule'] }),
         queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+        queryClient.invalidateQueries({ queryKey: ['command-center'] }),
         queryClient.invalidateQueries({ queryKey: ['goal-tree'] }),
       ])
     },

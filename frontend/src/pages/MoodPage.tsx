@@ -36,6 +36,7 @@ export function MoodPage() {
         queryClient.invalidateQueries({ queryKey: ['health-today'] }),
         queryClient.invalidateQueries({ queryKey: ['health-moods'] }),
         queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+        queryClient.invalidateQueries({ queryKey: ['command-center'] }),
       ])
     },
   })

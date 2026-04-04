@@ -1,4 +1,6 @@
 """Tests for goal dependency rules and progress logic."""
+from datetime import date, timedelta
+
 from django.test import TestCase
 from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient
@@ -131,3 +133,66 @@ class GoalReadModelTests(TestCase):
         self.assertEqual(response.data["summary"]["project_count"], 1)
         self.assertEqual(response.data["summary"]["task_count"], 1)
         self.assertTrue(any(edge["kind"] == "dependency" for edge in response.data["edges"]))
+
+    def test_task_nodes_accept_due_dates_and_manual_priority(self):
+        serializer = NodeSerializer(
+            data={
+                "title": "Build command center backend",
+                "type": Node.NodeType.TASK,
+                "category": Node.Category.CAREER,
+                "status": Node.Status.ACTIVE,
+                "due_date": date.today().isoformat(),
+                "manual_priority": Node.ManualPriority.HIGH,
+                "notes": "Backend feature and API work.",
+            },
+        )
+
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        node = serializer.save()
+        self.assertEqual(node.manual_priority, Node.ManualPriority.HIGH)
+        self.assertEqual(serializer.data["due_date"], date.today().isoformat())
+        self.assertEqual(serializer.data["recommended_tool"], "Codex")
+
+    def test_non_task_nodes_reject_due_dates_and_manual_priority(self):
+        serializer = NodeSerializer(
+            data={
+                "title": "North star goal",
+                "type": Node.NodeType.GOAL,
+                "category": Node.Category.LIFE,
+                "status": Node.Status.ACTIVE,
+                "due_date": date.today().isoformat(),
+                "manual_priority": Node.ManualPriority.HIGH,
+            },
+        )
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("due_date", serializer.errors)
+
+    def test_goal_map_exposes_task_planning_fields(self):
+        goal = Node.objects.create(
+            code="g1",
+            title="Reach independent income target",
+            type=Node.NodeType.GOAL,
+            category=Node.Category.FINANCE,
+            status=Node.Status.ACTIVE,
+        )
+        task = Node.objects.create(
+            code="t1",
+            title="Build command center backend",
+            type=Node.NodeType.TASK,
+            category=Node.Category.CAREER,
+            status=Node.Status.AVAILABLE,
+            parent=goal,
+            due_date=date.today() + timedelta(days=2),
+            manual_priority=Node.ManualPriority.MEDIUM,
+        )
+        task.deps.set([goal])
+
+        response = self.client.get("/api/goals/nodes/map/")
+
+        self.assertEqual(response.status_code, 200)
+        map_task = next(item for item in response.data["nodes"] if item["id"] == str(task.id))
+        self.assertEqual(map_task["due_date"], task.due_date.isoformat())
+        self.assertEqual(map_task["manual_priority"], Node.ManualPriority.MEDIUM)
+        self.assertEqual(map_task["recommended_tool"], "Codex")
+        self.assertTrue(map_task["tool_reasoning"])

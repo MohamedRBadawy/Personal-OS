@@ -11,3 +11,1101 @@ Not Found: /
 [04/Apr/2026 09:05:18] "GET / HTTP/1.1" 404 3417
 Not Found: /favicon.ico
 [04/Apr/2026 09:05:19] "GET /favicon.ico HTTP/1.1" 404 3468
+[04/Apr/2026 09:18:49] "GET /api/core/dashboard/ HTTP/1.1" 200 5745
+[04/Apr/2026 09:20:33] "GET /api/core/dashboard/ HTTP/1.1" 200 5745
+[04/Apr/2026 09:27:00] "GET /api/core/dashboard/ HTTP/1.1" 200 5745
+Not Found: /
+[04/Apr/2026 09:29:07] "GET / HTTP/1.1" 404 3417
+Not Found: /
+[04/Apr/2026 09:29:09] "HEAD / HTTP/1.1" 404 0
+Not Found: /
+[04/Apr/2026 09:29:09] "GET / HTTP/1.1" 404 3417
+[04/Apr/2026 09:29:13] "OPTIONS /api/core/dashboard/ HTTP/1.1" 200 0
+[04/Apr/2026 09:29:13] "GET /api/core/dashboard/ HTTP/1.1" 200 5745
+[04/Apr/2026 09:29:14] "GET /api/core/dashboard/ HTTP/1.1" 200 5745
+[04/Apr/2026 09:29:51] "OPTIONS /api/goals/nodes/tree/ HTTP/1.1" 200 0
+[04/Apr/2026 09:29:51] "OPTIONS /api/goals/nodes/map/ HTTP/1.1" 200 0
+[04/Apr/2026 09:29:51] "GET /api/goals/nodes/tree/ HTTP/1.1" 200 4891
+[04/Apr/2026 09:29:51] "GET /api/goals/nodes/map/ HTTP/1.1" 200 4498
+[04/Apr/2026 09:29:51] "OPTIONS /api/goals/nodes/e3c1ce9d-7a03-405c-b916-c27833313c13/context/ HTTP/1.1" 200 0
+[04/Apr/2026 09:29:51] "GET /api/goals/nodes/e3c1ce9d-7a03-405c-b916-c27833313c13/context/ HTTP/1.1" 200 3486
+[04/Apr/2026 09:32:46] "GET /api/core/dashboard/ HTTP/1.1" 200 5745
+[04/Apr/2026 09:32:55] "OPTIONS /api/analytics/overview/ HTTP/1.1" 200 0
+[04/Apr/2026 09:32:55] "OPTIONS /api/analytics/reviews/preview/ HTTP/1.1" 200 0
+[04/Apr/2026 09:32:55] "OPTIONS /api/analytics/suggestions/ HTTP/1.1" 200 0
+[04/Apr/2026 09:32:55] "OPTIONS /api/analytics/reviews/ HTTP/1.1" 200 0
+[04/Apr/2026 09:32:55] "GET /api/analytics/reviews/ HTTP/1.1" 200 655
+[04/Apr/2026 09:32:55] "GET /api/analytics/suggestions/ HTTP/1.1" 200 1187
+[04/Apr/2026 09:32:55] "GET /api/analytics/reviews/preview/ HTTP/1.1" 200 1996
+[04/Apr/2026 09:32:55] "GET /api/analytics/overview/ HTTP/1.1" 200 1905
+[04/Apr/2026 09:32:57] "OPTIONS /api/analytics/timeline/?week_start=2026-03-30 HTTP/1.1" 200 0
+[04/Apr/2026 09:32:57] "GET /api/analytics/timeline/?week_start=2026-03-30 HTTP/1.1" 200 3243
+[04/Apr/2026 09:33:30] "OPTIONS /api/goals/nodes/tree/ HTTP/1.1" 200 0
+[04/Apr/2026 09:33:30] "OPTIONS /api/goals/nodes/map/ HTTP/1.1" 200 0
+[04/Apr/2026 09:33:31] "GET /api/goals/nodes/tree/ HTTP/1.1" 200 4891
+[04/Apr/2026 09:33:31] "OPTIONS /api/goals/nodes/e3c1ce9d-7a03-405c-b916-c27833313c13/context/ HTTP/1.1" 200 0
+[04/Apr/2026 09:33:31] "GET /api/goals/nodes/map/ HTTP/1.1" 200 4498
+[04/Apr/2026 09:33:31] "GET /api/goals/nodes/e3c1ce9d-7a03-405c-b916-c27833313c13/context/ HTTP/1.1" 200 3486
+[04/Apr/2026 09:33:35] "OPTIONS /api/goals/nodes/57499fac-c6da-4b3f-b6ad-22eaa762810c/context/ HTTP/1.1" 200 0
+[04/Apr/2026 09:33:35] "GET /api/goals/nodes/57499fac-c6da-4b3f-b6ad-22eaa762810c/context/ HTTP/1.1" 200 1195
+[04/Apr/2026 09:33:37] "OPTIONS /api/goals/nodes/7f8cc682-cb6b-491a-b280-3fe92d894408/context/ HTTP/1.1" 200 0
+[04/Apr/2026 09:33:37] "GET /api/goals/nodes/7f8cc682-cb6b-491a-b280-3fe92d894408/context/ HTTP/1.1" 200 1182
+[04/Apr/2026 09:33:38] "OPTIONS /api/goals/nodes/584f1023-4330-40bf-8103-b143b5de2348/context/ HTTP/1.1" 200 0
+[04/Apr/2026 09:33:38] "GET /api/goals/nodes/584f1023-4330-40bf-8103-b143b5de2348/context/ HTTP/1.1" 200 414
+F:\Personal OS\backend\goals\models.py changed, reloading.
+Watching for file changes with StatReloader
+F:\Personal OS\backend\goals\services.py changed, reloading.
+Watching for file changes with StatReloader
+F:\Personal OS\backend\goals\serializers.py changed, reloading.
+Watching for file changes with StatReloader
+F:\Personal OS\backend\core\services.py changed, reloading.
+Watching for file changes with StatReloader
+F:\Personal OS\backend\core\services.py changed, reloading.
+Watching for file changes with StatReloader
+F:\Personal OS\backend\core\services.py changed, reloading.
+Watching for file changes with StatReloader
+F:\Personal OS\backend\core\services.py changed, reloading.
+Watching for file changes with StatReloader
+F:\Personal OS\backend\core\services.py changed, reloading.
+Watching for file changes with StatReloader
+F:\Personal OS\backend\core\chat_service.py changed, reloading.
+Watching for file changes with StatReloader
+F:\Personal OS\backend\core\chat_views.py changed, reloading.
+Watching for file changes with StatReloader
+F:\Personal OS\backend\core\urls.py changed, reloading.
+Watching for file changes with StatReloader
+F:\Personal OS\backend\core\services.py changed, reloading.
+Watching for file changes with StatReloader
+Internal Server Error: /api/goals/nodes/tree/
+Traceback (most recent call last):
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\sqlite3\base.py", line 354, in execute
+    return super().execute(query, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+sqlite3.OperationalError: no such column: goals_node.due_date
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "F:\Personal OS\backend\goals\views.py", line 25, in tree
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 809, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 251, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 728, in to_representation
+    self.child.to_representation(item) for item in iterable
+                                                   ^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\query.py", line 402, in __iter__
+    self._fetch_all()
+    ~~~~~~~~~~~~~~~^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\query.py", line 1933, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\query.py", line 93, in __iter__
+    results = compiler.execute_sql(
+        chunked_fetch=self.chunked_fetch, chunk_size=self.chunk_size
+    )
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\sql\compiler.py", line 1574, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\sqlite3\base.py", line 354, in execute
+    return super().execute(query, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+django.db.utils.OperationalError: no such column: goals_node.due_date
+[04/Apr/2026 10:02:44] "GET /api/goals/nodes/tree/ HTTP/1.1" 500 175493
+Internal Server Error: /api/goals/nodes/e3c1ce9d-7a03-405c-b916-c27833313c13/context/
+Traceback (most recent call last):
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\sqlite3\base.py", line 354, in execute
+    return super().execute(query, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+sqlite3.OperationalError: no such column: goals_node.due_date
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "F:\Personal OS\backend\goals\views.py", line 33, in context
+    node = self.get_object()
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\generics.py", line 100, in get_object
+    obj = get_object_or_404(queryset, **filter_kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\generics.py", line 19, in get_object_or_404
+    return _get_object_or_404(queryset, *filter_args, **filter_kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\shortcuts.py", line 86, in get_object_or_404
+    return queryset.get(*args, **kwargs)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\query.py", line 647, in get
+    num = len(clone)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\query.py", line 384, in __len__
+    self._fetch_all()
+    ~~~~~~~~~~~~~~~^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\query.py", line 1933, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\query.py", line 93, in __iter__
+    results = compiler.execute_sql(
+        chunked_fetch=self.chunked_fetch, chunk_size=self.chunk_size
+    )
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\sql\compiler.py", line 1574, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\sqlite3\base.py", line 354, in execute
+    return super().execute(query, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+django.db.utils.OperationalError: no such column: goals_node.due_date
+[04/Apr/2026 10:02:44] "GET /api/goals/nodes/e3c1ce9d-7a03-405c-b916-c27833313c13/context/ HTTP/1.1" 500 180965
+Internal Server Error: /api/goals/nodes/map/
+Traceback (most recent call last):
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\sqlite3\base.py", line 354, in execute
+    return super().execute(query, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+sqlite3.OperationalError: no such column: goals_node.due_date
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "F:\Personal OS\backend\goals\views.py", line 29, in map
+    return Response(GoalMapService.payload(), status=status.HTTP_200_OK)
+                    ~~~~~~~~~~~~~~~~~~~~~~^^
+  File "F:\Personal OS\backend\goals\services.py", line 167, in payload
+    nodes = list(
+        Node.objects.select_related("parent").prefetch_related("deps").order_by("created_at"),
+    )
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\query.py", line 402, in __iter__
+    self._fetch_all()
+    ~~~~~~~~~~~~~~~^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\query.py", line 1933, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\query.py", line 93, in __iter__
+    results = compiler.execute_sql(
+        chunked_fetch=self.chunked_fetch, chunk_size=self.chunk_size
+    )
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\sql\compiler.py", line 1574, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\sqlite3\base.py", line 354, in execute
+    return super().execute(query, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+django.db.utils.OperationalError: no such column: goals_node.due_date
+[04/Apr/2026 10:02:44] "GET /api/goals/nodes/map/ HTTP/1.1" 500 165019
+Internal Server Error: /api/goals/nodes/tree/
+Traceback (most recent call last):
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\sqlite3\base.py", line 354, in execute
+    return super().execute(query, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+sqlite3.OperationalError: no such column: goals_node.due_date
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "F:\Personal OS\backend\goals\views.py", line 25, in tree
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 809, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 251, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 728, in to_representation
+    self.child.to_representation(item) for item in iterable
+                                                   ^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\query.py", line 402, in __iter__
+    self._fetch_all()
+    ~~~~~~~~~~~~~~~^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\query.py", line 1933, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\query.py", line 93, in __iter__
+    results = compiler.execute_sql(
+        chunked_fetch=self.chunked_fetch, chunk_size=self.chunk_size
+    )
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\sql\compiler.py", line 1574, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\sqlite3\base.py", line 354, in execute
+    return super().execute(query, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+django.db.utils.OperationalError: no such column: goals_node.due_date
+[04/Apr/2026 10:02:44] "GET /api/goals/nodes/tree/ HTTP/1.1" 500 175479
+Internal Server Error: /api/goals/nodes/584f1023-4330-40bf-8103-b143b5de2348/context/
+Traceback (most recent call last):
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\sqlite3\base.py", line 354, in execute
+    return super().execute(query, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+sqlite3.OperationalError: no such column: goals_node.due_date
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "F:\Personal OS\backend\goals\views.py", line 33, in context
+    node = self.get_object()
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\generics.py", line 100, in get_object
+    obj = get_object_or_404(queryset, **filter_kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\generics.py", line 19, in get_object_or_404
+    return _get_object_or_404(queryset, *filter_args, **filter_kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\shortcuts.py", line 86, in get_object_or_404
+    return queryset.get(*args, **kwargs)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\query.py", line 647, in get
+    num = len(clone)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\query.py", line 384, in __len__
+    self._fetch_all()
+    ~~~~~~~~~~~~~~~^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\query.py", line 1933, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\query.py", line 93, in __iter__
+    results = compiler.execute_sql(
+        chunked_fetch=self.chunked_fetch, chunk_size=self.chunk_size
+    )
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\sql\compiler.py", line 1574, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\sqlite3\base.py", line 354, in execute
+    return super().execute(query, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+django.db.utils.OperationalError: no such column: goals_node.due_date
+[04/Apr/2026 10:02:44] "GET /api/goals/nodes/584f1023-4330-40bf-8103-b143b5de2348/context/ HTTP/1.1" 500 180979
+Internal Server Error: /api/goals/nodes/map/
+Traceback (most recent call last):
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\sqlite3\base.py", line 354, in execute
+    return super().execute(query, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+sqlite3.OperationalError: no such column: goals_node.due_date
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "F:\Personal OS\backend\goals\views.py", line 29, in map
+    return Response(GoalMapService.payload(), status=status.HTTP_200_OK)
+                    ~~~~~~~~~~~~~~~~~~~~~~^^
+  File "F:\Personal OS\backend\goals\services.py", line 167, in payload
+    nodes = list(
+        Node.objects.select_related("parent").prefetch_related("deps").order_by("created_at"),
+    )
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\query.py", line 402, in __iter__
+    self._fetch_all()
+    ~~~~~~~~~~~~~~~^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\query.py", line 1933, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\query.py", line 93, in __iter__
+    results = compiler.execute_sql(
+        chunked_fetch=self.chunked_fetch, chunk_size=self.chunk_size
+    )
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\sql\compiler.py", line 1574, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\sqlite3\base.py", line 354, in execute
+    return super().execute(query, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+django.db.utils.OperationalError: no such column: goals_node.due_date
+[04/Apr/2026 10:02:44] "GET /api/goals/nodes/map/ HTTP/1.1" 500 165033
+Internal Server Error: /api/goals/nodes/tree/
+Traceback (most recent call last):
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\sqlite3\base.py", line 354, in execute
+    return super().execute(query, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+sqlite3.OperationalError: no such column: goals_node.due_date
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "F:\Personal OS\backend\goals\views.py", line 25, in tree
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 809, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 251, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 728, in to_representation
+    self.child.to_representation(item) for item in iterable
+                                                   ^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\query.py", line 402, in __iter__
+    self._fetch_all()
+    ~~~~~~~~~~~~~~~^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\query.py", line 1933, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\query.py", line 93, in __iter__
+    results = compiler.execute_sql(
+        chunked_fetch=self.chunked_fetch, chunk_size=self.chunk_size
+    )
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\sql\compiler.py", line 1574, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\sqlite3\base.py", line 354, in execute
+    return super().execute(query, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+django.db.utils.OperationalError: no such column: goals_node.due_date
+[04/Apr/2026 10:15:34] "GET /api/goals/nodes/tree/ HTTP/1.1" 500 175479
+Internal Server Error: /api/goals/nodes/map/
+Traceback (most recent call last):
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\sqlite3\base.py", line 354, in execute
+    return super().execute(query, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+sqlite3.OperationalError: no such column: goals_node.due_date
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "F:\Personal OS\backend\goals\views.py", line 29, in map
+    return Response(GoalMapService.payload(), status=status.HTTP_200_OK)
+                    ~~~~~~~~~~~~~~~~~~~~~~^^
+  File "F:\Personal OS\backend\goals\services.py", line 167, in payload
+    nodes = list(
+        Node.objects.select_related("parent").prefetch_related("deps").order_by("created_at"),
+    )
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\query.py", line 402, in __iter__
+    self._fetch_all()
+    ~~~~~~~~~~~~~~~^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\query.py", line 1933, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\query.py", line 93, in __iter__
+    results = compiler.execute_sql(
+        chunked_fetch=self.chunked_fetch, chunk_size=self.chunk_size
+    )
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\sql\compiler.py", line 1574, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\sqlite3\base.py", line 354, in execute
+    return super().execute(query, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+django.db.utils.OperationalError: no such column: goals_node.due_date
+[04/Apr/2026 10:15:34] "GET /api/goals/nodes/map/ HTTP/1.1" 500 165019
+Internal Server Error: /api/goals/nodes/e3c1ce9d-7a03-405c-b916-c27833313c13/context/
+Traceback (most recent call last):
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\sqlite3\base.py", line 354, in execute
+    return super().execute(query, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+sqlite3.OperationalError: no such column: goals_node.due_date
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "F:\Personal OS\backend\goals\views.py", line 33, in context
+    node = self.get_object()
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\generics.py", line 100, in get_object
+    obj = get_object_or_404(queryset, **filter_kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\generics.py", line 19, in get_object_or_404
+    return _get_object_or_404(queryset, *filter_args, **filter_kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\shortcuts.py", line 86, in get_object_or_404
+    return queryset.get(*args, **kwargs)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\query.py", line 647, in get
+    num = len(clone)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\query.py", line 384, in __len__
+    self._fetch_all()
+    ~~~~~~~~~~~~~~~^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\query.py", line 1933, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\query.py", line 93, in __iter__
+    results = compiler.execute_sql(
+        chunked_fetch=self.chunked_fetch, chunk_size=self.chunk_size
+    )
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\models\sql\compiler.py", line 1574, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\db\backends\sqlite3\base.py", line 354, in execute
+    return super().execute(query, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+django.db.utils.OperationalError: no such column: goals_node.due_date
+[04/Apr/2026 10:15:34] "GET /api/goals/nodes/e3c1ce9d-7a03-405c-b916-c27833313c13/context/ HTTP/1.1" 500 180965
+F:\Personal OS\backend\core\services.py changed, reloading.
+Watching for file changes with StatReloader
+[04/Apr/2026 10:25:30] "GET /api/goals/nodes/map/ HTTP/1.1" 200 6615
+Internal Server Error: /api/goals/nodes/584f1023-4330-40bf-8103-b143b5de2348/context/
+Traceback (most recent call last):
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "F:\Personal OS\backend\goals\views.py", line 35, in context
+    "node": NodeTreeSerializer(node).data,
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 585, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 251, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 537, in to_representation
+    for field in fields:
+                 ^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 398, in _readable_fields
+    for field in self.fields.values():
+                 ^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 386, in fields
+    for key, value in self.get_fields().items():
+                      ~~~~~~~~~~~~~~~^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 1101, in get_fields
+    field_names = self.get_field_names(declared_fields, info)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 1204, in get_field_names
+    assert field_name in fields, (
+           ^^^^^^^^^^^^^^^^^^^^
+AssertionError: The field 'children' was declared on serializer NodeTreeSerializer, but has not been included in the 'fields' option.
+[04/Apr/2026 10:25:31] "GET /api/goals/nodes/584f1023-4330-40bf-8103-b143b5de2348/context/ HTTP/1.1" 500 141690
+Internal Server Error: /api/goals/nodes/tree/
+Traceback (most recent call last):
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "F:\Personal OS\backend\goals\views.py", line 25, in tree
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 809, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 251, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 728, in to_representation
+    self.child.to_representation(item) for item in iterable
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 537, in to_representation
+    for field in fields:
+                 ^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 398, in _readable_fields
+    for field in self.fields.values():
+                 ^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 386, in fields
+    for key, value in self.get_fields().items():
+                      ~~~~~~~~~~~~~~~^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 1101, in get_fields
+    field_names = self.get_field_names(declared_fields, info)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 1204, in get_field_names
+    assert field_name in fields, (
+           ^^^^^^^^^^^^^^^^^^^^
+AssertionError: The field 'children' was declared on serializer NodeTreeSerializer, but has not been included in the 'fields' option.
+[04/Apr/2026 10:25:31] "GET /api/goals/nodes/tree/ HTTP/1.1" 500 145746
+[04/Apr/2026 10:25:32] "OPTIONS /api/core/command-center/ HTTP/1.1" 200 0
+[04/Apr/2026 10:25:32] "GET /api/core/command-center/ HTTP/1.1" 200 11247
+Internal Server Error: /api/goals/nodes/tree/
+Traceback (most recent call last):
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "F:\Personal OS\backend\goals\views.py", line 25, in tree
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 809, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 251, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 728, in to_representation
+    self.child.to_representation(item) for item in iterable
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 537, in to_representation
+    for field in fields:
+                 ^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 398, in _readable_fields
+    for field in self.fields.values():
+                 ^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 386, in fields
+    for key, value in self.get_fields().items():
+                      ~~~~~~~~~~~~~~~^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 1101, in get_fields
+    field_names = self.get_field_names(declared_fields, info)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 1204, in get_field_names
+    assert field_name in fields, (
+           ^^^^^^^^^^^^^^^^^^^^
+AssertionError: The field 'children' was declared on serializer NodeTreeSerializer, but has not been included in the 'fields' option.
+[04/Apr/2026 10:27:39] "GET /api/goals/nodes/map/ HTTP/1.1" 200 6615
+[04/Apr/2026 10:27:39] "GET /api/goals/nodes/tree/ HTTP/1.1" 500 145746
+Internal Server Error: /api/goals/nodes/e3c1ce9d-7a03-405c-b916-c27833313c13/context/
+Traceback (most recent call last):
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "F:\Personal OS\backend\goals\views.py", line 35, in context
+    "node": NodeTreeSerializer(node).data,
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 585, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 251, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 537, in to_representation
+    for field in fields:
+                 ^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 398, in _readable_fields
+    for field in self.fields.values():
+                 ^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 386, in fields
+    for key, value in self.get_fields().items():
+                      ~~~~~~~~~~~~~~~^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 1101, in get_fields
+    field_names = self.get_field_names(declared_fields, info)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 1204, in get_field_names
+    assert field_name in fields, (
+           ^^^^^^^^^^^^^^^^^^^^
+AssertionError: The field 'children' was declared on serializer NodeTreeSerializer, but has not been included in the 'fields' option.
+[04/Apr/2026 10:27:39] "GET /api/goals/nodes/e3c1ce9d-7a03-405c-b916-c27833313c13/context/ HTTP/1.1" 500 141666
+[04/Apr/2026 10:27:45] "GET /api/analytics/timeline/?week_start=2026-03-30 HTTP/1.1" 200 3243
+Internal Server Error: /api/goals/nodes/e3c1ce9d-7a03-405c-b916-c27833313c13/context/
+Traceback (most recent call last):
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "F:\Personal OS\backend\goals\views.py", line 35, in context
+    "node": NodeTreeSerializer(node).data,
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 585, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 251, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 537, in to_representation
+    for field in fields:
+                 ^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 398, in _readable_fields
+    for field in self.fields.values():
+                 ^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 386, in fields
+    for key, value in self.get_fields().items():
+                      ~~~~~~~~~~~~~~~^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 1101, in get_fields
+    field_names = self.get_field_names(declared_fields, info)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 1204, in get_field_names
+    assert field_name in fields, (
+           ^^^^^^^^^^^^^^^^^^^^
+AssertionError: The field 'children' was declared on serializer NodeTreeSerializer, but has not been included in the 'fields' option.
+[04/Apr/2026 10:27:46] "GET /api/goals/nodes/e3c1ce9d-7a03-405c-b916-c27833313c13/context/ HTTP/1.1" 500 141666
+Internal Server Error: /api/goals/nodes/tree/
+Traceback (most recent call last):
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "F:\Personal OS\backend\goals\views.py", line 25, in tree
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 809, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 251, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 728, in to_representation
+    self.child.to_representation(item) for item in iterable
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 537, in to_representation
+    for field in fields:
+                 ^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 398, in _readable_fields
+    for field in self.fields.values():
+                 ^^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 386, in fields
+    for key, value in self.get_fields().items():
+                      ~~~~~~~~~~~~~~~^^
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 1101, in get_fields
+    field_names = self.get_field_names(declared_fields, info)
+  File "F:\Personal OS\backend\venv\Lib\site-packages\rest_framework\serializers.py", line 1204, in get_field_names
+    assert field_name in fields, (
+           ^^^^^^^^^^^^^^^^^^^^
+AssertionError: The field 'children' was declared on serializer NodeTreeSerializer, but has not been included in the 'fields' option.
+[04/Apr/2026 10:27:46] "GET /api/goals/nodes/tree/ HTTP/1.1" 500 145746
+[04/Apr/2026 10:27:51] "GET /api/analytics/reviews/ HTTP/1.1" 200 655
+[04/Apr/2026 10:27:51] "GET /api/analytics/suggestions/ HTTP/1.1" 200 1187
+[04/Apr/2026 10:27:51] "GET /api/analytics/overview/ HTTP/1.1" 200 1905
+[04/Apr/2026 10:27:51] "GET /api/analytics/reviews/preview/ HTTP/1.1" 200 1996
+[04/Apr/2026 10:27:54] "OPTIONS /api/pipeline/workspace/ HTTP/1.1" 200 0
+[04/Apr/2026 10:27:54] "GET /api/pipeline/workspace/ HTTP/1.1" 200 539
+[04/Apr/2026 10:27:58] "OPTIONS /api/schedule/today/ HTTP/1.1" 200 0
+[04/Apr/2026 10:27:58] "GET /api/schedule/today/ HTTP/1.1" 200 2456
+[04/Apr/2026 10:28:13] "OPTIONS /api/finance/entries/summary/ HTTP/1.1" 200 0
+[04/Apr/2026 10:28:13] "OPTIONS /api/finance/entries/ HTTP/1.1" 200 0
+[04/Apr/2026 10:28:13] "GET /api/finance/entries/ HTTP/1.1" 200 348
+[04/Apr/2026 10:28:13] "GET /api/finance/entries/summary/ HTTP/1.1" 200 236
+[04/Apr/2026 10:28:16] "OPTIONS /api/health/today/ HTTP/1.1" 200 0
+[04/Apr/2026 10:28:16] "OPTIONS /api/health/logs/ HTTP/1.1" 200 0
+[04/Apr/2026 10:28:16] "OPTIONS /api/health/moods/ HTTP/1.1" 200 0
+[04/Apr/2026 10:28:16] "GET /api/health/logs/ HTTP/1.1" 200 52
+[04/Apr/2026 10:28:16] "GET /api/health/moods/ HTTP/1.1" 200 52
+[04/Apr/2026 10:28:16] "GET /api/health/today/ HTTP/1.1" 200 1521

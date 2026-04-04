@@ -26,6 +26,7 @@ export function PipelinePage() {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['pipeline-workspace'] }),
       queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+      queryClient.invalidateQueries({ queryKey: ['command-center'] }),
       queryClient.invalidateQueries({ queryKey: ['analytics-overview'] }),
     ])
   }
