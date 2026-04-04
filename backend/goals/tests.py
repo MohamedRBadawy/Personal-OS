@@ -5,7 +5,7 @@ from django.test import TestCase
 from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient
 
-from goals.models import Node
+from goals.models import GoalAttachmentProfile, Node
 from goals.serializers import NodeSerializer
 from goals.services import NodeStatusService
 
@@ -196,3 +196,50 @@ class GoalReadModelTests(TestCase):
         self.assertEqual(map_task["manual_priority"], Node.ManualPriority.MEDIUM)
         self.assertEqual(map_task["recommended_tool"], "Codex")
         self.assertTrue(map_task["tool_reasoning"])
+
+    def test_goal_context_includes_attachment_suggestions(self):
+        task = Node.objects.create(
+            title="Build outbound system",
+            type=Node.NodeType.TASK,
+            category=Node.Category.CAREER,
+            status=Node.Status.AVAILABLE,
+            notes="Client outreach and pipeline work.",
+        )
+
+        response = self.client.get(f"/api/goals/nodes/{task.id}/context/")
+
+        self.assertEqual(response.status_code, 200)
+        suggestion_keys = {item["key"] for item in response.data["attachment_suggestions"]}
+        self.assertIn("process", suggestion_keys)
+        self.assertIn("tools", suggestion_keys)
+        self.assertIn("marketing_actions", suggestion_keys)
+
+    def test_attachment_profile_endpoint_saves_and_exposes_support_layers(self):
+        task = Node.objects.create(
+            title="Build outbound system",
+            type=Node.NodeType.TASK,
+            category=Node.Category.CAREER,
+            status=Node.Status.AVAILABLE,
+        )
+
+        create_response = self.client.post(
+            "/api/goals/attachments/",
+            {
+                "node": str(task.id),
+                "recommended_layers": ["process", "tools"],
+                "habits": ["Daily outreach"],
+                "marketing_actions": ["Follow up with warm leads"],
+                "process_notes": "Start with the overview endpoint.",
+                "tools": ["Codex", "Django shell"],
+                "learning_path": ["Refine the read models"],
+                "supporting_people": ["Ahmed Mentor"],
+            },
+            format="json",
+        )
+        context_response = self.client.get(f"/api/goals/nodes/{task.id}/context/")
+
+        self.assertEqual(create_response.status_code, 201)
+        self.assertEqual(GoalAttachmentProfile.objects.count(), 1)
+        self.assertEqual(context_response.status_code, 200)
+        self.assertEqual(context_response.data["attachment_profile"]["habits"], ["Daily outreach"])
+        self.assertEqual(context_response.data["attachment_profile"]["tools"], ["Codex", "Django shell"])

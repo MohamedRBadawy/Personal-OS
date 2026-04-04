@@ -162,3 +162,34 @@ class HealthWorkspaceTests(TestCase):
         self.assertEqual(review.status_code, 200)
         self.assertIn("Habit completion (7d)", review.data["report"])
         self.assertIn("Prayer completion (7d)", review.data["report"])
+
+    def test_health_overview_endpoint_returns_grouped_capacity_payload(self):
+        HealthLog.objects.create(
+            date=self.today,
+            sleep_hours="7.0",
+            sleep_quality=4,
+            energy_level=3,
+            exercise_done=True,
+            exercise_type="Walk",
+        )
+        MoodLog.objects.create(date=self.today, mood_score=3, notes="Steady")
+        SpiritualLog.objects.create(
+            date=self.today,
+            fajr=True,
+            dhuhr=True,
+            asr=True,
+            maghrib=True,
+            isha=False,
+            quran_pages=4,
+            dhikr_done=True,
+        )
+
+        response = self.client.get("/api/health/overview/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("summary", response.data)
+        self.assertIn("today", response.data)
+        self.assertIn("recent_health_logs", response.data)
+        self.assertIn("capacity_signals", response.data)
+        self.assertGreaterEqual(len(response.data["recent_health_logs"]), 1)
+        self.assertTrue(response.data["capacity_signals"])

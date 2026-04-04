@@ -67,6 +67,8 @@ export type GoalContext = {
   ancestors: GoalNode[]
   dependents: GoalNode[]
   progress_pct: number
+  attachment_profile?: GoalAttachmentProfile | null
+  attachment_suggestions?: GoalAttachmentSuggestion[]
 }
 
 export type GoalNodeUpdatePayload = Partial<
@@ -834,6 +836,15 @@ export type ChatResponse = {
   reply: string
   actions: ChatAction[]
   affected_modules: string[]
+  proposed_actions?: ChatProposedAction[]
+  requires_confirmation?: boolean
+}
+
+export type ChatProposedAction = {
+  tool: string
+  module: string | null
+  summary: string
+  input: Record<string, unknown>
 }
 
 export type CommandCenterPriorityItem = {
@@ -932,4 +943,193 @@ export type CommandCenterPayload = {
     inbox_text: string
     blockers_text: string
   } | null
+}
+
+export type GoalAttachmentSuggestion = {
+  key: string
+  label: string
+  reason: string
+}
+
+export type GoalAttachmentProfile = {
+  id: string
+  node: string
+  recommended_layers: string[]
+  habits: string[]
+  marketing_actions: string[]
+  process_notes: string
+  tools: string[]
+  learning_path: string[]
+  supporting_people: string[]
+  attachment_suggestions: GoalAttachmentSuggestion[]
+  created_at: string
+  updated_at: string
+}
+
+export type GoalAttachmentProfilePayload = {
+  node: string
+  recommended_layers: string[]
+  habits: string[]
+  marketing_actions: string[]
+  process_notes: string
+  tools: string[]
+  learning_path: string[]
+  supporting_people: string[]
+}
+
+export type IncomeSource = {
+  id: string
+  name: string
+  category: string
+  monthly_target_eur: string
+  baseline_amount_eur: string | null
+  active: boolean
+  notes: string
+}
+
+export type IncomeSourcePayload = {
+  name: string
+  category: string
+  monthly_target_eur: string
+  baseline_amount_eur: string | null
+  active: boolean
+  notes: string
+}
+
+export type FinanceOverviewIncomeSource = IncomeSource & {
+  realized_this_month_eur: number
+  progress_pct: number
+}
+
+export type FinanceOverviewPayload = {
+  date: string
+  summary: FinanceSummary
+  monthly_summary: {
+    month: string
+    income_entry_count: number
+    expense_entry_count: number
+    recurring_income_eur: number
+    recurring_expense_eur: number
+  }
+  target_tracking: {
+    independent_income_eur: number
+    target_eur: string
+    progress_pct: number
+    months_to_target: number | null
+    active_income_sources: number
+  }
+  income_sources: FinanceOverviewIncomeSource[]
+  recent_entries: FinanceEntry[]
+}
+
+export type HealthOverviewPayload = {
+  date: string
+  summary: HealthSummary
+  today: HealthTodayPayload
+  recent_health_logs: HealthLog[]
+  recent_mood_logs: MoodLog[]
+  recent_spiritual_logs: SpiritualLog[]
+  capacity_signals: string[]
+}
+
+export type WorkOverviewPayload = {
+  date: string
+  summary: {
+    active_task_count: number
+    blocked_task_count: number
+    deadline_count: number
+    proposal_draft_count: number
+    due_follow_ups_count: number
+    active_opportunity_count: number
+  }
+  task_board: CommandCenterPriorityItem[]
+  deadlines: CommandCenterPriorityItem[]
+  pipeline: PipelineWorkspacePayload
+  marketing_actions: PipelineWorkspaceMarketingAction[]
+  proposal_drafts: PipelineWorkspaceOpportunity[]
+}
+
+export type ProjectRetrospective = {
+  id: string
+  title: string
+  source_type: 'project' | 'opportunity'
+  goal_node: string | null
+  opportunity: string | null
+  status: string
+  summary: string
+  what_worked: string
+  what_didnt: string
+  next_time: string
+  closed_at: string
+  created_at: string
+  updated_at: string
+}
+
+export type ProjectRetrospectivePayload = {
+  title: string
+  source_type: 'project' | 'opportunity'
+  goal_node?: string | null
+  opportunity?: string | null
+  status: string
+  summary: string
+  what_worked: string
+  what_didnt: string
+  next_time: string
+  closed_at: string
+}
+
+export type TimelineOverviewPayload = {
+  date: string
+  timeline: TimelineWeekPayload
+  weekly_review: {
+    status: {
+      week_start: string
+      week_end: string
+      review_exists: boolean
+      current_review_id: string | null
+      latest_review_id: string | null
+    }
+    preview: WeeklyReviewPreview
+  }
+  pattern_analysis: string
+  achievements: Achievement[]
+  retrospectives: Array<{
+    id: string
+    title: string
+    source_type: string
+    status: string
+    summary: string
+    what_worked: string
+    what_didnt: string
+    next_time: string
+    closed_at: string
+  }>
+  archived_goals: Array<{
+    id: string
+    title: string
+    type: GoalNodeType
+    category: string | null
+    completed_at: string | null
+    notes: string
+  }>
+}
+
+export type IdeasOverviewPayload = {
+  date: string
+  summary: {
+    raw_ideas: number
+    validated_ideas: number
+    decisions: number
+    learning_items: number
+  }
+  ideas: Idea[]
+  decisions: DecisionLog[]
+  learning: Learning[]
+}
+
+export type NamedReportPayload = {
+  name: string
+  generated_at: string
+  report: string
+  sections: Record<string, unknown>
 }

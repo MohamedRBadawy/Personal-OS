@@ -8,6 +8,7 @@ from analytics.serializers.crud_models import (
     DecisionLogSerializer,
     AchievementSerializer,
     IdeaSerializer,
+    ProjectRetrospectiveSerializer,
 )
 
 __all__ = [
@@ -19,4 +20,5 @@ __all__ = [
     "DecisionLogSerializer",
     "AchievementSerializer",
     "IdeaSerializer",
+    "ProjectRetrospectiveSerializer",
 ]

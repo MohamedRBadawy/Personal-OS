@@ -11,6 +11,7 @@ from analytics.models.learning import Learning
 from analytics.models.decision_log import DecisionLog
 from analytics.models.achievement import Achievement
 from analytics.models.idea import Idea
+from analytics.models.project_retrospective import ProjectRetrospective
 
 
 class RelationshipSerializer(serializers.ModelSerializer):
@@ -65,3 +66,12 @@ class IdeaSerializer(serializers.ModelSerializer):
         model = Idea
         fields = "__all__"
         read_only_fields = ["id", "created_at"]
+
+
+class ProjectRetrospectiveSerializer(serializers.ModelSerializer):
+    """Serializer for stored retrospective records."""
+
+    class Meta:
+        model = ProjectRetrospective
+        fields = "__all__"
+        read_only_fields = ["id", "created_at", "updated_at"]

@@ -207,6 +207,45 @@ class HealthSummaryService:
             ],
         }
 
+    @classmethod
+    def overview_payload(cls, reference_date=None):
+        """Return the grouped health and body workspace payload."""
+        reference_date = reference_date or timezone.localdate()
+        summary = cls.summary(reference_date)
+        today = cls.today_workspace(reference_date)
+        recent_health_logs = [
+            HealthLogSerializer(item).data
+            for item in HealthLog.objects.order_by("-date")[:7]
+        ]
+        recent_mood_logs = [
+            MoodLogSerializer(item).data
+            for item in MoodLog.objects.order_by("-date")[:7]
+        ]
+        recent_spiritual_logs = [
+            SpiritualLogSerializer(item).data
+            for item in SpiritualLog.objects.order_by("-date")[:7]
+        ]
+        capacity_signals = []
+        if summary["low_energy_today"]:
+            capacity_signals.append("Energy is low today, so lighter execution is more realistic.")
+        if summary["low_sleep_today"]:
+            capacity_signals.append("Sleep is below the healthy threshold today.")
+        if summary["low_mood_today"]:
+            capacity_signals.append("Mood is low today, so protect scope and reduce friction.")
+        if summary["prayer_gap_streak"] >= 2:
+            capacity_signals.append("Spiritual consistency has slipped for multiple days in a row.")
+        if not capacity_signals:
+            capacity_signals.append("Health signals are stable enough for a normal day.")
+        return {
+            "date": reference_date.isoformat(),
+            "summary": summary,
+            "today": today,
+            "recent_health_logs": recent_health_logs,
+            "recent_mood_logs": recent_mood_logs,
+            "recent_spiritual_logs": recent_spiritual_logs,
+            "capacity_signals": capacity_signals,
+        }
+
     @staticmethod
     def _serialized_today_log(model_class, serializer_class, reference_date):
         log = model_class.objects.filter(date=reference_date).first()

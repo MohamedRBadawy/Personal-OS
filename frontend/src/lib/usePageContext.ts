@@ -13,9 +13,14 @@ const PAGE_MAP: Record<string, PageContext> = {
     contextHint: '[Context: Command Center page]',
   },
   '/goals': {
-    domain: 'Goals',
-    placeholder: "Ask about your goal hierarchy, what's blocking you, how to restructure...",
-    contextHint: '[Context: Goals page]',
+    domain: 'Goals & Life Plan',
+    placeholder: "Ask about your goal hierarchy, blockers, relationships, or how to restructure the life plan...",
+    contextHint: '[Context: Goals and life plan page]',
+  },
+  '/work': {
+    domain: 'Work & Career',
+    placeholder: 'Ask about deadlines, proposals, pipeline pressure, or what work to prioritize...',
+    contextHint: '[Context: Work and career page]',
   },
   '/finance': {
     domain: 'Finance',
@@ -23,39 +28,9 @@ const PAGE_MAP: Record<string, PageContext> = {
     contextHint: '[Context: Finance page]',
   },
   '/health': {
-    domain: 'Health',
-    placeholder: 'Ask about sleep patterns, energy trends, health correlations...',
-    contextHint: '[Context: Health page]',
-  },
-  '/habits': {
-    domain: 'Habits',
-    placeholder: 'Ask about habit patterns, correlations with energy...',
-    contextHint: '[Context: Habits page]',
-  },
-  '/mood': {
-    domain: 'Mood',
-    placeholder: "Talk about how you're feeling, detect patterns...",
-    contextHint: '[Context: Mood page]',
-  },
-  '/spiritual': {
-    domain: 'Spiritual',
-    placeholder: 'Reflect spiritually, connect faith to your goals...',
-    contextHint: '[Context: Spiritual page]',
-  },
-  '/schedule': {
-    domain: 'Schedule',
-    placeholder: "Ask about today's schedule, time allocation, energy management...",
-    contextHint: '[Context: Schedule page]',
-  },
-  '/pipeline': {
-    domain: 'Pipeline',
-    placeholder: 'Draft a proposal, analyze client fit, strategize your pipeline...',
-    contextHint: '[Context: Pipeline page]',
-  },
-  '/marketing': {
-    domain: 'Marketing',
-    placeholder: 'Track marketing actions, plan outreach strategy...',
-    contextHint: '[Context: Marketing page]',
+    domain: 'Health & Body',
+    placeholder: 'Ask about capacity, mood patterns, habits, or spiritual consistency...',
+    contextHint: '[Context: Health and body page]',
   },
   '/analytics': {
     domain: 'Analytics',
@@ -63,39 +38,14 @@ const PAGE_MAP: Record<string, PageContext> = {
     contextHint: '[Context: Analytics page]',
   },
   '/timeline': {
-    domain: 'Timeline',
-    placeholder: 'Ask about your week, debrief a day, prepare for tomorrow...',
-    contextHint: '[Context: Timeline page]',
+    domain: 'Achievements & Timeline',
+    placeholder: 'Ask about your week, wins, retrospectives, or review patterns...',
+    contextHint: '[Context: Achievements and timeline page]',
   },
   '/ideas': {
-    domain: 'Ideas',
-    placeholder: 'Think out loud, explore ideas...',
-    contextHint: '[Context: Ideas page]',
-  },
-  '/decisions': {
-    domain: 'Decisions',
-    placeholder: 'Record decisions, stress-test reasoning...',
-    contextHint: '[Context: Decisions page]',
-  },
-  '/achievements': {
-    domain: 'Achievements',
-    placeholder: 'Reflect on achievements...',
-    contextHint: '[Context: Achievements page]',
-  },
-  '/learning': {
-    domain: 'Learning',
-    placeholder: 'Discuss learning, connect to goals...',
-    contextHint: '[Context: Learning page]',
-  },
-  '/family': {
-    domain: 'Family',
-    placeholder: 'Talk about family goals...',
-    contextHint: '[Context: Family page]',
-  },
-  '/relationships': {
-    domain: 'Relationships',
-    placeholder: 'Ask about your network...',
-    contextHint: '[Context: Relationships page]',
+    domain: 'Ideas & Thinking',
+    placeholder: 'Think out loud, explore ideas, challenge a decision, or reason through a problem...',
+    contextHint: '[Context: Ideas and thinking page]',
   },
 }
 

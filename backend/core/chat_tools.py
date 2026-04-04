@@ -15,6 +15,7 @@ from goals.models import Node
 from goals.services import NodeStatusService
 from health.models import Habit, HabitLog, HealthLog, MoodLog, SpiritualLog
 from pipeline.models import MarketingAction, Opportunity
+from pipeline.services import OpportunityLifecycleService
 
 logger = logging.getLogger(__name__)
 
@@ -135,6 +136,19 @@ TOOL_SCHEMAS = [
         },
     },
     {
+        "name": "log_marketing_action",
+        "description": "Record a marketing or visibility action with optional follow-up context.",
+        "input_schema": {
+            "type": "object",
+            "required": ["action", "platform"],
+            "properties": {
+                "action": {"type": "string"},
+                "platform": {"type": "string"},
+                "result": {"type": "string"},
+            },
+        },
+    },
+    {
         "name": "capture_idea",
         "description": "Capture a raw idea or thought into the ideas inbox.",
         "input_schema": {
@@ -190,6 +204,7 @@ def execute_tool(name: str, inputs: dict) -> dict:
         "update_node_status": _update_node_status,
         "add_finance_entry": _add_finance_entry,
         "add_opportunity": _add_opportunity,
+        "log_marketing_action": _log_marketing_action,
         "capture_idea": _capture_idea,
         "log_achievement": _log_achievement,
         "log_decision": _log_decision,
@@ -293,7 +308,18 @@ def _add_opportunity(inputs: dict) -> dict:
         budget=inputs.get("budget"),
         date_found=date.today(),
     )
+    OpportunityLifecycleService.enrich(opp)
     return {"status": "created", "id": str(opp.id), "name": opp.name}
+
+
+def _log_marketing_action(inputs: dict) -> dict:
+    action = MarketingAction.objects.create(
+        action=inputs["action"],
+        platform=inputs["platform"],
+        result=inputs.get("result", ""),
+        date=date.today(),
+    )
+    return {"status": "recorded", "id": str(action.id), "action": action.action}
 
 
 def _capture_idea(inputs: dict) -> dict:

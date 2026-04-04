@@ -4,6 +4,7 @@ from rest_framework.routers import DefaultRouter
 
 from health.views import (
     HealthLogViewSet,
+    HealthOverviewAPIView,
     HabitViewSet,
     HabitLogViewSet,
     HealthSummaryAPIView,
@@ -20,6 +21,7 @@ router.register("moods", MoodLogViewSet, basename="moodlog")
 router.register("spiritual", SpiritualLogViewSet, basename="spirituallog")
 
 urlpatterns = [
+    path("overview/", HealthOverviewAPIView.as_view(), name="health-overview"),
     path("summary/", HealthSummaryAPIView.as_view(), name="health-summary"),
     path("today/", HealthTodayAPIView.as_view(), name="health-today"),
     path("", include(router.urls)),

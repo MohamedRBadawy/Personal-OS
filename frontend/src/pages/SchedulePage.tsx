@@ -78,7 +78,7 @@ export function SchedulePage() {
           type: b.type,
           duration_mins: b.duration_mins,
         }))
-      const prompt = `[Context: Schedule adjustment] Here are today's adjustable schedule blocks: ${JSON.stringify(adjustableBlocks)}. Low energy: ${data.low_energy_today}. Reduced mode: ${data.reduced_mode}. Done: ${data.summary.done_count}, pending: ${data.summary.pending_count}. Suggest specific adjustments — what to prioritize, swap, or skip. Be concise and actionable.`
+      const prompt = `[Context: Schedule adjustment] Here are today's adjustable schedule blocks: ${JSON.stringify(adjustableBlocks)}. Low energy: ${data.low_energy_today}. Reduced mode: ${data.reduced_mode}. Done: ${data.summary.done_count}, pending: ${data.summary.pending_count}. Suggest specific adjustments - what to prioritize, swap, or skip. Be concise and actionable.`
       return sendChatMessage([{ role: 'user', content: prompt }])
     },
     onSuccess: (result) => {
@@ -205,7 +205,7 @@ export function SchedulePage() {
                       <p className="schedule-time">{formatTime(block.time)}</p>
                       <h3>{block.label}</h3>
                       <p className="muted">
-                        {titleCase(block.type)} • {block.duration_mins} mins
+                        {titleCase(block.type)} - {block.duration_mins} mins
                       </p>
                     </div>
                     <div className="list-inline">
@@ -229,12 +229,12 @@ export function SchedulePage() {
                           <p>
                             {block.suggestion.goal_node.title}
                             {block.suggestion.goal_node.parent_title
-                              ? ` • ${block.suggestion.goal_node.parent_title}`
+                              ? ` - ${block.suggestion.goal_node.parent_title}`
                               : ''}
                           </p>
                         ) : (
                           <p>
-                            {block.suggestion.marketing_action?.action} • {block.suggestion.marketing_action?.platform}
+                            {block.suggestion.marketing_action?.action} - {block.suggestion.marketing_action?.platform}
                           </p>
                         )}
                       </div>

@@ -5,7 +5,7 @@ from decimal import Decimal, ROUND_CEILING
 from django.utils import timezone
 
 from core.models import AppSettings
-from finance.models import FinanceEntry
+from finance.models import FinanceEntry, IncomeSource
 from goals.services import NodeStatusService
 
 
@@ -115,3 +115,95 @@ class FinanceMetricsService:
             settings_obj,
             Decimal(summary["independent_income_eur"]),
         )
+
+
+class FinanceOverviewService:
+    """Build the broader finance workspace payload."""
+
+    @staticmethod
+    def _serialize_entry(entry):
+        return {
+            "id": str(entry.id),
+            "type": entry.type,
+            "source": entry.source,
+            "amount": str(entry.amount),
+            "amount_eur": round(FinanceMetricsService.convert_to_eur(entry.amount, entry.currency), 2),
+            "currency": entry.currency,
+            "is_independent": entry.is_independent,
+            "is_recurring": entry.is_recurring,
+            "date": entry.date.isoformat(),
+            "notes": entry.notes,
+        }
+
+    @classmethod
+    def _source_realized_income(cls, source, month_start, next_month):
+        entries = FinanceEntry.objects.filter(
+            source__iexact=source.name,
+            type=FinanceEntry.EntryType.INCOME,
+            date__gte=month_start,
+            date__lt=next_month,
+        )
+        return round(FinanceMetricsService._sum_entries(entries), 2)
+
+    @classmethod
+    def _serialize_source(cls, source, month_start, next_month):
+        realized = cls._source_realized_income(source, month_start, next_month)
+        target = Decimal(source.monthly_target_eur or 0)
+        progress = Decimal("0") if target == 0 else min(Decimal("100"), (realized / target) * 100)
+        return {
+            "id": str(source.id),
+            "name": source.name,
+            "category": source.category,
+            "monthly_target_eur": str(source.monthly_target_eur),
+            "baseline_amount_eur": str(source.baseline_amount_eur) if source.baseline_amount_eur is not None else None,
+            "active": source.active,
+            "notes": source.notes,
+            "realized_this_month_eur": realized,
+            "progress_pct": round(progress, 2),
+        }
+
+    @classmethod
+    def payload(cls, reference_date=None):
+        """Return the finance overview used by the grouped finance workspace."""
+        reference_date = reference_date or timezone.localdate()
+        month_start, next_month = FinanceMetricsService.month_window(reference_date)
+        summary = FinanceMetricsService.summary(reference_date)
+        current_month_entries = FinanceEntry.objects.filter(
+            date__gte=month_start,
+            date__lt=next_month,
+        )
+        recurring_income = current_month_entries.filter(
+            type=FinanceEntry.EntryType.INCOME,
+            is_recurring=True,
+        )
+        recurring_expenses = current_month_entries.filter(
+            type=FinanceEntry.EntryType.EXPENSE,
+            is_recurring=True,
+        )
+        income_sources = list(IncomeSource.objects.all())
+        return {
+            "date": reference_date.isoformat(),
+            "summary": summary,
+            "monthly_summary": {
+                "month": month_start.isoformat(),
+                "income_entry_count": current_month_entries.filter(type=FinanceEntry.EntryType.INCOME).count(),
+                "expense_entry_count": current_month_entries.filter(type=FinanceEntry.EntryType.EXPENSE).count(),
+                "recurring_income_eur": round(FinanceMetricsService._sum_entries(recurring_income), 2),
+                "recurring_expense_eur": round(FinanceMetricsService._sum_entries(recurring_expenses), 2),
+            },
+            "target_tracking": {
+                "independent_income_eur": summary["independent_income_eur"],
+                "target_eur": summary["target_eur"],
+                "progress_pct": summary["kyrgyzstan_progress_pct"],
+                "months_to_target": summary["months_to_target"],
+                "active_income_sources": sum(1 for source in income_sources if source.active),
+            },
+            "income_sources": [
+                cls._serialize_source(source, month_start, next_month)
+                for source in income_sources
+            ],
+            "recent_entries": [
+                cls._serialize_entry(entry)
+                for entry in FinanceEntry.objects.order_by("-date", "-created_at")[:12]
+            ],
+        }

@@ -2,8 +2,12 @@
 from django.utils import timezone
 from rest_framework import serializers
 
-from goals.models import Node
-from goals.services import NodeStatusService, TaskRecommendationService
+from goals.models import GoalAttachmentProfile, Node
+from goals.services import (
+    GoalAttachmentSuggestionService,
+    NodeStatusService,
+    TaskRecommendationService,
+)
 
 
 class NodeSerializer(serializers.ModelSerializer):
@@ -105,6 +109,10 @@ class NodeSerializer(serializers.ModelSerializer):
             NodeStatusService.validate_dependencies(node, deps)
             node.deps.set(deps)
         NodeStatusService.refresh_all()
+        if node.type == Node.NodeType.PROJECT and node.status == Node.Status.DONE:
+            from analytics.services import ProjectRetrospectiveService
+
+            ProjectRetrospectiveService.capture_for_node(node)
         return node
 
     def update(self, instance, validated_data):
@@ -126,6 +134,10 @@ class NodeSerializer(serializers.ModelSerializer):
         if deps is not None:
             instance.deps.set(deps)
         NodeStatusService.refresh_all()
+        if instance.type == Node.NodeType.PROJECT and instance.status == Node.Status.DONE:
+            from analytics.services import ProjectRetrospectiveService
+
+            ProjectRetrospectiveService.capture_for_node(instance)
         return instance
 
 
@@ -135,8 +147,53 @@ class NodeTreeSerializer(NodeSerializer):
     children = serializers.SerializerMethodField()
 
     class Meta(NodeSerializer.Meta):
-        fields = NodeSerializer.Meta.fields
+        fields = NodeSerializer.Meta.fields + ["children"]
 
     def get_children(self, obj):
         children = obj.children.all().order_by("created_at")
         return NodeTreeSerializer(children, many=True).data
+
+
+class GoalAttachmentProfileSerializer(serializers.ModelSerializer):
+    """Serializer for structured goal support layers."""
+
+    attachment_suggestions = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = GoalAttachmentProfile
+        fields = [
+            "id",
+            "node",
+            "recommended_layers",
+            "habits",
+            "marketing_actions",
+            "process_notes",
+            "tools",
+            "learning_path",
+            "supporting_people",
+            "attachment_suggestions",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "created_at",
+            "updated_at",
+            "attachment_suggestions",
+        ]
+
+    def validate_node(self, value):
+        if value.type in {Node.NodeType.IDEA, Node.NodeType.BURDEN}:
+            raise serializers.ValidationError(
+                "Attachment profiles are only supported for goal, project, task, and sub-task nodes.",
+            )
+        return value
+
+    def validate(self, attrs):
+        node = attrs.get("node", self.instance.node if self.instance else None)
+        if node and not attrs.get("recommended_layers"):
+            attrs["recommended_layers"] = GoalAttachmentSuggestionService.recommended_layer_keys(node)
+        return attrs
+
+    def get_attachment_suggestions(self, obj):
+        return GoalAttachmentSuggestionService.suggest(obj.node)

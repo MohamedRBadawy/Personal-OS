@@ -34,7 +34,14 @@ import {
   updateSpiritualLog,
 } from '../lib/api'
 import { formatCurrency, formatDate, formatPercent, titleCase } from '../lib/formatters'
-import type { HabitBoardItem, Opportunity, OpportunityPayload, ScheduleBlockPayload, TodayScheduleBlock } from '../lib/types'
+import type {
+  ChatProposedAction,
+  HabitBoardItem,
+  Opportunity,
+  OpportunityPayload,
+  ScheduleBlockPayload,
+  TodayScheduleBlock,
+} from '../lib/types'
 
 const quickActions = [
   { id: 'task', label: 'Task', template: 'Create a task: ' },
@@ -81,6 +88,7 @@ export function HomePage() {
   const [captureText, setCaptureText] = useState('')
   const [captureAction, setCaptureAction] = useState<(typeof quickActions)[number]['id'] | null>(null)
   const [captureReply, setCaptureReply] = useState<string | null>(null)
+  const [captureReview, setCaptureReview] = useState<{ text: string; actions: ChatProposedAction[] } | null>(null)
   const [editingOpportunity, setEditingOpportunity] = useState<Opportunity | null>(null)
 
   const commandCenterQuery = useQuery({
@@ -90,9 +98,36 @@ export function HomePage() {
 
   const captureMutation = useMutation({
     mutationFn: ({ text, quickAction }: { text: string; quickAction: string | null }) =>
-      sendChatMessage([{ role: 'user', content: text }], { surface: 'command_center', quick_action: quickAction }),
+      sendChatMessage(
+        [{ role: 'user', content: text }],
+        { surface: 'command_center', mode: 'command_center_capture', quick_action: quickAction },
+      ),
+    onSuccess: async (result, variables) => {
+      setCaptureReply(result.reply)
+      if (result.requires_confirmation && result.proposed_actions?.length) {
+        setCaptureReview({ text: variables.text, actions: result.proposed_actions })
+        return
+      }
+      setCaptureReview(null)
+      setCaptureText('')
+      setCaptureAction(null)
+      await invalidateCommandCenter(queryClient, result.affected_modules)
+    },
+  })
+  const confirmCaptureMutation = useMutation({
+    mutationFn: ({ text, actions }: { text: string; actions: ChatProposedAction[] }) =>
+      sendChatMessage(
+        [{ role: 'user', content: text }],
+        {
+          surface: 'command_center',
+          mode: 'command_center_capture',
+          confirm_capture: true,
+          proposed_actions: actions,
+        },
+      ),
     onSuccess: async (result) => {
       setCaptureReply(result.reply)
+      setCaptureReview(null)
       setCaptureText('')
       setCaptureAction(null)
       await invalidateCommandCenter(queryClient, result.affected_modules)
@@ -237,13 +272,37 @@ export function HomePage() {
             </div>
             <div className="button-row">
               <button disabled={captureMutation.isPending || !captureText.trim()} type="submit">{captureMutation.isPending ? 'Capturing...' : 'Process capture'}</button>
-              <button className="button-ghost" type="button" onClick={() => { setCaptureAction(null); setCaptureReply(null); setCaptureText('') }}>Clear</button>
+              <button className="button-ghost" type="button" onClick={() => { setCaptureAction(null); setCaptureReply(null); setCaptureReview(null); setCaptureText('') }}>Clear</button>
             </div>
           </form>
+          {captureReview ? (
+            <div className="command-inline-note">
+              <strong>Review before apply</strong>
+              <ul className="plain-list">
+                {captureReview.actions.map((action) => (
+                  <li key={`${action.tool}-${action.summary}`} className="context-item">
+                    {action.summary}
+                  </li>
+                ))}
+              </ul>
+              <div className="button-row">
+                <button
+                  disabled={confirmCaptureMutation.isPending}
+                  type="button"
+                  onClick={() => confirmCaptureMutation.mutate(captureReview)}
+                >
+                  {confirmCaptureMutation.isPending ? 'Applying...' : 'Confirm and apply'}
+                </button>
+                <button className="button-ghost" type="button" onClick={() => setCaptureReview(null)}>
+                  Keep editing
+                </button>
+              </div>
+            </div>
+          ) : null}
           {captureReply ? <div className="command-inline-note"><strong>AI result</strong><p>{captureReply}</p></div> : null}
         </Panel>
 
-        <Panel title="Weekly review and wins" description="Keep recent progress and review pressure visible." aside={<Link className="button-link" to="/analytics">Open analytics</Link>}>
+        <Panel title="Weekly review and wins" description="Keep recent progress and review pressure visible." aside={<Link className="button-link" to="/timeline?tab=review">Open review</Link>}>
           <div className="summary-strip">
             <div><strong>{commandCenter.weekly_review.pending_suggestions_count}</strong><p className="muted">Pending suggestions</p></div>
             <div><strong>{commandCenter.weekly_review.status.review_exists ? 'Saved' : 'Open'}</strong><p className="muted">This week review</p></div>
@@ -280,7 +339,7 @@ export function HomePage() {
         )}
       </Panel>
 
-      <Panel title="Today's schedule" description="See the full day, adjust blocks inline, and log what actually happened." aside={<Link className="button-link" to="/schedule">Open schedule</Link>}>
+      <Panel title="Today's schedule" description="See the full day, adjust blocks inline, and log what actually happened." aside={<Link className="button-link" to="/work?tab=schedule">Open execution</Link>}>
         {commandCenter.schedule.blocks.length === 0 ? <EmptyState title="No schedule blocks" body="Activate a schedule template to turn this into the daily loop." /> : (
           <div className="schedule-list">
             {commandCenter.schedule.blocks.map((block) => (
@@ -336,7 +395,7 @@ export function HomePage() {
             />
           </Panel>
 
-          <Panel title="Finance" description="Add a transaction and see recent money movement immediately." aside={<Link className="button-link" to="/finance">Open finance</Link>}>
+          <Panel title="Finance" description="Add a transaction and see recent money movement immediately." aside={<Link className="button-link" to="/finance?tab=ledger">Open ledger</Link>}>
             <div className="summary-strip">
               <div><strong>{formatCurrency(commandCenter.finance.summary.independent_income_eur)}</strong><p className="muted">Independent income</p></div>
               <div><strong>{formatCurrency(commandCenter.finance.summary.net_eur)}</strong><p className="muted">Net this month</p></div>
@@ -359,7 +418,7 @@ export function HomePage() {
       </div>
 
       <div className="two-column">
-        <Panel title="Pipeline pressure" description="See due follow-ups, update opportunity status, and add new leads from the same surface." aside={<Link className="button-link" to="/pipeline">Open pipeline</Link>}>
+        <Panel title="Pipeline pressure" description="See due follow-ups, update opportunity status, and add new leads from the same surface." aside={<Link className="button-link" to="/work?tab=pipeline">Open work view</Link>}>
           <div className="summary-strip">
             <div><strong>{commandCenter.pipeline.summary.due_follow_ups_count}</strong><p className="muted">Due follow-ups</p></div>
             <div><strong>{commandCenter.pipeline.summary.new_or_reviewing_count}</strong><p className="muted">Active leads</p></div>

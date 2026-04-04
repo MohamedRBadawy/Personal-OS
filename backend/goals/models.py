@@ -95,3 +95,57 @@ class Node(BaseModel):
     def __str__(self):
         label = self.code or self.get_type_display()
         return f"[{label}] {self.title}"
+
+
+class GoalAttachmentProfile(BaseModel):
+    """Structured support layers attached to a goal-like node."""
+
+    node = models.OneToOneField(
+        Node,
+        on_delete=models.CASCADE,
+        related_name="attachment_profile",
+    )
+    recommended_layers = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Deterministic AI-suggested support layers for this node.",
+    )
+    habits = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Supporting habits that reinforce this goal or project.",
+    )
+    marketing_actions = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Marketing or visibility actions attached to this node.",
+    )
+    process_notes = models.TextField(
+        blank=True,
+        help_text="Repeatable process notes that make execution easier.",
+    )
+    tools = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Tools or systems that support the work.",
+    )
+    learning_path = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Learning resources or milestones needed for the goal.",
+    )
+    supporting_people = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="People, mentors, or collaborators connected to this work.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["node__title"]
+        verbose_name = "goal attachment profile"
+        verbose_name_plural = "goal attachment profiles"
+
+    def __str__(self):
+        return f"Attachments for {self.node.title}"

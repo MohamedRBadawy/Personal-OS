@@ -6,7 +6,14 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from analytics.services import AnalyticsOverviewService, OverwhelmService, TimelineService, WeeklyReviewService
+from analytics.services import (
+    AnalyticsOverviewService,
+    IdeasOverviewService,
+    OverwhelmService,
+    TimelineOverviewService,
+    TimelineService,
+    WeeklyReviewService,
+)
 
 
 class OverwhelmAPIView(APIView):
@@ -42,3 +49,17 @@ class TimelineAPIView(APIView):
             except ValueError as exc:
                 raise ValidationError({"week_start": "Expected YYYY-MM-DD."}) from exc
         return Response(TimelineService.payload(week_start=week_start), status=status.HTTP_200_OK)
+
+
+class TimelineOverviewAPIView(APIView):
+    """Expose the grouped achievements and timeline workspace payload."""
+
+    def get(self, request):
+        return Response(TimelineOverviewService.payload(), status=status.HTTP_200_OK)
+
+
+class IdeasOverviewAPIView(APIView):
+    """Expose the grouped ideas and thinking workspace payload."""
+
+    def get(self, request):
+        return Response(IdeasOverviewService.payload(), status=status.HTTP_200_OK)

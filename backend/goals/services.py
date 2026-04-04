@@ -3,7 +3,7 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
-from goals.models import Node
+from goals.models import GoalAttachmentProfile, Node
 
 
 class NodeStatusService:
@@ -156,6 +156,91 @@ class TaskRecommendationService:
         if tokens & cls.manual_terms:
             return "Manual", "This is best done directly in real life rather than through a software tool."
         return "Claude", "Start with structured thinking, then move into execution once the path is clear."
+
+
+class GoalAttachmentSuggestionService:
+    """Return deterministic support-layer suggestions for goal-like nodes."""
+
+    @staticmethod
+    def _normalize(items):
+        seen = set()
+        normalized = []
+        for item in items:
+            key = item["key"]
+            if key in seen:
+                continue
+            seen.add(key)
+            normalized.append(item)
+        return normalized
+
+    @classmethod
+    def suggest(cls, node):
+        """Suggest support layers that should exist around the selected node."""
+        haystack = f"{node.title} {node.notes}".lower()
+        suggestions = []
+
+        if node.type in {Node.NodeType.GOAL, Node.NodeType.PROJECT, Node.NodeType.TASK}:
+            suggestions.append(
+                {
+                    "key": "process",
+                    "label": "Process",
+                    "reason": "This work will be easier to repeat if the steps are written down clearly.",
+                },
+            )
+            suggestions.append(
+                {
+                    "key": "tools",
+                    "label": "Tools",
+                    "reason": "A defined tool stack keeps execution faster and less mentally expensive.",
+                },
+            )
+
+        if node.category in {Node.Category.CAREER, Node.Category.FINANCE, Node.Category.LEARNING}:
+            suggestions.append(
+                {
+                    "key": "learning_path",
+                    "label": "Learning Path",
+                    "reason": "This domain often benefits from an explicit skill-building track.",
+                },
+            )
+
+        if node.category in {Node.Category.HEALTH, Node.Category.SPIRITUAL} or any(
+            term in haystack for term in ["habit", "consistency", "daily", "routine", "energy", "prayer"]
+        ):
+            suggestions.append(
+                {
+                    "key": "habits",
+                    "label": "Habits",
+                    "reason": "This looks like work that depends on recurring behavior, not just one-off action.",
+                },
+            )
+
+        if node.category in {Node.Category.CAREER, Node.Category.FINANCE} or any(
+            term in haystack for term in ["client", "proposal", "outreach", "audience", "lead", "pipeline"]
+        ):
+            suggestions.append(
+                {
+                    "key": "marketing_actions",
+                    "label": "Marketing Actions",
+                    "reason": "The work appears tied to visibility, client pursuit, or outbound momentum.",
+                },
+            )
+
+        if any(term in haystack for term in ["family", "network", "mentor", "relationship", "collaborat"]):
+            suggestions.append(
+                {
+                    "key": "supporting_people",
+                    "label": "Supporting People",
+                    "reason": "The result likely depends on keeping the right people visible around the plan.",
+                },
+            )
+
+        return cls._normalize(suggestions)
+
+    @classmethod
+    def recommended_layer_keys(cls, node):
+        """Return only the keys for persistent profile defaults."""
+        return [item["key"] for item in cls.suggest(node)]
 
 
 class GoalMapService:

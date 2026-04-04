@@ -1,19 +1,7 @@
-import { screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import * as api from './lib/api'
-import type {
-  AnalyticsOverviewPayload,
-  CommandCenterPayload,
-  DashboardPayload,
-  GoalMapPayload,
-  GoalTreeNode,
-  HealthTodayPayload,
-  PaginatedResponse,
-  PipelineWorkspacePayload,
-  TimelineWeekPayload,
-  TodaySchedulePayload,
-} from './lib/types'
 import { renderRoute } from './test/test-utils'
 
 vi.mock('./lib/api', () => ({
@@ -24,11 +12,25 @@ vi.mock('./lib/api', () => ({
   getGoalTree: vi.fn(),
   getGoalMap: vi.fn(),
   getGoalContext: vi.fn(),
+  createGoalNode: vi.fn(),
   updateGoalNode: vi.fn(),
+  deleteGoalNode: vi.fn(),
+  listGoalAttachmentProfiles: vi.fn(),
+  createGoalAttachmentProfile: vi.fn(),
+  updateGoalAttachmentProfile: vi.fn(),
   getFinanceSummary: vi.fn(),
+  getFinanceOverview: vi.fn(),
   listFinanceEntries: vi.fn(),
   createFinanceEntry: vi.fn(),
+  listIncomeSources: vi.fn(),
+  createIncomeSource: vi.fn(),
+  updateIncomeSource: vi.fn(),
+  deleteIncomeSource: vi.fn(),
+  getFinancialReport: vi.fn(),
+  getProgressReport: vi.fn(),
+  getPersonalReviewReport: vi.fn(),
   getHealthSummary: vi.fn(),
+  getHealthOverview: vi.fn(),
   getHealthToday: vi.fn(),
   listHealthLogs: vi.fn(),
   listMoodLogs: vi.fn(),
@@ -45,6 +47,7 @@ vi.mock('./lib/api', () => ({
   createScheduleLog: vi.fn(),
   updateScheduleLog: vi.fn(),
   getTimeline: vi.fn(),
+  getTimelineOverview: vi.fn(),
   getAnalyticsOverview: vi.fn(),
   getWeeklyReviewPreview: vi.fn(),
   listWeeklyReviews: vi.fn(),
@@ -54,12 +57,14 @@ vi.mock('./lib/api', () => ({
   actSuggestion: vi.fn(),
   dismissSuggestion: vi.fn(),
   getPipelineWorkspace: vi.fn(),
+  getWorkOverview: vi.fn(),
   createOpportunity: vi.fn(),
   updateOpportunity: vi.fn(),
   listMarketingActions: vi.fn(),
   createMarketingAction: vi.fn(),
   updateMarketingAction: vi.fn(),
   deleteMarketingAction: vi.fn(),
+  getIdeasOverview: vi.fn(),
   listIdeas: vi.fn(),
   createIdea: vi.fn(),
   updateIdea: vi.fn(),
@@ -86,7 +91,7 @@ vi.mock('./lib/api', () => ({
   deleteLearning: vi.fn(),
 }))
 
-function paginated<T>(results: T[]): PaginatedResponse<T> {
+function paginated<T>(results: T[]) {
   return {
     count: results.length,
     next: null,
@@ -95,48 +100,124 @@ function paginated<T>(results: T[]): PaginatedResponse<T> {
   }
 }
 
-const baseDashboard: DashboardPayload = {
-  date: '2026-04-03',
-  profile: {
-    id: 'profile-1',
-    full_name: 'Mohamed Badawy',
-    location: 'Cairo',
-    timezone: 'Africa/Cairo',
-    background: 'Operational systems builder',
-    cognitive_style: 'Structural thinker',
-    family_context: 'Married with children',
-    life_focus: 'Income and relocation',
+afterEach(() => {
+  cleanup()
+})
+
+const goalNode = {
+  id: 'goal-1',
+  code: 'g2',
+  title: 'Reach EUR 1,000/month independent income',
+  type: 'goal',
+  category: 'Finance',
+  status: 'active',
+  parent: null,
+  parent_title: null,
+  notes: 'Protect the income engine.',
+  deps: [],
+  blocked_by_titles: [],
+  ancestor_titles: [],
+  progress_pct: 25,
+  due_date: null,
+  manual_priority: null,
+  dependency_unblock_count: 2,
+  recommended_tool: 'Claude',
+  tool_reasoning: 'This work benefits from thinking, structuring, or drafting before execution.',
+  is_overdue: false,
+  due_in_days: null,
+}
+
+const taskNode = {
+  id: 'task-1',
+  code: 't1',
+  title: 'Build command center backend',
+  type: 'task',
+  category: 'Career',
+  status: 'available',
+  parent: 'goal-1',
+  parent_title: 'Reach EUR 1,000/month independent income',
+  notes: 'Wire the overview endpoints and keep the UX clear.',
+  deps: [],
+  blocked_by_titles: [],
+  ancestor_titles: ['Reach EUR 1,000/month independent income'],
+  progress_pct: 0,
+  due_date: '2026-04-06',
+  manual_priority: 'high',
+  dependency_unblock_count: 3,
+  recommended_tool: 'Codex',
+  tool_reasoning: 'Implementation-heavy work is best handled in the coding workspace.',
+  is_overdue: false,
+  due_in_days: 2,
+}
+
+const todaySchedule = {
+  date: '2026-04-04',
+  template: { id: 'template-1', name: 'Core Day', is_active: true },
+  low_energy_today: false,
+  reduced_mode: false,
+  notes: ['One follow-up is due today.'],
+  summary: {
+    done_count: 0,
+    late_count: 0,
+    partial_count: 0,
+    skipped_count: 0,
+    pending_count: 2,
+    due_follow_ups_count: 1,
   },
-  settings: {
-    id: 'settings-1',
-    name: 'Default Settings',
-    independent_income_target_eur: '1000.00',
-    employment_income_source_name: 'K Line Europe',
-    timezone: 'Africa/Cairo',
-    eur_to_usd_rate: '1.0800',
-    eur_to_egp_rate: '33.5000',
-  },
-  briefing: {
-    briefing_text: 'Start with the income goal and protect your energy.',
-    top_priorities: ['Income goal'],
-    observations: ['Energy is stable.'],
-    encouragement: 'Stay honest with the data.',
-  },
-  key_signals: ['Income-generating work stays highest leverage.'],
-  finance_summary: {
-    month: '2026-04-01',
-    total_income_eur: 700,
-    total_expense_eur: 100,
-    independent_income_eur: 250,
-    net_eur: 600,
-    kyrgyzstan_progress_pct: 25,
-    months_to_target: 3,
-    target_eur: '1000.00',
-    eur_to_usd_rate: '1.0800',
-    eur_to_egp_rate: '33.5000',
-  },
-  health_summary: {
-    date: '2026-04-03',
+  blocks: [
+    {
+      id: 'block-1',
+      label: 'Focused work slot',
+      type: 'work',
+      time: '09:00',
+      is_fixed: false,
+      is_adjustable: true,
+      duration_mins: 90,
+      sort_order: 10,
+      log: null,
+      suggestion_reason: 'This is still the highest leverage work.',
+      suggestion: {
+        kind: 'goal_node',
+        reason: 'This is still the highest leverage work.',
+        goal_node: {
+          id: 'task-1',
+          title: 'Build command center backend',
+          type: 'task',
+          status: 'available',
+          parent_title: 'Reach EUR 1,000/month independent income',
+        },
+        marketing_action: null,
+      },
+    },
+    {
+      id: 'block-2',
+      label: 'Follow-up slot',
+      type: 'marketing',
+      time: '13:00',
+      is_fixed: false,
+      is_adjustable: true,
+      duration_mins: 45,
+      sort_order: 20,
+      log: null,
+      suggestion_reason: 'A follow-up is due today.',
+      suggestion: {
+        kind: 'marketing_follow_up',
+        reason: 'A follow-up is due today.',
+        goal_node: null,
+        marketing_action: {
+          id: 'marketing-1',
+          action: 'Follow up with warm LinkedIn lead',
+          platform: 'LinkedIn',
+          follow_up_date: '2026-04-04',
+        },
+      },
+    },
+  ],
+}
+
+const healthToday = {
+  date: '2026-04-04',
+  summary: {
     avg_sleep_7d: 7,
     avg_energy_7d: 3,
     avg_sleep_30d: 7.2,
@@ -161,124 +242,179 @@ const baseDashboard: DashboardPayload = {
     active_habits_count: 2,
     habits_completed_today: 0,
   },
+  health_log: null,
+  mood_log: null,
+  spiritual_log: null,
+  habit_board: [
+    {
+      habit: { id: 'habit-1', name: 'Cold shower', target: 'daily', custom_days: null, goal: null },
+      today_log: null,
+      completion_rate_7d: 43,
+      completion_rate_30d: 48,
+      current_streak: 0,
+    },
+    {
+      habit: { id: 'habit-2', name: 'LinkedIn outreach', target: '3x_week', custom_days: null, goal: 'goal-1' },
+      today_log: null,
+      completion_rate_7d: 67,
+      completion_rate_30d: 58,
+      current_streak: 0,
+    },
+  ],
+}
+
+const commandCenterPayload = {
+  date: '2026-04-04',
+  profile: { id: 'profile-1', full_name: 'Mohamed Badawy' },
+  settings: {
+    id: 'settings-1',
+    name: 'Default Settings',
+    independent_income_target_eur: '1000.00',
+  },
+  briefing: {
+    briefing_text: 'Protect the income system first, then close one follow-up loop.',
+    top_priorities: ['Income system'],
+    observations: ['Energy is stable.'],
+    encouragement: 'Keep the plan narrow and visible.',
+  },
+  key_signals: ['Income-generating work stays highest leverage.'],
   overwhelm: {
-    date: '2026-04-03',
+    date: '2026-04-04',
     overwhelm_score: 1,
     reduced_mode: false,
     max_priorities: 3,
     burnout_risk: false,
     signals: [],
   },
-  top_priorities: [
-    {
-      id: 'goal-1',
-      code: 'g2',
-      title: 'Reach EUR 1,000/month independent income',
-      type: 'goal',
-      category: 'Finance',
-      status: 'active',
-      parent: null,
-      deps: [],
-      notes: '',
-      completed_at: null,
-      progress_pct: 25,
+  reentry: {
+    active: true,
+    days_away: 3,
+    message: 'You have been away for a few days, so start with what changed and what still matters.',
+    what_changed: ['A follow-up became due.'],
+    matters_now: ['Protect the first income block.'],
+    can_wait: ['Lower-leverage cleanup can wait until after the core work block.'],
+  },
+  priorities: [taskNode],
+  top_priorities: [goalNode],
+  schedule: todaySchedule,
+  health_today: healthToday,
+  finance: {
+    summary: {
+      month: '2026-04-01',
+      total_income_eur: 700,
+      total_expense_eur: 100,
+      independent_income_eur: 250,
+      net_eur: 600,
+      kyrgyzstan_progress_pct: 25,
+      months_to_target: 3,
+      target_eur: '1000.00',
+      eur_to_usd_rate: '1.08',
+      eur_to_egp_rate: '33.5',
     },
-  ],
-  pipeline_summary: {
-    new_or_reviewing_count: 1,
-    applied_count: 0,
-    won_count: 0,
-    lost_count: 0,
-    empty_pipeline: false,
-    days_since_last_application: 1,
-    due_follow_ups_count: 1,
-  },
-  today_snapshot: {
-    active_project_count: 2,
-    blocked_goal_count: 1,
-    available_task_count: 4,
-    sleep_hours_today: 7,
-    energy_level_today: 3,
-    mood_score_today: 3,
-    completed_habits_today: 1,
-    total_habits: 3,
-    prayers_count_today: 3,
-    marketing_actions_this_month: 4,
-    active_leads_count: 2,
-  },
-  schedule_snapshot: {
-    date: '2026-04-03',
-    reduced_mode: false,
-    low_energy_today: false,
-    due_follow_ups_count: 1,
-    pending_count: 2,
-    blocks: [
+    recent_entries: [
       {
-        id: 'block-1',
-        time: '09:00',
-        label: 'Focused work slot',
-        type: 'work',
-        status: 'pending',
-        suggestion_label: 'Reach EUR 1,000/month independent income',
-        suggestion_kind: 'goal_node',
-      },
-      {
-        id: 'block-2',
-        time: '13:00',
-        label: 'Marketing follow-up slot',
-        type: 'marketing',
-        status: 'pending',
-        suggestion_label: 'Follow up with warm LinkedIn lead',
-        suggestion_kind: 'marketing_follow_up',
+        id: 'entry-1',
+        type: 'income',
+        source: 'Freelance Client',
+        amount: '250.00',
+        amount_eur: 250,
+        currency: 'EUR',
+        is_independent: true,
+        is_recurring: false,
+        date: '2026-04-03',
+        notes: 'Landing page build',
       },
     ],
   },
-  review_status: {
-    week_start: '2026-03-30',
-    week_end: '2026-04-05',
-    review_exists: false,
-    current_review_id: null,
-    latest_review_id: null,
-  },
-  suggestions_summary: {
-    pending_count: 2,
-    by_module: {
-      analytics: 1,
-      pipeline: 1,
+  pipeline: {
+    summary: {
+      new_or_reviewing_count: 1,
+      applied_count: 0,
+      won_count: 0,
+      lost_count: 0,
+      empty_pipeline: false,
+      days_since_last_application: 1,
+      due_follow_ups_count: 1,
     },
+    active_opportunities: [
+      {
+        id: 'opp-1',
+        name: 'Warm Upwork lead',
+        platform: 'Upwork',
+        description: 'Migration and dashboard work',
+        budget: '450.00',
+        status: 'reviewing',
+        fit_score: 82,
+        fit_reasoning: 'Strong fit with backend and frontend systems work.',
+        date_found: '2026-04-02',
+        date_applied: null,
+        date_closed: null,
+        proposal_draft: 'Draft proposal',
+        outcome_notes: '',
+      },
+    ],
+    due_follow_ups: [
+      {
+        id: 'marketing-1',
+        action: 'Follow up with warm LinkedIn lead',
+        platform: 'LinkedIn',
+        date: '2026-04-01',
+        follow_up_date: '2026-04-04',
+        follow_up_done: false,
+        result: 'Awaiting reply',
+      },
+    ],
   },
-  weekly_review_preview: {
-    week_start: '2026-03-30',
-    week_end: '2026-04-05',
-    snippet: 'Weekly Review - Independent income this month: EUR 250',
-    report: 'Weekly Review',
+  weekly_review: {
+    status: {
+      week_start: '2026-03-30',
+      week_end: '2026-04-05',
+      review_exists: false,
+      current_review_id: null,
+      latest_review_id: null,
+    },
+    preview: {
+      week_start: '2026-03-30',
+      week_end: '2026-04-05',
+      snippet: 'Weekly Review - independent income is moving again.',
+      report: 'Weekly Review\n- independent income is moving again.',
+    },
+    pending_suggestions_count: 2,
+    pending_suggestions: [
+      {
+        id: 'suggestion-1',
+        topic: 'weekly_review',
+        module: 'analytics',
+        suggestion_text: 'Generate the weekly review before the week closes.',
+        shown_at: '2026-04-04T08:00:00Z',
+        acted_on: false,
+        dismissed_at: null,
+      },
+    ],
   },
+  status_cards: [
+    { id: 'goals', label: 'Goals', value: 2, total: 5, status: 'attention', detail: 'Two priorities still open.', route: '/goals' },
+    { id: 'finance', label: 'Finance', value: 250, total: 1000, status: 'attention', detail: 'Independent income is 25% of target.', route: '/finance?tab=ledger' },
+  ],
+  recent_progress: [
+    { id: 'progress-1', kind: 'win', domain: 'Work', title: 'Command center foundation shipped', detail: 'The main workspace is now live.', date: '2026-04-03' },
+  ],
   latest_checkin: null,
 }
 
-const goalTree: GoalTreeNode[] = [
+const goalTree = [
   {
-    ...baseDashboard.top_priorities[0],
+    ...goalNode,
     children: [
       {
-        id: 'project-1',
-        code: 'p1',
-        title: 'Build outbound pipeline',
-        type: 'project',
-        category: 'Work',
-        status: 'available',
-        parent: 'goal-1',
-        deps: [],
-        notes: '',
-        completed_at: null,
-        progress_pct: 50,
+        ...taskNode,
         children: [],
       },
     ],
   },
 ]
 
-const goalMap: GoalMapPayload = {
+const goalMap = {
   nodes: [
     {
       id: 'goal-1',
@@ -291,152 +427,215 @@ const goalMap: GoalMapPayload = {
       progress_pct: 25,
       child_count: 1,
       blocked_by: [],
-    },
-    {
-      id: 'project-1',
-      code: 'p1',
-      title: 'Build outbound pipeline',
-      type: 'project',
-      category: 'Work',
-      status: 'available',
-      parent: 'goal-1',
-      progress_pct: 50,
-      child_count: 1,
-      blocked_by: [],
+      due_date: null,
+      manual_priority: null,
+      recommended_tool: 'Claude',
+      tool_reasoning: 'Start with structured thinking.',
     },
     {
       id: 'task-1',
       code: 't1',
-      title: 'Send three outreach messages',
+      title: 'Build command center backend',
       type: 'task',
-      category: 'Work',
+      category: 'Career',
       status: 'available',
-      parent: 'project-1',
+      parent: 'goal-1',
       progress_pct: 0,
       child_count: 0,
-      blocked_by: ['goal-1'],
+      blocked_by: [],
+      due_date: '2026-04-06',
+      manual_priority: 'high',
+      recommended_tool: 'Codex',
+      tool_reasoning: 'Implementation-heavy work is best handled in the coding workspace.',
     },
   ],
   edges: [
-    { id: 'edge-1', source: 'goal-1', target: 'project-1', kind: 'hierarchy' },
-    { id: 'edge-2', source: 'project-1', target: 'task-1', kind: 'hierarchy' },
-    { id: 'edge-3', source: 'goal-1', target: 'task-1', kind: 'dependency' },
+    { source: 'goal-1', target: 'task-1', kind: 'hierarchy' },
   ],
   summary: {
     goal_count: 1,
-    project_count: 1,
+    project_count: 0,
     task_count: 1,
     blocked_count: 0,
   },
 }
 
-const healthToday: HealthTodayPayload = {
-  date: '2026-04-03',
-  summary: baseDashboard.health_summary,
-  health_log: null,
-  mood_log: null,
-  spiritual_log: null,
-  habit_board: [
-    {
-      habit: {
-        id: 'habit-1',
-        name: 'Cold shower',
-        target: 'daily',
-        custom_days: null,
-        goal: null,
-      },
-      today_log: null,
-      completion_rate_7d: 43,
-      completion_rate_30d: 48,
-      current_streak: 0,
-    },
-    {
-      habit: {
-        id: 'habit-2',
-        name: 'LinkedIn outreach',
-        target: '3x_week',
-        custom_days: null,
-        goal: 'goal-1',
-      },
-      today_log: null,
-      completion_rate_7d: 67,
-      completion_rate_30d: 58,
-      current_streak: 0,
-    },
+const goalContext = {
+  node: {
+    ...taskNode,
+    children: [],
+  },
+  ancestors: [goalNode],
+  dependents: [],
+  progress_pct: 0,
+  attachment_profile: null,
+  attachment_suggestions: [
+    { key: 'process', label: 'Process', reason: 'This work will be easier to repeat if the steps are written down clearly.' },
+    { key: 'tools', label: 'Tools', reason: 'A defined tool stack keeps execution faster.' },
+    { key: 'learning_path', label: 'Learning Path', reason: 'This domain benefits from an explicit skill-building track.' },
   ],
 }
 
-const todaySchedule: TodaySchedulePayload = {
-  date: '2026-04-03',
-  template: {
-    id: 'template-1',
-    name: 'Core Day',
-    is_active: true,
+const familyGoals = [
+  {
+    id: 'family-1',
+    title: 'Plan family relocation docs',
+    who_involved: 'Mohamed and spouse',
+    target_date: '2026-05-01',
+    notes: 'Collect passport and school papers.',
+    status: 'active',
+    created_at: '2026-04-01T08:00:00Z',
   },
-  low_energy_today: false,
-  reduced_mode: false,
-  notes: ['1 marketing follow-up item(s) are due.'],
+]
+
+const relationships = [
+  {
+    id: 'relationship-1',
+    name: 'Ahmed Mentor',
+    relationship_type: 'mentor',
+    last_contact: '2026-04-01',
+    follow_up_notes: 'Share current pipeline progress.',
+    created_at: '2026-04-01T08:00:00Z',
+  },
+]
+
+const marketingActions = [
+  {
+    id: 'marketing-1',
+    action: 'Publish case study snippet',
+    platform: 'LinkedIn',
+    goal: null,
+    result: '2 inbound replies',
+    follow_up_date: '2026-04-04',
+    follow_up_done: false,
+    date: '2026-04-03',
+    created_at: '2026-04-03T08:00:00Z',
+  },
+]
+
+const pipelineWorkspace = {
+  date: '2026-04-04',
+  summary: commandCenterPayload.pipeline.summary,
+  active_opportunities: commandCenterPayload.pipeline.active_opportunities,
+  recent_outcomes: [],
+  due_follow_ups: commandCenterPayload.pipeline.due_follow_ups,
+  recent_clients: [],
+}
+
+const workOverview = {
+  date: '2026-04-04',
   summary: {
-    done_count: 0,
-    late_count: 0,
-    partial_count: 0,
-    skipped_count: 0,
-    pending_count: 2,
+    active_task_count: 2,
+    blocked_task_count: 0,
+    deadline_count: 1,
+    proposal_draft_count: 1,
     due_follow_ups_count: 1,
+    active_opportunity_count: 1,
   },
-  blocks: [
+  task_board: [taskNode],
+  deadlines: [taskNode],
+  pipeline: pipelineWorkspace,
+  marketing_actions: marketingActions,
+  proposal_drafts: [
     {
-      id: 'block-1',
-      label: 'Focused work slot',
-      type: 'work',
-      time: '09:00',
-      is_fixed: false,
-      is_adjustable: true,
-      duration_mins: 90,
-      sort_order: 30,
-      log: null,
-      suggestion_reason: 'This is the highest-priority available work item right now.',
-      suggestion: {
-        kind: 'goal_node',
-        reason: 'This is the highest-priority available work item right now.',
-        goal_node: {
-          id: 'goal-1',
-          title: 'Reach EUR 1,000/month independent income',
-          type: 'goal',
-          status: 'active',
-          parent_title: null,
-        },
-        marketing_action: null,
-      },
-    },
-    {
-      id: 'block-2',
-      label: 'Marketing follow-up slot',
-      type: 'marketing',
-      time: '13:00',
-      is_fixed: false,
-      is_adjustable: true,
-      duration_mins: 45,
-      sort_order: 40,
-      log: null,
-      suggestion_reason: 'A follow-up is due, so this slot is reserved for closing the loop.',
-      suggestion: {
-        kind: 'marketing_follow_up',
-        reason: 'A follow-up is due, so this slot is reserved for closing the loop.',
-        goal_node: null,
-        marketing_action: {
-          id: 'marketing-1',
-          action: 'Follow up with warm LinkedIn lead',
-          platform: 'LinkedIn',
-          follow_up_date: '2026-04-03',
-        },
-      },
+      ...commandCenterPayload.pipeline.active_opportunities[0],
+      proposal_draft: 'Draft proposal for the work.',
     },
   ],
 }
 
-const analyticsOverview: AnalyticsOverviewPayload = {
-  date: '2026-04-03',
+const financeSummary = {
+  month: '2026-04-01',
+  total_income_eur: 700,
+  total_expense_eur: 100,
+  independent_income_eur: 250,
+  net_eur: 600,
+  kyrgyzstan_progress_pct: 25,
+  months_to_target: 3,
+  target_eur: '1000.00',
+  eur_to_usd_rate: '1.08',
+  eur_to_egp_rate: '33.5',
+}
+
+const financeOverview = {
+  date: '2026-04-04',
+  summary: financeSummary,
+  monthly_summary: {
+    month: '2026-04-01',
+    income_entry_count: 2,
+    expense_entry_count: 1,
+    recurring_income_eur: 700,
+    recurring_expense_eur: 50,
+  },
+  target_tracking: {
+    independent_income_eur: 250,
+    target_eur: '1000.00',
+    progress_pct: 25,
+    months_to_target: 3,
+    active_income_sources: 1,
+  },
+  income_sources: [
+    {
+      id: 'source-1',
+      name: 'Freelance Retainers',
+      category: 'Freelance',
+      monthly_target_eur: '1000.00',
+      baseline_amount_eur: '250.00',
+      active: true,
+      notes: 'Main target stream.',
+      realized_this_month_eur: 250,
+      progress_pct: 25,
+    },
+  ],
+  recent_entries: commandCenterPayload.finance.recent_entries,
+}
+
+const healthOverview = {
+  date: '2026-04-04',
+  summary: healthToday.summary,
+  today: healthToday,
+  recent_health_logs: [
+    {
+      id: 'health-1',
+      date: '2026-04-03',
+      sleep_hours: '7.5',
+      sleep_quality: 4,
+      energy_level: 3,
+      exercise_done: true,
+      exercise_type: 'Walk',
+      exercise_duration_mins: 30,
+      weight_kg: null,
+      nutrition_notes: '',
+    },
+  ],
+  recent_mood_logs: [
+    {
+      id: 'mood-1',
+      date: '2026-04-03',
+      mood_score: 3,
+      notes: 'Steady',
+    },
+  ],
+  recent_spiritual_logs: [
+    {
+      id: 'spiritual-1',
+      date: '2026-04-03',
+      fajr: true,
+      dhuhr: true,
+      asr: true,
+      maghrib: true,
+      isha: false,
+      quran_pages: 3,
+      dhikr_done: true,
+      prayers_count: 4,
+      notes: '',
+    },
+  ],
+  capacity_signals: ['Health signals are stable enough for a normal day.'],
+}
+
+const analyticsOverview = {
+  date: '2026-04-04',
   health: {
     low_energy_today: false,
     low_mood_today: false,
@@ -450,7 +649,7 @@ const analyticsOverview: AnalyticsOverviewPayload = {
     net_eur: 600,
     kyrgyzstan_progress_pct: 25,
   },
-  pipeline: baseDashboard.pipeline_summary,
+  pipeline: commandCenterPayload.pipeline.summary,
   counts: {
     health_logs: 3,
     mood_logs: 2,
@@ -470,22 +669,18 @@ const analyticsOverview: AnalyticsOverviewPayload = {
       id: 'history-1',
       domain: 'Finance',
       title: '+250 EUR - Freelance Client',
-      detail: 'Upwork lead converted to cash',
+      detail: 'Landing page build',
       date: '2026-04-03',
     },
   ],
-  pattern_analysis: 'Momentum is strongest when health logging stays steady and outreach is active.',
+  pattern_analysis: 'Momentum is strongest when daily capture stays simple and visible.',
 }
 
 const weeklyReviewPreview = {
   week_start: '2026-03-30',
   week_end: '2026-04-05',
-  report: 'Weekly Review\n- Independent income this month: EUR 250\n- Honest assessment: momentum is returning.',
-  context: {
-    goals: {
-      done_count: 1,
-    },
-  },
+  report: 'Weekly Review\n- Independent income is recovering.\n- Keep the scope narrow.',
+  context: { goals: { done_count: 1 } },
 }
 
 const weeklyReviews = [
@@ -493,9 +688,9 @@ const weeklyReviews = [
     id: 'review-1',
     week_start: '2026-03-30',
     week_end: '2026-04-05',
-    ai_report: 'Weekly Review\n- Independent income this month: EUR 250',
-    personal_notes: 'Keep the next week narrower.',
-    created_at: '2026-04-03T08:00:00Z',
+    ai_report: 'Weekly Review\n- Independent income is recovering.',
+    personal_notes: 'Keep the week narrow.',
+    created_at: '2026-04-04T08:00:00Z',
   },
 ]
 
@@ -504,8 +699,8 @@ const suggestions = [
     id: 'suggestion-1',
     topic: 'weekly_review',
     module: 'analytics',
-    suggestion_text: 'Generate the weekly review before the week rolls over.',
-    shown_at: '2026-04-03T08:00:00Z',
+    suggestion_text: 'Generate the weekly review before the week closes.',
+    shown_at: '2026-04-04T08:00:00Z',
     acted_on: false,
     dismissed_at: null,
   },
@@ -514,14 +709,14 @@ const suggestions = [
     topic: 'pipeline_follow_up',
     module: 'pipeline',
     suggestion_text: 'Close one follow-up loop today.',
-    shown_at: '2026-04-03T09:00:00Z',
+    shown_at: '2026-04-04T09:00:00Z',
     acted_on: false,
     dismissed_at: null,
   },
 ]
 
-const timelineWeek: TimelineWeekPayload = {
-  today: '2026-04-03',
+const timelineWeek = {
+  today: '2026-04-04',
   week_start: '2026-03-30',
   week_end: '2026-04-05',
   days: [
@@ -530,312 +725,121 @@ const timelineWeek: TimelineWeekPayload = {
       is_today: false,
       is_future: false,
       score: 58,
-      indicators: {
-        health: true,
-        mood: true,
-        spiritual: false,
-        habits: false,
-        finance: false,
-        marketing: false,
-        achievements: false,
-        decisions: false,
-      },
+      indicators: { health: true, mood: true, spiritual: false, habits: false, finance: false, marketing: false, achievements: false, decisions: false },
       detail_rows: [{ domain: 'Mood', label: 'Mood', value: '3/5 - Steady' }],
-      ai_note: 'Debrief: mood stayed steady, but the day needed stronger work capture.',
+      ai_note: 'Debrief: mood stayed steady.',
     },
     {
       date: '2026-03-31',
       is_today: false,
       is_future: false,
       score: 64,
-      indicators: {
-        health: true,
-        mood: false,
-        spiritual: true,
-        habits: true,
-        finance: false,
-        marketing: true,
-        achievements: false,
-        decisions: false,
-      },
+      indicators: { health: true, mood: false, spiritual: true, habits: true, finance: false, marketing: true, achievements: false, decisions: false },
       detail_rows: [{ domain: 'Habits', label: 'Habits', value: 'Cold shower' }],
-      ai_note: 'Debrief: anchors were decent, and marketing got a little traction.',
+      ai_note: 'Debrief: anchors were decent.',
     },
     {
       date: '2026-04-01',
       is_today: false,
       is_future: false,
       score: 75,
-      indicators: {
-        health: true,
-        mood: true,
-        spiritual: true,
-        habits: true,
-        finance: true,
-        marketing: false,
-        achievements: false,
-        decisions: false,
-      },
+      indicators: { health: true, mood: true, spiritual: true, habits: true, finance: true, marketing: false, achievements: false, decisions: false },
       detail_rows: [{ domain: 'Finance', label: 'Money', value: '+700 EUR' }],
-      ai_note: 'Debrief: money moved, and that kept the bigger goal credible.',
+      ai_note: 'Debrief: money moved and that mattered.',
     },
     {
       date: '2026-04-02',
       is_today: false,
       is_future: false,
       score: 68,
-      indicators: {
-        health: true,
-        mood: false,
-        spiritual: false,
-        habits: true,
-        finance: false,
-        marketing: false,
-        achievements: false,
-        decisions: true,
-      },
+      indicators: { health: true, mood: false, spiritual: false, habits: true, finance: false, marketing: false, achievements: false, decisions: true },
       detail_rows: [{ domain: 'Decision', label: 'Decisions', value: 'Keep focus on income' }],
-      ai_note: 'Debrief: the day stayed useful because decisions stayed aligned.',
+      ai_note: 'Debrief: decisions stayed aligned.',
     },
     {
       date: '2026-04-03',
-      is_today: true,
+      is_today: false,
       is_future: false,
       score: 70,
-      indicators: {
-        health: true,
-        mood: true,
-        spiritual: true,
-        habits: true,
-        finance: true,
-        marketing: true,
-        achievements: false,
-        decisions: false,
-      },
+      indicators: { health: true, mood: true, spiritual: true, habits: true, finance: true, marketing: true, achievements: false, decisions: false },
       detail_rows: [{ domain: 'Health', label: 'Body', value: 'Sleep 7h - Energy 3/5' }],
-      ai_note: 'Debrief: keep the day narrow and finish the current outreach block.',
+      ai_note: 'Debrief: keep the day narrow and finish the outreach block.',
     },
     {
       date: '2026-04-04',
-      is_today: false,
-      is_future: true,
-      score: 0,
-      indicators: {
-        health: false,
-        mood: false,
-        spiritual: false,
-        habits: false,
-        finance: false,
-        marketing: false,
-        achievements: false,
-        decisions: false,
-      },
-      detail_rows: [],
-      ai_note: 'Prepare: protect the morning and keep one outreach block visible.',
+      is_today: true,
+      is_future: false,
+      score: 72,
+      indicators: { health: true, mood: true, spiritual: true, habits: true, finance: true, marketing: true, achievements: true, decisions: false },
+      detail_rows: [{ domain: 'Achievement', label: 'Wins', value: 'Command center foundation shipped' }],
+      ai_note: 'Debrief: momentum is visible now.',
     },
     {
       date: '2026-04-05',
       is_today: false,
       is_future: true,
       score: 0,
-      indicators: {
-        health: false,
-        mood: false,
-        spiritual: false,
-        habits: false,
-        finance: false,
-        marketing: false,
-        achievements: false,
-        decisions: false,
-      },
+      indicators: { health: false, mood: false, spiritual: false, habits: false, finance: false, marketing: false, achievements: false, decisions: false },
       detail_rows: [],
       ai_note: 'Prepare: leave room for weekly review and recovery.',
     },
   ],
 }
 
-const pipelineWorkspace: PipelineWorkspacePayload = {
-  date: '2026-04-03',
-  summary: baseDashboard.pipeline_summary,
-  active_opportunities: [
-    {
-      id: 'opp-1',
-      name: 'Warm Upwork lead',
-      platform: 'Upwork',
-      description: 'Migration and dashboard work',
-      status: 'reviewing',
-      budget: '450.00',
-      fit_score: 82,
-      fit_reasoning: 'Strong fit with current backend and frontend work.',
-      proposal_draft: 'Draft proposal',
-      date_found: '2026-04-02',
-      date_applied: null,
-      date_closed: null,
-      outcome_notes: '',
-    },
-  ],
-  recent_outcomes: [],
-  due_follow_ups: [
-    {
-      id: 'marketing-1',
-      action: 'Follow up with warm LinkedIn lead',
-      platform: 'LinkedIn',
-      follow_up_date: '2026-04-03',
-      follow_up_done: false,
-      date: '2026-04-01',
-      result: 'Awaiting reply',
-    },
-  ],
-  recent_clients: [],
-}
-
-const commandCenterPayload: CommandCenterPayload = {
-  date: '2026-04-03',
-  profile: baseDashboard.profile,
-  settings: baseDashboard.settings,
-  briefing: baseDashboard.briefing,
-  key_signals: baseDashboard.key_signals,
-  overwhelm: baseDashboard.overwhelm,
-  reentry: {
-    active: false,
-    days_away: 0,
-    message: '',
-    what_changed: [],
-    matters_now: [],
-    can_wait: [],
-  },
-  priorities: [
-    {
-      id: 'goal-1',
-      code: 'g2',
-      title: 'Reach EUR 1,000/month independent income',
-      type: 'goal',
-      category: 'Finance',
-      status: 'active',
-      parent: null,
-      parent_title: null,
-      notes: '',
-      deps: [],
-      blocked_by_titles: [],
-      ancestor_titles: [],
-      progress_pct: 25,
-      due_date: null,
-      manual_priority: null,
-      dependency_unblock_count: 1,
-      recommended_tool: 'Claude',
-      tool_reasoning: 'This work benefits from thinking, structuring, or drafting before execution.',
-      is_overdue: false,
-      due_in_days: null,
-    },
-  ],
-  top_priorities: [
-    {
-      id: 'goal-1',
-      code: 'g2',
-      title: 'Reach EUR 1,000/month independent income',
-      type: 'goal',
-      category: 'Finance',
-      status: 'active',
-      parent: null,
-      parent_title: null,
-      notes: '',
-      deps: [],
-      blocked_by_titles: [],
-      ancestor_titles: [],
-      progress_pct: 25,
-      due_date: null,
-      manual_priority: null,
-      dependency_unblock_count: 1,
-      recommended_tool: 'Claude',
-      tool_reasoning: 'This work benefits from thinking, structuring, or drafting before execution.',
-      is_overdue: false,
-      due_in_days: null,
-    },
-  ],
-  schedule: todaySchedule,
-  health_today: healthToday,
-  finance: {
-    summary: baseDashboard.finance_summary,
-    recent_entries: [
-      {
-        id: 'entry-1',
-        type: 'income',
-        source: 'K Line Europe',
-        amount: '700.00',
-        amount_eur: 700,
-        currency: 'EUR',
-        is_independent: false,
-        is_recurring: true,
-        date: '2026-04-01',
-        notes: '',
-      },
-    ],
-  },
-  pipeline: pipelineWorkspace,
+const timelineOverview = {
+  date: '2026-04-04',
+  timeline: timelineWeek,
   weekly_review: {
-    status: baseDashboard.review_status,
-    preview: {
+    status: {
       week_start: '2026-03-30',
       week_end: '2026-04-05',
-      snippet: 'Weekly Review - Independent income this month: EUR 250',
-      report: 'Weekly Review',
+      review_exists: false,
+      current_review_id: null,
+      latest_review_id: 'review-1',
     },
-    pending_suggestions_count: 2,
-    pending_suggestions: [
-      {
-        id: 'suggestion-1',
-        topic: 'weekly_review',
-        module: 'analytics',
-        suggestion_text: 'Generate the weekly review before the week rolls over.',
-        shown_at: '2026-04-03T08:00:00Z',
-      },
-      {
-        id: 'suggestion-2',
-        topic: 'pipeline_follow_up',
-        module: 'pipeline',
-        suggestion_text: 'Close one follow-up loop today.',
-        shown_at: '2026-04-03T09:00:00Z',
-      },
-    ],
+    preview: weeklyReviewPreview,
   },
-  status_cards: [
-    { id: 'goals', label: 'Goals and tasks', value: 1, total: 3, status: 'clear', detail: '0 blocked - 2 ready now', route: '/goals' },
-    { id: 'schedule', label: "Today's schedule", value: 0, total: 2, status: 'attention', detail: '2 pending - 0 skipped', route: '/schedule' },
-    { id: 'finance', label: 'Independent income', value: 250, total: 1000, status: 'attention', detail: 'Net this month: 600 EUR', route: '/finance' },
-  ],
-  recent_progress: [
+  pattern_analysis: analyticsOverview.pattern_analysis,
+  achievements: [
     {
-      id: 'progress-1',
-      kind: 'win',
+      id: 'achievement-1',
+      title: 'Command center foundation shipped',
       domain: 'Work',
-      title: 'Backend foundation shipped',
-      detail: 'Migrations and read models are live.',
-      date: '2026-04-01',
+      date: '2026-04-03',
+      notes: 'Main grouped workspace is now live.',
     },
   ],
-  latest_checkin: null,
+  retrospectives: [
+    {
+      id: 'retro-1',
+      title: 'Closed project reflection',
+      source_type: 'project',
+      status: 'done',
+      summary: 'The project closed cleanly.',
+      what_worked: 'Strong scoping.',
+      what_didnt: 'Polish came late.',
+      next_time: 'Validate the UX sooner.',
+      closed_at: '2026-04-02',
+    },
+  ],
+  archived_goals: [
+    {
+      id: 'goal-archived-1',
+      title: 'Stabilize MVP',
+      type: 'project',
+      category: 'Career',
+      completed_at: '2026-03-28T08:00:00Z',
+      notes: 'Done.',
+    },
+  ],
 }
-
-const marketingActions = [
-  {
-    id: 'marketing-1',
-    action: 'Publish case study snippet',
-    platform: 'LinkedIn',
-    goal: null,
-    result: '2 inbound replies',
-    follow_up_date: '2026-04-04',
-    follow_up_done: false,
-    date: '2026-04-03',
-    created_at: '2026-04-03T08:00:00Z',
-  },
-]
 
 const ideas = [
   {
     id: 'idea-1',
     title: 'Telegram notifications',
     context: 'Useful for daily reminders later.',
-    status: 'raw' as const,
+    status: 'raw',
     linked_goal: null,
     created_at: '2026-04-03T08:00:00Z',
   },
@@ -844,7 +848,7 @@ const ideas = [
 const decisions = [
   {
     id: 'decision-1',
-    decision: 'Ship backend-first',
+    decision: 'Ship backend first',
     reasoning: 'Stabilize contracts before polish.',
     alternatives_considered: 'Prototype-first',
     outcome: '',
@@ -856,34 +860,11 @@ const decisions = [
 const achievements = [
   {
     id: 'achievement-1',
-    title: 'Backend foundation shipped',
+    title: 'Command center foundation shipped',
     domain: 'Work',
-    date: '2026-04-01',
-    notes: 'Migrations and read models are live.',
-    created_at: '2026-04-01T08:00:00Z',
-  },
-]
-
-const familyGoals = [
-  {
-    id: 'family-1',
-    title: 'Plan family relocation docs',
-    who_involved: 'Mohamed and spouse',
-    target_date: '2026-05-01',
-    notes: 'Collect passport and school papers.',
-    status: 'active' as const,
-    created_at: '2026-04-01T08:00:00Z',
-  },
-]
-
-const relationships = [
-  {
-    id: 'relationship-1',
-    name: 'Ahmed Mentor',
-    relationship_type: 'mentor',
-    last_contact: '2026-04-01',
-    follow_up_notes: 'Share current client pipeline progress.',
-    created_at: '2026-04-01T08:00:00Z',
+    date: '2026-04-03',
+    notes: 'Main grouped workspace is now live.',
+    created_at: '2026-04-03T08:00:00Z',
   },
 ]
 
@@ -892,109 +873,94 @@ const learnings = [
     id: 'learning-1',
     topic: 'Django service design',
     source: 'Internal implementation',
-    status: 'in_progress' as const,
+    status: 'in_progress',
     key_insights: 'Keep orchestration in services.',
     linked_goal: null,
     created_at: '2026-04-01T08:00:00Z',
   },
 ]
 
+const ideasOverview = {
+  date: '2026-04-04',
+  summary: {
+    raw_ideas: 1,
+    validated_ideas: 0,
+    decisions: 1,
+    learning_items: 1,
+  },
+  ideas,
+  decisions,
+  learning: learnings,
+}
+
+const financialReport = {
+  name: 'financial',
+  generated_at: '2026-04-04T09:00:00Z',
+  report: 'Financial Report\n- Independent income: EUR 250\n- Progress to target: 25%',
+  sections: {},
+}
+
 beforeEach(() => {
-  vi.mocked(api.getCommandCenter).mockResolvedValue(commandCenterPayload)
-  vi.mocked(api.getDashboard).mockResolvedValue(baseDashboard)
-  vi.mocked(api.submitCheckIn).mockResolvedValue({
-    checkin_id: 'checkin-1',
-    health_log_id: 'health-1',
-    mood_log_id: 'mood-1',
-    finance_entry_ids: [],
-    idea_id: 'idea-1',
-    blocker_id: 'blocker-1',
-    briefing: {
-      briefing_text: 'Keep today light and finish the highest leverage task.',
-      top_priorities: ['Income goal'],
-      observations: ['Energy is low today.'],
-      encouragement: 'Reduce scope before adding more load.',
-    },
-    finance_summary: baseDashboard.finance_summary,
-    health_summary: {
-      ...baseDashboard.health_summary,
-      low_energy_today: true,
-    },
-  })
+  vi.resetAllMocks()
+
+  vi.mocked(api.getCommandCenter).mockResolvedValue(commandCenterPayload as never)
+  vi.mocked(api.getDashboard).mockResolvedValue({} as never)
   vi.mocked(api.sendChatMessage).mockResolvedValue({
     reply: 'Captured that and updated the system.',
     actions: [],
     affected_modules: ['goals'],
-  })
-  vi.mocked(api.getGoalTree).mockResolvedValue(goalTree)
-  vi.mocked(api.getGoalMap).mockResolvedValue(goalMap)
-  vi.mocked(api.getGoalContext).mockResolvedValue({
-    node: goalTree[0],
-    ancestors: [],
-    dependents: [],
-    progress_pct: 25,
-  })
-  vi.mocked(api.updateGoalNode).mockResolvedValue(goalTree[0])
-  vi.mocked(api.getFinanceSummary).mockResolvedValue(baseDashboard.finance_summary)
-  vi.mocked(api.listFinanceEntries).mockResolvedValue(
-    paginated([
-      {
-        id: 'entry-1',
-        type: 'income',
-        source: 'K Line Europe',
-        amount: '700.00',
-        amount_eur: 700,
-        currency: 'EUR',
-        is_independent: false,
-        is_recurring: true,
-        date: '2026-04-01',
-        notes: '',
-      },
-    ]),
-  )
-  vi.mocked(api.createFinanceEntry).mockResolvedValue({
-    id: 'entry-2',
-    type: 'income',
-    source: 'Freelance Client',
-    amount: '250.00',
-    amount_eur: 250,
-    currency: 'EUR',
-    is_independent: true,
-    is_recurring: false,
-    date: '2026-04-03',
-    notes: '',
-  })
-  vi.mocked(api.getHealthSummary).mockResolvedValue(baseDashboard.health_summary)
-  vi.mocked(api.getHealthToday).mockResolvedValue(healthToday)
-  vi.mocked(api.listHealthLogs).mockResolvedValue(
-    paginated([
-      {
-        id: 'health-1',
-        date: '2026-04-02',
-        sleep_hours: '7.5',
-        sleep_quality: 4,
-        energy_level: 3,
-        exercise_done: true,
-        exercise_type: 'Walk',
-        exercise_duration_mins: 30,
-        weight_kg: null,
-        nutrition_notes: '',
-      },
-    ]),
-  )
-  vi.mocked(api.listMoodLogs).mockResolvedValue(
-    paginated([
-      {
-        id: 'mood-0',
-        date: '2026-04-01',
-        mood_score: 3,
-        notes: 'Steady',
-      },
-    ]),
-  )
+    proposed_actions: [],
+    requires_confirmation: false,
+  } as never)
+
+  vi.mocked(api.getGoalTree).mockResolvedValue(goalTree as never)
+  vi.mocked(api.getGoalMap).mockResolvedValue(goalMap as never)
+  vi.mocked(api.getGoalContext).mockResolvedValue(goalContext as never)
+  vi.mocked(api.createGoalNode).mockResolvedValue(taskNode as never)
+  vi.mocked(api.updateGoalNode).mockResolvedValue(taskNode as never)
+  vi.mocked(api.deleteGoalNode).mockResolvedValue(null as never)
+  vi.mocked(api.createGoalAttachmentProfile).mockResolvedValue({
+    id: 'attachment-1',
+    node: 'task-1',
+    habits: ['Cold shower'],
+  } as never)
+  vi.mocked(api.updateGoalAttachmentProfile).mockResolvedValue({
+    id: 'attachment-1',
+    node: 'task-1',
+    habits: ['Cold shower'],
+  } as never)
+  vi.mocked(api.listFamilyGoals).mockResolvedValue(paginated(familyGoals) as never)
+  vi.mocked(api.listRelationships).mockResolvedValue(paginated(relationships) as never)
+
+  vi.mocked(api.getFinanceSummary).mockResolvedValue(financeSummary as never)
+  vi.mocked(api.getFinanceOverview).mockResolvedValue(financeOverview as never)
+  vi.mocked(api.listFinanceEntries).mockResolvedValue(paginated(commandCenterPayload.finance.recent_entries) as never)
+  vi.mocked(api.createFinanceEntry).mockResolvedValue(commandCenterPayload.finance.recent_entries[0] as never)
+  vi.mocked(api.createIncomeSource).mockResolvedValue(financeOverview.income_sources[0] as never)
+  vi.mocked(api.updateIncomeSource).mockResolvedValue(financeOverview.income_sources[0] as never)
+  vi.mocked(api.deleteIncomeSource).mockResolvedValue(null as never)
+  vi.mocked(api.getFinancialReport).mockResolvedValue(financialReport as never)
+  vi.mocked(api.getProgressReport).mockResolvedValue({
+    name: 'progress',
+    generated_at: '2026-04-04T09:00:00Z',
+    report: 'Progress Report',
+    sections: {},
+  } as never)
+  vi.mocked(api.getPersonalReviewReport).mockResolvedValue({
+    name: 'personal-review',
+    generated_at: '2026-04-04T09:00:00Z',
+    report: 'Personal Review Report',
+    sections: {},
+  } as never)
+
+  vi.mocked(api.getHealthSummary).mockResolvedValue(healthToday.summary as never)
+  vi.mocked(api.getHealthOverview).mockResolvedValue(healthOverview as never)
+  vi.mocked(api.getHealthToday).mockResolvedValue(healthToday as never)
+  vi.mocked(api.listHealthLogs).mockResolvedValue(paginated(healthOverview.recent_health_logs) as never)
+  vi.mocked(api.listMoodLogs).mockResolvedValue(paginated(healthOverview.recent_mood_logs) as never)
   vi.mocked(api.createHealthLog).mockResolvedValue({
     id: 'health-2',
-    date: '2026-04-03',
+    date: '2026-04-04',
     sleep_hours: '6.5',
     sleep_quality: 3,
     energy_level: 3,
@@ -1003,10 +969,10 @@ beforeEach(() => {
     exercise_duration_mins: null,
     weight_kg: null,
     nutrition_notes: '',
-  })
+  } as never)
   vi.mocked(api.updateHealthLog).mockResolvedValue({
     id: 'health-2',
-    date: '2026-04-03',
+    date: '2026-04-04',
     sleep_hours: '6.5',
     sleep_quality: 3,
     energy_level: 3,
@@ -1015,335 +981,251 @@ beforeEach(() => {
     exercise_duration_mins: null,
     weight_kg: null,
     nutrition_notes: '',
-  })
-  vi.mocked(api.createMoodLog).mockResolvedValue({
-    id: 'mood-1',
-    date: '2026-04-03',
-    mood_score: 2,
-    notes: 'Low focus',
-  })
-  vi.mocked(api.updateMoodLog).mockResolvedValue({
-    id: 'mood-1',
-    date: '2026-04-03',
-    mood_score: 4,
-    notes: 'Recovered',
-  })
-  vi.mocked(api.createSpiritualLog).mockResolvedValue({
-    id: 'spiritual-1',
-    date: '2026-04-03',
-    fajr: true,
-    dhuhr: true,
-    asr: true,
-    maghrib: true,
-    isha: true,
-    quran_pages: 3,
-    dhikr_done: true,
-    notes: '',
-    prayers_count: 5,
-  })
-  vi.mocked(api.updateSpiritualLog).mockResolvedValue({
-    id: 'spiritual-1',
-    date: '2026-04-03',
-    fajr: true,
-    dhuhr: true,
-    asr: true,
-    maghrib: true,
-    isha: true,
-    quran_pages: 5,
-    dhikr_done: true,
-    notes: 'Good anchor',
-    prayers_count: 5,
-  })
+  } as never)
+  vi.mocked(api.createMoodLog).mockResolvedValue(healthOverview.recent_mood_logs[0] as never)
+  vi.mocked(api.updateMoodLog).mockResolvedValue(healthOverview.recent_mood_logs[0] as never)
+  vi.mocked(api.createSpiritualLog).mockResolvedValue(healthOverview.recent_spiritual_logs[0] as never)
+  vi.mocked(api.updateSpiritualLog).mockResolvedValue(healthOverview.recent_spiritual_logs[0] as never)
   vi.mocked(api.createHabitLog).mockResolvedValue({
     id: 'habit-log-1',
     habit: 'habit-1',
-    date: '2026-04-03',
+    date: '2026-04-04',
     done: true,
     note: '',
-  })
+  } as never)
   vi.mocked(api.updateHabitLog).mockResolvedValue({
     id: 'habit-log-1',
     habit: 'habit-1',
-    date: '2026-04-03',
-    done: false,
+    date: '2026-04-04',
+    done: true,
     note: '',
-  })
-  vi.mocked(api.getTodaySchedule).mockResolvedValue(todaySchedule)
-  vi.mocked(api.updateScheduleBlock).mockResolvedValue({
-    id: 'block-1',
-    label: 'Focused work slot',
-    type: 'work',
-    time: '09:00',
-    is_fixed: false,
-    is_adjustable: true,
-    duration_mins: 90,
-    sort_order: 30,
-  })
+  } as never)
+
+  vi.mocked(api.getTodaySchedule).mockResolvedValue(todaySchedule as never)
+  vi.mocked(api.updateScheduleBlock).mockResolvedValue(todaySchedule.blocks[0] as never)
   vi.mocked(api.createScheduleLog).mockResolvedValue({
     id: 'schedule-log-1',
-    date: '2026-04-03',
+    date: '2026-04-04',
     status: 'done',
     actual_time: null,
     note: '',
     task_node: {
-      id: 'goal-1',
-      title: 'Reach EUR 1,000/month independent income',
-      type: 'goal',
-      status: 'active',
-      parent_title: null,
+      id: 'task-1',
+      title: 'Build command center backend',
+      type: 'task',
+      status: 'available',
+      parent_title: 'Reach EUR 1,000/month independent income',
     },
-  })
+  } as never)
   vi.mocked(api.updateScheduleLog).mockResolvedValue({
     id: 'schedule-log-1',
-    date: '2026-04-03',
+    date: '2026-04-04',
     status: 'done',
     actual_time: null,
     note: '',
     task_node: {
-      id: 'goal-1',
-      title: 'Reach EUR 1,000/month independent income',
-      type: 'goal',
-      status: 'active',
-      parent_title: null,
+      id: 'task-1',
+      title: 'Build command center backend',
+      type: 'task',
+      status: 'available',
+      parent_title: 'Reach EUR 1,000/month independent income',
     },
-  })
-  vi.mocked(api.getTimeline).mockResolvedValue(timelineWeek)
-  vi.mocked(api.getAnalyticsOverview).mockResolvedValue(analyticsOverview)
-  vi.mocked(api.getWeeklyReviewPreview).mockResolvedValue(weeklyReviewPreview)
-  vi.mocked(api.listWeeklyReviews).mockResolvedValue(paginated(weeklyReviews))
+  } as never)
+
+  vi.mocked(api.getTimeline).mockResolvedValue(timelineWeek as never)
+  vi.mocked(api.getTimelineOverview).mockResolvedValue(timelineOverview as never)
+  vi.mocked(api.getAnalyticsOverview).mockResolvedValue(analyticsOverview as never)
+  vi.mocked(api.getWeeklyReviewPreview).mockResolvedValue(weeklyReviewPreview as never)
+  vi.mocked(api.listWeeklyReviews).mockResolvedValue(paginated(weeklyReviews) as never)
   vi.mocked(api.generateWeeklyReview).mockResolvedValue({
     review: weeklyReviews[0],
     preview: weeklyReviewPreview,
-  })
-  vi.mocked(api.updateWeeklyReview).mockResolvedValue(weeklyReviews[0])
-  vi.mocked(api.listSuggestions).mockResolvedValue(paginated(suggestions))
+  } as never)
+  vi.mocked(api.updateWeeklyReview).mockResolvedValue(weeklyReviews[0] as never)
+  vi.mocked(api.listSuggestions).mockResolvedValue(paginated(suggestions) as never)
   vi.mocked(api.actSuggestion).mockResolvedValue({
     ...suggestions[0],
     acted_on: true,
-    dismissed_at: null,
-  })
+  } as never)
   vi.mocked(api.dismissSuggestion).mockResolvedValue({
     ...suggestions[1],
-    acted_on: false,
-    dismissed_at: '2026-04-03T10:00:00Z',
-  })
-  vi.mocked(api.getPipelineWorkspace).mockResolvedValue(pipelineWorkspace)
-  vi.mocked(api.createOpportunity).mockResolvedValue({
-    id: 'opp-2',
-    name: 'New direct lead',
-    platform: 'Direct',
-    description: 'API work',
-    budget: '300.00',
-    status: 'new',
-    fit_score: 70,
-    fit_reasoning: 'Solid fit',
-    date_found: '2026-04-03',
-    date_applied: null,
-    date_closed: null,
-    proposal_draft: '',
-    outcome_notes: '',
-    created_at: '2026-04-03T08:00:00Z',
-    updated_at: '2026-04-03T08:00:00Z',
-  })
-  vi.mocked(api.updateOpportunity).mockResolvedValue({
-    id: 'opp-1',
-    name: 'Warm Upwork lead',
-    platform: 'Upwork',
-    description: 'Migration and dashboard work',
-    budget: '450.00',
-    status: 'applied',
-    fit_score: 82,
-    fit_reasoning: 'Strong fit with current backend and frontend work.',
-    date_found: '2026-04-02',
-    date_applied: '2026-04-03',
-    date_closed: null,
-    proposal_draft: 'Draft proposal',
-    outcome_notes: '',
-    created_at: '2026-04-02T08:00:00Z',
-    updated_at: '2026-04-03T08:00:00Z',
-  })
-  vi.mocked(api.listMarketingActions).mockResolvedValue(paginated(marketingActions))
-  vi.mocked(api.createMarketingAction).mockResolvedValue(marketingActions[0])
-  vi.mocked(api.updateMarketingAction).mockResolvedValue(marketingActions[0])
-  vi.mocked(api.deleteMarketingAction).mockResolvedValue(null)
-  vi.mocked(api.listIdeas).mockResolvedValue(paginated(ideas))
-  vi.mocked(api.createIdea).mockResolvedValue(ideas[0])
-  vi.mocked(api.updateIdea).mockResolvedValue(ideas[0])
-  vi.mocked(api.deleteIdea).mockResolvedValue(null)
-  vi.mocked(api.listDecisions).mockResolvedValue(paginated(decisions))
-  vi.mocked(api.createDecision).mockResolvedValue(decisions[0])
-  vi.mocked(api.updateDecision).mockResolvedValue(decisions[0])
-  vi.mocked(api.deleteDecision).mockResolvedValue(null)
-  vi.mocked(api.listAchievements).mockResolvedValue(paginated(achievements))
-  vi.mocked(api.createAchievement).mockResolvedValue(achievements[0])
-  vi.mocked(api.updateAchievement).mockResolvedValue(achievements[0])
-  vi.mocked(api.deleteAchievement).mockResolvedValue(null)
-  vi.mocked(api.listFamilyGoals).mockResolvedValue(paginated(familyGoals))
-  vi.mocked(api.createFamilyGoal).mockResolvedValue(familyGoals[0])
-  vi.mocked(api.updateFamilyGoal).mockResolvedValue(familyGoals[0])
-  vi.mocked(api.deleteFamilyGoal).mockResolvedValue(null)
-  vi.mocked(api.listRelationships).mockResolvedValue(paginated(relationships))
-  vi.mocked(api.createRelationship).mockResolvedValue(relationships[0])
-  vi.mocked(api.updateRelationship).mockResolvedValue(relationships[0])
-  vi.mocked(api.deleteRelationship).mockResolvedValue(null)
-  vi.mocked(api.listLearnings).mockResolvedValue(paginated(learnings))
-  vi.mocked(api.createLearning).mockResolvedValue(learnings[0])
-  vi.mocked(api.updateLearning).mockResolvedValue(learnings[0])
-  vi.mocked(api.deleteLearning).mockResolvedValue(null)
+    dismissed_at: '2026-04-04T10:00:00Z',
+  } as never)
+
+  vi.mocked(api.getPipelineWorkspace).mockResolvedValue(pipelineWorkspace as never)
+  vi.mocked(api.getWorkOverview).mockResolvedValue(workOverview as never)
+  vi.mocked(api.createOpportunity).mockResolvedValue(commandCenterPayload.pipeline.active_opportunities[0] as never)
+  vi.mocked(api.updateOpportunity).mockResolvedValue(commandCenterPayload.pipeline.active_opportunities[0] as never)
+  vi.mocked(api.listMarketingActions).mockResolvedValue(paginated(marketingActions) as never)
+  vi.mocked(api.createMarketingAction).mockResolvedValue(marketingActions[0] as never)
+  vi.mocked(api.updateMarketingAction).mockResolvedValue({
+    ...marketingActions[0],
+    follow_up_done: true,
+  } as never)
+  vi.mocked(api.deleteMarketingAction).mockResolvedValue(null as never)
+
+  vi.mocked(api.getIdeasOverview).mockResolvedValue(ideasOverview as never)
+  vi.mocked(api.listIdeas).mockResolvedValue(paginated(ideas) as never)
+  vi.mocked(api.createIdea).mockResolvedValue(ideas[0] as never)
+  vi.mocked(api.updateIdea).mockResolvedValue(ideas[0] as never)
+  vi.mocked(api.deleteIdea).mockResolvedValue(null as never)
+  vi.mocked(api.listDecisions).mockResolvedValue(paginated(decisions) as never)
+  vi.mocked(api.createDecision).mockResolvedValue(decisions[0] as never)
+  vi.mocked(api.updateDecision).mockResolvedValue(decisions[0] as never)
+  vi.mocked(api.deleteDecision).mockResolvedValue(null as never)
+  vi.mocked(api.listAchievements).mockResolvedValue(paginated(achievements) as never)
+  vi.mocked(api.createAchievement).mockResolvedValue(achievements[0] as never)
+  vi.mocked(api.updateAchievement).mockResolvedValue(achievements[0] as never)
+  vi.mocked(api.deleteAchievement).mockResolvedValue(null as never)
+  vi.mocked(api.listLearnings).mockResolvedValue(paginated(learnings) as never)
+  vi.mocked(api.createLearning).mockResolvedValue(learnings[0] as never)
+  vi.mocked(api.updateLearning).mockResolvedValue(learnings[0] as never)
+  vi.mocked(api.deleteLearning).mockResolvedValue(null as never)
 })
 
 describe('route smoke tests', () => {
   test.each([
-    ['/', /priority stack/i],
-    ['/timeline', /week rhythm and daily debriefs/i],
-    ['/analytics', /overview, history, patterns, and review/i],
-    ['/goals', /dependency-aware map/i],
-    ['/family', /shared family goals deserve a dedicated place in the system/i],
-    ['/relationships', /keep people and follow-up context visible inside the main product/i],
-    ['/schedule', /daily operating loop/i],
-    ['/finance', /money movement and independence progress/i],
-    ['/pipeline', /opportunities, follow-ups, and outcomes/i],
-    ['/marketing', /marketing actions and follow-ups/i],
-    ['/learning', /track books, courses, and skill-building/i],
-    ['/health', /energy, sleep, and body trends/i],
-    ['/ideas', /idea inbox and development/i],
-    ['/decisions', /decision log/i],
-    ['/achievements', /wins should stay visible/i],
-  ])('renders %s', async (route, heading) => {
+    ['/', /unified capture/i],
+    ['/goals', /map the structure, then support it with people and systems\./i],
+    ['/work', /run tasks, deadlines, pipeline, marketing, and proposals from one work surface\./i],
+    ['/finance', /see money clearly, track income streams, and generate reports\./i],
+    ['/health', /see capacity, body state, mood, habits, and spiritual anchor together\./i],
+    ['/timeline', /see history, weekly review, patterns, wins, and retrospectives in one timeline view\./i],
+    ['/ideas', /keep raw ideas, decisions, learning, and structured thinking in one place\./i],
+  ])('renders %s under the new 7-view IA', async (route, heading) => {
     renderRoute(route)
-    expect(await screen.findByText(heading)).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument()
+  })
+
+  test.each([
+    ['/analytics', /overview, history, patterns, and review/i],
+    ['/schedule', /daily operating loop/i],
+    ['/pipeline', /opportunities, follow-ups, and outcomes/i],
+    ['/family', /shared family goals deserve a dedicated place in the system\./i],
+    ['/achievements', /wins should stay visible so momentum has a timeline\./i],
+  ])('keeps legacy route %s working through grouped views', async (route, text) => {
+    renderRoute(route)
+    expect(await screen.findByText(text)).toBeInTheDocument()
   })
 })
 
-describe('core expanded flows', () => {
-  test('prefills the command center capture box from a quick action', async () => {
+describe('command center behavior', () => {
+  test('prefills the unified capture box from a quick action', async () => {
     renderRoute('/')
-    expect(await screen.findByText(/start with the income goal/i)).toBeInTheDocument()
+
+    await screen.findByText(/protect the income system first/i)
     await userEvent.click(screen.getByRole('button', { name: /^task$/i }))
 
     expect(screen.getByLabelText(/capture input/i)).toHaveValue('Create a task: ')
   })
 
-  test('switches goals page to map view', async () => {
-    renderRoute('/goals')
-    await userEvent.click(await screen.findByRole('button', { name: /^map$/i }))
-
-    expect(await screen.findByText(/see goal-project-task relationships/i)).toBeInTheDocument()
-    await waitFor(() => expect(api.getGoalMap).toHaveBeenCalled())
-  })
-
-  test('selects a future timeline day and shows its prepare note', async () => {
-    renderRoute('/timeline')
-    await userEvent.click(await screen.findByRole('button', { name: /4 apr 2026/i }))
-
-    expect(await screen.findByText(/protect the morning and keep one outreach block visible/i)).toBeInTheDocument()
-  })
-
-  test('switches analytics to patterns tab', async () => {
-    renderRoute('/analytics')
-    await userEvent.click(await screen.findByRole('button', { name: /patterns/i }))
-
-    expect(await screen.findByText(/momentum is strongest when health logging stays steady/i)).toBeInTheDocument()
-  })
-
-  test('shows the weekly loop card on the home page', async () => {
-    renderRoute('/')
-
-    expect(await screen.findByText(/this week review/i)).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: /pending suggestions/i })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /open analytics/i })).toBeInTheDocument()
-  })
-})
-
-describe('workspaces', () => {
-  test('creates a finance entry', async () => {
-    renderRoute('/finance')
-    await userEvent.type(await screen.findByLabelText(/source/i), 'Freelance Client')
-    await userEvent.clear(screen.getByLabelText(/amount/i))
-    await userEvent.type(screen.getByLabelText(/amount/i), '250')
-    await userEvent.click(screen.getByRole('button', { name: /add finance entry/i }))
-
-    await waitFor(() => expect(api.createFinanceEntry).toHaveBeenCalledTimes(1))
-  })
-
-  test('creates a schedule log when a block status is recorded', async () => {
-    renderRoute('/schedule')
-
-    await userEvent.click((await screen.findAllByRole('button', { name: /^done$/i }))[0])
-
-    await waitFor(() => expect(api.createScheduleLog).toHaveBeenCalledTimes(1))
-  })
-
-  test('creates an opportunity from the pipeline workspace', async () => {
-    renderRoute('/pipeline')
-    await userEvent.type(await screen.findByLabelText(/opportunity name/i), 'New direct lead')
-    await userEvent.type(screen.getByLabelText(/description/i), 'API work')
-    await userEvent.click(screen.getByRole('button', { name: /add opportunity/i }))
-
-    await waitFor(() => expect(api.createOpportunity).toHaveBeenCalledTimes(1))
-  })
-
-  test('marks a due follow-up done from the pipeline workspace', async () => {
-    renderRoute('/pipeline')
-    await userEvent.click(await screen.findByRole('button', { name: /mark follow-up done/i }))
-
-    await waitFor(() => expect(api.updateMarketingAction).toHaveBeenCalledWith('marketing-1', { follow_up_done: true }))
-  })
-
-  test('creates a marketing action in the generic workspace', async () => {
-    renderRoute('/marketing')
-    await userEvent.type(await screen.findByLabelText(/^action$/i), 'Share a case study')
-    await userEvent.click(screen.getByRole('button', { name: /add marketing action/i }))
-
-    await waitFor(() => expect(api.createMarketingAction).toHaveBeenCalledTimes(1))
-  })
-})
-
-describe('health workspace interactions', () => {
-  test('creates a body log and keeps the existing body flow working', async () => {
-    vi.mocked(api.getHealthToday)
-      .mockResolvedValueOnce(healthToday)
+  test('uses a reviewable capture flow before applying multi-step changes', async () => {
+    vi.mocked(api.sendChatMessage)
       .mockResolvedValueOnce({
-        ...healthToday,
-        summary: {
-          ...healthToday.summary,
-          health_logged_today: true,
-        },
-        health_log: {
-          id: 'health-2',
-          date: '2026-04-03',
-          sleep_hours: '6.5',
-          sleep_quality: 3,
-          energy_level: 3,
-          exercise_done: false,
-          exercise_type: '',
-          exercise_duration_mins: null,
-          weight_kg: null,
-          nutrition_notes: '',
-        },
-      })
+        reply: 'I mapped this into a few changes. Review them before I apply anything structural or multi-step.',
+        actions: [],
+        affected_modules: ['finance', 'analytics'],
+        proposed_actions: [
+          { tool: 'add_finance_entry', module: 'finance', summary: 'Log expense: Taxi (120 EGP)', input: {} },
+          { tool: 'capture_idea', module: 'analytics', summary: 'Capture idea: Telegram reminder bot', input: {} },
+        ],
+        requires_confirmation: true,
+      } as never)
+      .mockResolvedValueOnce({
+        reply: 'Applied 2 changes across finance, analytics.',
+        actions: [],
+        affected_modules: ['finance', 'analytics'],
+        proposed_actions: [],
+        requires_confirmation: false,
+      } as never)
 
-    renderRoute('/health')
-    await userEvent.click(await screen.findByRole('button', { name: /save health log/i }))
+    renderRoute('/')
+    await screen.findByText(/unified capture/i)
 
-    await waitFor(() => expect(api.createHealthLog).toHaveBeenCalledTimes(1))
-    expect(await screen.findByText(/today is already logged/i)).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText(/capture input/i), {
+      target: {
+        value: 'Log a 120 EGP taxi expense and capture an idea about a Telegram reminder bot',
+      },
+    })
+    await userEvent.click(screen.getByRole('button', { name: /process capture/i }))
+
+    expect(await screen.findByText(/review before apply/i)).toBeInTheDocument()
+    expect(screen.getByText(/log expense: taxi/i)).toBeInTheDocument()
+    expect(screen.getByText(/capture idea: telegram reminder bot/i)).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: /confirm and apply/i }))
+
+    await waitFor(() => expect(api.sendChatMessage).toHaveBeenCalledTimes(2))
+    expect(await screen.findByText(/applied 2 changes across finance, analytics/i)).toBeInTheDocument()
   })
 })
 
-describe('review workflow', () => {
-  test('generates a weekly review from analytics', async () => {
-    renderRoute('/analytics')
-    await userEvent.click(await screen.findByRole('button', { name: /review/i }))
-    await userEvent.click(await screen.findByRole('button', { name: /generate weekly review/i }))
+describe('grouped workspace flows', () => {
+  test('saves a goal attachment profile from the goals workspace', async () => {
+    renderRoute('/goals?tab=attachments')
 
-    await waitFor(() => expect(api.generateWeeklyReview).toHaveBeenCalledTimes(1))
-    expect(await screen.findByDisplayValue(/keep the next week narrower/i)).toBeInTheDocument()
+    await screen.findByText(/attachment profile/i)
+    await userEvent.type(await screen.findByLabelText(/process notes/i), 'Write the backend sequence clearly.')
+    await userEvent.type(screen.getByLabelText(/tools/i), 'Codex, Django shell')
+    await userEvent.click(screen.getByRole('button', { name: /save attachment profile/i }))
+
+    await waitFor(() => expect(api.createGoalAttachmentProfile).toHaveBeenCalledTimes(1))
   })
 
-  test('saves review notes from analytics', async () => {
-    renderRoute('/analytics')
-    await userEvent.click(await screen.findByRole('button', { name: /review/i }))
+  test('opens an AI thinking session from the work task board', async () => {
+    vi.mocked(api.sendChatMessage).mockResolvedValueOnce({
+      reply: 'Start with the overview endpoint and then wire the task board mutations.',
+      actions: [],
+      affected_modules: [],
+      proposed_actions: [],
+      requires_confirmation: false,
+    } as never)
+
+    renderRoute('/work?tab=board')
+
+    await screen.findByRole('heading', { name: /task board/i })
+    await userEvent.click(screen.getByRole('button', { name: /open ai thinking session/i }))
+
+    await waitFor(() =>
+      expect(api.sendChatMessage).toHaveBeenCalledWith(
+        [{ role: 'user', content: expect.stringContaining('Build command center backend') }],
+        { mode: 'task_thinking', task_id: 'task-1' },
+      ),
+    )
+    expect(await screen.findByText(/start with the overview endpoint/i)).toBeInTheDocument()
+  })
+
+  test('creates an income source inside the finance workspace', async () => {
+    renderRoute('/finance?tab=income')
+
+    await userEvent.type(await screen.findByLabelText(/^name$/i), 'Upwork Retainers')
+    await userEvent.clear(screen.getByLabelText(/monthly target/i))
+    await userEvent.type(screen.getByLabelText(/monthly target/i), '1200')
+    await userEvent.click(screen.getByRole('button', { name: /add income source/i }))
+
+    await waitFor(() => expect(api.createIncomeSource).toHaveBeenCalledTimes(1))
+  })
+
+  test('renders named reports inside the finance workspace', async () => {
+    renderRoute('/finance?tab=reports')
+
+    expect(await screen.findByText(/financial report/i)).toBeInTheDocument()
+    expect(screen.getByText(/progress to target: 25%/i)).toBeInTheDocument()
+  })
+
+  test('shows the grouped health overview signals', async () => {
+    renderRoute('/health')
+
+    expect(await screen.findByText(/capacity signals/i)).toBeInTheDocument()
+    expect(screen.getByText(/health signals are stable enough for a normal day/i)).toBeInTheDocument()
+  })
+
+  test('supports weekly review actions from the timeline workspace', async () => {
+    renderRoute('/timeline?tab=review')
+
+    await userEvent.click(await screen.findByRole('button', { name: /generate weekly review/i }))
+    await waitFor(() => expect(api.generateWeeklyReview).toHaveBeenCalledTimes(1))
+
     await userEvent.clear(await screen.findByLabelText(/personal notes/i))
     await userEvent.type(screen.getByLabelText(/personal notes/i), 'Protect the first two hours every day.')
     await userEvent.click(screen.getByRole('button', { name: /save review notes/i }))
@@ -1353,33 +1235,66 @@ describe('review workflow', () => {
         personal_notes: 'Protect the first two hours every day.',
       }),
     )
+
+    const weeklyReviewSuggestion = (await screen.findByText(/generate the weekly review before the week closes\./i)).closest('article')
+    const pipelineSuggestion = (await screen.findByText(/close one follow-up loop today\./i)).closest('article')
+
+    expect(weeklyReviewSuggestion).not.toBeNull()
+    expect(pipelineSuggestion).not.toBeNull()
+
+    await userEvent.click(within(weeklyReviewSuggestion as HTMLElement).getByRole('button', { name: /acted on/i }))
+    await userEvent.click(within(pipelineSuggestion as HTMLElement).getByRole('button', { name: /dismiss/i }))
+
+    await waitFor(() => expect(api.actSuggestion).toHaveBeenCalledWith('suggestion-1', expect.anything()))
+    await waitFor(() => expect(api.dismissSuggestion).toHaveBeenCalledWith('suggestion-2', expect.anything()))
   })
 
-  test('acts on and dismisses suggestions from analytics', async () => {
-    renderRoute('/analytics')
-    await userEvent.click(await screen.findByRole('button', { name: /review/i }))
-    await userEvent.click((await screen.findAllByRole('button', { name: /acted on/i }))[0])
-    await userEvent.click((await screen.findAllByRole('button', { name: /dismiss/i }))[1])
+  test('lets the ideas workspace run a structured thinking session', async () => {
+    vi.mocked(api.sendChatMessage).mockResolvedValueOnce({
+      reply: 'Break the idea into trigger, message, and delivery constraints before building it.',
+      actions: [],
+      affected_modules: [],
+      proposed_actions: [],
+      requires_confirmation: false,
+    } as never)
+
+    renderRoute('/ideas?tab=thinking')
+
+    await userEvent.type(await screen.findByLabelText(/prompt/i), 'How should I design a Telegram reminder workflow?')
+    await userEvent.click(screen.getByRole('button', { name: /start thinking session/i }))
 
     await waitFor(() =>
-      expect(api.actSuggestion).toHaveBeenCalledWith('suggestion-1', expect.anything()),
+      expect(api.sendChatMessage).toHaveBeenCalledWith(
+        [{ role: 'user', content: 'How should I design a Telegram reminder workflow?' }],
+        { mode: 'task_thinking', surface: 'ideas_thinking' },
+      ),
     )
-    await waitFor(() =>
-      expect(api.dismissSuggestion).toHaveBeenCalledWith('suggestion-2', expect.anything()),
-    )
+    expect(await screen.findByText(/break the idea into trigger/i)).toBeInTheDocument()
+  })
+
+  test('shows future-day preparation notes in the timeline strip', async () => {
+    renderRoute('/timeline?tab=timeline')
+
+    await userEvent.click(await screen.findByRole('button', { name: /5 apr 2026/i }))
+
+    expect(await screen.findByText(/leave room for weekly review and recovery/i)).toBeInTheDocument()
   })
 })
 
-describe('route error states', () => {
-  test('shows an error state when timeline fails', async () => {
-    vi.mocked(api.getTimeline).mockRejectedValueOnce(new Error('boom'))
+describe('error states', () => {
+  test('shows an error state when the timeline overview fails', async () => {
+    vi.mocked(api.getTimelineOverview).mockRejectedValueOnce(new Error('boom'))
+
     renderRoute('/timeline')
-    expect(await screen.findByText(/could not load the timeline/i)).toBeInTheDocument()
+
+    expect(await screen.findByText(/could not load the timeline workspace/i)).toBeInTheDocument()
   })
 
-  test('shows an error state when pipeline fails', async () => {
-    vi.mocked(api.getPipelineWorkspace).mockRejectedValueOnce(new Error('boom'))
-    renderRoute('/pipeline')
-    expect(await screen.findByText(/could not load the pipeline workspace/i)).toBeInTheDocument()
+  test('shows an error state when the work overview fails', async () => {
+    vi.mocked(api.getWorkOverview).mockRejectedValueOnce(new Error('boom'))
+
+    renderRoute('/work')
+
+    expect(await screen.findByText(/could not load the work workspace/i)).toBeInTheDocument()
   })
 })

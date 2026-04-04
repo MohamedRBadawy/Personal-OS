@@ -520,3 +520,94 @@ class CommandCenterTests(TestCase):
             [{"role": "user", "content": "Log a taxi expense and capture a product idea."}],
             context={"surface": "command_center", "capture_mode": "smart_inbox"},
         )
+
+    def test_command_center_capture_auto_applies_single_obvious_action(self):
+        response = self.client.post(
+            "/api/core/chat/",
+            {
+                "messages": [{"role": "user", "content": "Capture this idea: Telegram reminder bot"}],
+                "context": {
+                    "surface": "command_center",
+                    "mode": "command_center_capture",
+                    "quick_action": "idea",
+                },
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.data["requires_confirmation"])
+        self.assertEqual(response.data["affected_modules"], ["analytics"])
+        self.assertTrue(Idea.objects.filter(title__icontains="Telegram reminder bot").exists())
+
+    def test_command_center_capture_requires_confirmation_for_multi_step_changes(self):
+        review_response = self.client.post(
+            "/api/core/chat/",
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "Log a 120 EGP taxi expense and capture a Telegram reminder idea.",
+                    },
+                ],
+                "context": {
+                    "surface": "command_center",
+                    "mode": "command_center_capture",
+                },
+            },
+            format="json",
+        )
+
+        self.assertEqual(review_response.status_code, 200)
+        self.assertTrue(review_response.data["requires_confirmation"])
+        self.assertEqual(FinanceEntry.objects.count(), 0)
+        self.assertEqual(Idea.objects.count(), 0)
+        self.assertEqual(len(review_response.data["proposed_actions"]), 2)
+
+        confirm_response = self.client.post(
+            "/api/core/chat/",
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "Log a 120 EGP taxi expense and capture a Telegram reminder idea.",
+                    },
+                ],
+                "context": {
+                    "surface": "command_center",
+                    "mode": "command_center_capture",
+                    "confirm_capture": True,
+                    "proposed_actions": review_response.data["proposed_actions"],
+                },
+            },
+            format="json",
+        )
+
+        self.assertEqual(confirm_response.status_code, 200)
+        self.assertFalse(confirm_response.data["requires_confirmation"])
+        self.assertEqual(confirm_response.data["affected_modules"], ["finance", "analytics"])
+        self.assertEqual(FinanceEntry.objects.count(), 1)
+        self.assertEqual(Idea.objects.count(), 1)
+
+    def test_progress_report_endpoint_returns_grouped_sections(self):
+        call_command("seed_initial_data")
+
+        response = self.client.get("/api/reports/progress/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["name"], "progress")
+        self.assertIn("command_center", response.data["sections"])
+        self.assertIn("work", response.data["sections"])
+        self.assertIn("Progress Report", response.data["report"])
+
+    def test_personal_review_report_endpoint_returns_grouped_sections(self):
+        call_command("seed_initial_data")
+
+        response = self.client.get("/api/reports/personal-review/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["name"], "personal-review")
+        self.assertIn("weekly_review", response.data["sections"])
+        self.assertIn("timeline", response.data["sections"])
+        self.assertIn("health", response.data["sections"])
+        self.assertIn("Personal Review Report", response.data["report"])

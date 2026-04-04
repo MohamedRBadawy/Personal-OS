@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { EmptyState } from '../components/EmptyState'
 import { MetricCard } from '../components/MetricCard'
@@ -17,9 +17,14 @@ import {
 } from '../lib/api'
 import { formatCurrency, formatDate, formatPercent, titleCase } from '../lib/formatters'
 
-export function AnalyticsPage() {
+type AnalyticsPageProps = {
+  initialTab?: 'overview' | 'history' | 'patterns' | 'review'
+  hideTabs?: boolean
+}
+
+export function AnalyticsPage({ initialTab = 'overview', hideTabs = false }: AnalyticsPageProps) {
   const queryClient = useQueryClient()
-  const [tab, setTab] = useState<'overview' | 'history' | 'patterns' | 'review'>('overview')
+  const [tab, setTab] = useState<'overview' | 'history' | 'patterns' | 'review'>(initialTab)
   const overviewQuery = useQuery({
     queryKey: ['analytics-overview'],
     queryFn: getAnalyticsOverview,
@@ -70,6 +75,10 @@ export function AnalyticsPage() {
   })
 
   const [aiPatternAnalysis, setAiPatternAnalysis] = useState<string | null>(null)
+
+  useEffect(() => {
+    setTab(initialTab)
+  }, [initialTab])
 
   const analyzePatternsMutation = useMutation({
     mutationFn: () =>
@@ -129,23 +138,25 @@ export function AnalyticsPage() {
           <h2>Overview, history, patterns, and review</h2>
           <p>Keep the cross-domain picture legible and close the week inside the same workspace.</p>
         </div>
-        <div className="button-row">
-          {[
-            ['overview', 'Overview'],
-            ['history', 'History'],
-            ['patterns', 'Patterns'],
-            ['review', 'Review'],
-          ].map(([value, label]) => (
-            <button
-              key={value}
-              className={tab === value ? 'button-muted active' : 'button-muted'}
-              type="button"
-              onClick={() => setTab(value as typeof tab)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        {hideTabs ? null : (
+          <div className="button-row">
+            {[
+              ['overview', 'Overview'],
+              ['history', 'History'],
+              ['patterns', 'Patterns'],
+              ['review', 'Review'],
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                className={tab === value ? 'button-muted active' : 'button-muted'}
+                type="button"
+                onClick={() => setTab(value as typeof tab)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {tab === 'overview' ? (

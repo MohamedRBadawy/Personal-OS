@@ -9,7 +9,9 @@ from rest_framework.test import APIClient
 
 from analytics.models.achievement import Achievement
 from analytics.models.decision_log import DecisionLog
+from analytics.models.project_retrospective import ProjectRetrospective
 from finance.models import FinanceEntry
+from goals.models import Node
 from pipeline.models import Client, MarketingAction, Opportunity
 from pipeline.services import OpportunityLifecycleService
 
@@ -45,6 +47,19 @@ class OpportunityLifecycleTests(TestCase):
 
         OpportunityLifecycleService.handle_status_change(opportunity)
         self.assertTrue(DecisionLog.objects.filter(decision__icontains="Lost opportunity").exists())
+
+    def test_closed_opportunity_creates_retrospective_record(self):
+        opportunity = Opportunity.objects.create(
+            name="Closed Deal",
+            platform=Opportunity.Platform.DIRECT,
+            status=Opportunity.Status.WON,
+            budget=Decimal("500.00"),
+            date_found=timezone.localdate(),
+        )
+
+        OpportunityLifecycleService.handle_status_change(opportunity)
+
+        self.assertTrue(ProjectRetrospective.objects.filter(opportunity=opportunity).exists())
 
 
 class PipelineWorkspaceTests(TestCase):
@@ -101,6 +116,49 @@ class PipelineWorkspaceTests(TestCase):
         self.assertEqual(workspace_response.status_code, 200)
         self.assertEqual(workspace_response.data["summary"]["due_follow_ups_count"], 0)
         self.assertEqual(len(workspace_response.data["due_follow_ups"]), 0)
+
+    def test_work_overview_endpoint_returns_grouped_payload(self):
+        today = timezone.localdate()
+        goal = Node.objects.create(
+            title="Reach independent income target",
+            type=Node.NodeType.GOAL,
+            category=Node.Category.FINANCE,
+            status=Node.Status.ACTIVE,
+        )
+        Node.objects.create(
+            title="Build command center backend",
+            type=Node.NodeType.TASK,
+            category=Node.Category.CAREER,
+            status=Node.Status.AVAILABLE,
+            parent=goal,
+            due_date=today,
+            manual_priority=Node.ManualPriority.HIGH,
+            notes="API and backend implementation work.",
+        )
+        Opportunity.objects.create(
+            name="Warm Upwork lead",
+            platform=Opportunity.Platform.UPWORK,
+            status=Opportunity.Status.REVIEWING,
+            proposal_draft="Draft proposal",
+            date_found=today,
+        )
+        MarketingAction.objects.create(
+            action="Follow up with warm LinkedIn lead",
+            platform="LinkedIn",
+            date=today,
+            follow_up_date=today,
+            follow_up_done=False,
+        )
+
+        response = self.client.get("/api/work/overview/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("summary", response.data)
+        self.assertIn("task_board", response.data)
+        self.assertIn("deadlines", response.data)
+        self.assertIn("proposal_drafts", response.data)
+        self.assertEqual(response.data["summary"]["deadline_count"], 1)
+        self.assertEqual(response.data["summary"]["proposal_draft_count"], 1)
 
     @patch("core.ai.AnthropicAIProvider._request_json")
     def test_live_ai_enriches_opportunity_on_create(self, request_json):

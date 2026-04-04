@@ -14,8 +14,11 @@ import type {
   FamilyGoalPayload,
   FinanceEntry,
   FinanceEntryPayload,
+  FinanceOverviewPayload,
   FinanceSummary,
   GoalContext,
+  GoalAttachmentProfile,
+  GoalAttachmentProfilePayload,
   GoalMapPayload,
   GoalNode,
   GoalNodeCreatePayload,
@@ -25,20 +28,27 @@ import type {
   HabitLogPayload,
   HealthLog,
   HealthLogPayload,
+  HealthOverviewPayload,
   HealthSummary,
   HealthTodayPayload,
   Idea,
+  IdeasOverviewPayload,
   IdeaPayload,
+  IncomeSource,
+  IncomeSourcePayload,
   Learning,
   LearningPayload,
   MarketingAction,
   MarketingActionPayload,
+  NamedReportPayload,
   MoodLog,
   MoodLogPayload,
   Opportunity,
   OpportunityPayload,
   PaginatedResponse,
   PipelineWorkspacePayload,
+  ProjectRetrospective,
+  ProjectRetrospectivePayload,
   Relationship,
   RelationshipPayload,
   ScheduleBlockPayload,
@@ -46,12 +56,14 @@ import type {
   ScheduleLogPayload,
   SpiritualLog,
   SpiritualLogPayload,
+  TimelineOverviewPayload,
+  TimelineWeekPayload,
   WeeklyReview,
   WeeklyReviewGenerateResponse,
   WeeklyReviewPreview,
   WeeklyReviewUpdatePayload,
-  TimelineWeekPayload,
   TodaySchedulePayload,
+  WorkOverviewPayload,
 } from './types'
 
 export function resolveApiBaseUrl(rawValue: string | undefined = import.meta.env.VITE_API_BASE_URL) {
@@ -172,6 +184,10 @@ export function getFinanceSummary() {
   return request<FinanceSummary>('/finance/entries/summary/')
 }
 
+export function getFinanceOverview() {
+  return request<FinanceOverviewPayload>('/finance/overview/')
+}
+
 export function listFinanceEntries() {
   return listResource<FinanceEntry>('/finance/entries/')
 }
@@ -180,8 +196,28 @@ export function createFinanceEntry(payload: FinanceEntryPayload) {
   return createResource<FinanceEntry, FinanceEntryPayload>('/finance/entries/', payload)
 }
 
+export function listIncomeSources() {
+  return listResource<IncomeSource>('/finance/income-sources/')
+}
+
+export function createIncomeSource(payload: IncomeSourcePayload) {
+  return createResource<IncomeSource, IncomeSourcePayload>('/finance/income-sources/', payload)
+}
+
+export function updateIncomeSource(id: string, payload: Partial<IncomeSourcePayload>) {
+  return updateResource<IncomeSource, Partial<IncomeSourcePayload>>(`/finance/income-sources/${id}/`, payload)
+}
+
+export function deleteIncomeSource(id: string) {
+  return deleteResource(`/finance/income-sources/${id}/`)
+}
+
 export function getHealthSummary() {
   return request<HealthSummary>('/health/summary/')
+}
+
+export function getHealthOverview() {
+  return request<HealthOverviewPayload>('/health/overview/')
 }
 
 export function getHealthToday() {
@@ -287,8 +323,16 @@ export function getTimeline(weekStart?: string) {
   return request<TimelineWeekPayload>(`/analytics/timeline/${suffix}`)
 }
 
+export function getTimelineOverview() {
+  return request<TimelineOverviewPayload>('/timeline/overview/')
+}
+
 export function getPipelineWorkspace() {
   return request<PipelineWorkspacePayload>('/pipeline/workspace/')
+}
+
+export function getWorkOverview() {
+  return request<WorkOverviewPayload>('/work/overview/')
 }
 
 export function listOpportunities() {
@@ -325,6 +369,10 @@ export function deleteMarketingAction(id: string) {
 
 export function listIdeas() {
   return listResource<Idea>('/analytics/ideas/')
+}
+
+export function getIdeasOverview() {
+  return request<IdeasOverviewPayload>('/ideas/overview/')
 }
 
 export function createIdea(payload: IdeaPayload) {
@@ -369,6 +417,18 @@ export function updateAchievement(id: string, payload: Partial<AchievementPayloa
 
 export function deleteAchievement(id: string) {
   return deleteResource(`/analytics/achievements/${id}/`)
+}
+
+export function listRetrospectives() {
+  return listResource<ProjectRetrospective>('/analytics/retrospectives/')
+}
+
+export function createRetrospective(payload: ProjectRetrospectivePayload) {
+  return createResource<ProjectRetrospective, ProjectRetrospectivePayload>('/analytics/retrospectives/', payload)
+}
+
+export function updateRetrospective(id: string, payload: Partial<ProjectRetrospectivePayload>) {
+  return updateResource<ProjectRetrospective, Partial<ProjectRetrospectivePayload>>(`/analytics/retrospectives/${id}/`, payload)
 }
 
 export function listFamilyGoals() {
@@ -417,6 +477,31 @@ export function updateLearning(id: string, payload: Partial<LearningPayload>) {
 
 export function deleteLearning(id: string) {
   return deleteResource(`/analytics/learnings/${id}/`)
+}
+
+export function listGoalAttachmentProfiles(nodeId?: string) {
+  const suffix = nodeId ? `?node=${encodeURIComponent(nodeId)}` : ''
+  return listResource<GoalAttachmentProfile>(`/goals/attachments/${suffix}`)
+}
+
+export function createGoalAttachmentProfile(payload: GoalAttachmentProfilePayload) {
+  return createResource<GoalAttachmentProfile, GoalAttachmentProfilePayload>('/goals/attachments/', payload)
+}
+
+export function updateGoalAttachmentProfile(id: string, payload: Partial<GoalAttachmentProfilePayload>) {
+  return updateResource<GoalAttachmentProfile, Partial<GoalAttachmentProfilePayload>>(`/goals/attachments/${id}/`, payload)
+}
+
+export function getFinancialReport() {
+  return request<NamedReportPayload>('/reports/financial/')
+}
+
+export function getProgressReport() {
+  return request<NamedReportPayload>('/reports/progress/')
+}
+
+export function getPersonalReviewReport() {
+  return request<NamedReportPayload>('/reports/personal-review/')
 }
 
 // ---------------------------------------------------------------------------

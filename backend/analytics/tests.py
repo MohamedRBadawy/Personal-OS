@@ -12,10 +12,13 @@ from analytics.models.ai_suggestion import AISuggestion
 from analytics.models.achievement import Achievement
 from analytics.models.decision_log import DecisionLog
 from analytics.models.idea import Idea
+from analytics.models.learning import Learning
+from analytics.models.project_retrospective import ProjectRetrospective
 from analytics.models.weekly_review import WeeklyReview
 from analytics.services import OverwhelmService
 from finance.models import FinanceEntry
 from core.models import DailyCheckIn
+from goals.models import Node
 from health.models.health_log import HealthLog
 from health.models.habit import Habit, HabitLog
 from health.models.mood_log import MoodLog
@@ -173,6 +176,57 @@ class AnalyticsReadModelTests(TestCase):
         self.assertEqual(second_response.data["review"]["id"], review_id)
         self.assertEqual(second_response.data["review"]["personal_notes"], "Keep the next week narrower.")
         self.assertEqual(second_response.data["preview"]["week_end"], (today - timedelta(days=today.weekday()) + timedelta(days=6)).isoformat())
+
+    def test_timeline_overview_endpoint_returns_achievements_retrospectives_and_archived_goals(self):
+        today = timezone.localdate()
+        Achievement.objects.create(title="Shipped command center", domain="Work", date=today)
+        done_project = Node.objects.create(
+            title="Stabilize MVP",
+            type=Node.NodeType.PROJECT,
+            category=Node.Category.CAREER,
+            status=Node.Status.DONE,
+        )
+        ProjectRetrospective.objects.create(
+            title="Closed project reflection",
+            source_type=ProjectRetrospective.SourceType.PROJECT,
+            goal_node=done_project,
+            status="done",
+            summary="The project closed cleanly.",
+            what_worked="Strong scoping.",
+            what_didnt="Polish came late.",
+            next_time="Validate the UX sooner.",
+            closed_at=today,
+        )
+
+        response = self.client.get("/api/timeline/overview/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("weekly_review", response.data)
+        self.assertIn("pattern_analysis", response.data)
+        self.assertEqual(len(response.data["achievements"]), 1)
+        self.assertEqual(len(response.data["retrospectives"]), 1)
+        self.assertEqual(len(response.data["archived_goals"]), 1)
+
+    def test_ideas_overview_endpoint_returns_grouped_idea_decision_and_learning_data(self):
+        today = timezone.localdate()
+        Idea.objects.create(title="Telegram reminder idea", context="Useful later")
+        DecisionLog.objects.create(decision="Ship backend first", reasoning="Stabilize contracts", date=today)
+        Learning.objects.create(
+            topic="Django service design",
+            source="Internal implementation",
+            status=Learning.Status.IN_PROGRESS,
+            key_insights="Keep orchestration in services.",
+        )
+
+        response = self.client.get("/api/ideas/overview/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["summary"]["raw_ideas"], 1)
+        self.assertEqual(response.data["summary"]["decisions"], 1)
+        self.assertEqual(response.data["summary"]["learning_items"], 1)
+        self.assertEqual(len(response.data["ideas"]), 1)
+        self.assertEqual(len(response.data["decisions"]), 1)
+        self.assertEqual(len(response.data["learning"]), 1)
 
     def test_suggestion_actions_update_state(self):
         suggestion = AISuggestion.objects.create(

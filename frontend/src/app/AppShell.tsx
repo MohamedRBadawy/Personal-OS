@@ -9,24 +9,25 @@ type NavItem = {
 
 const primaryItems = [
   { href: '/', label: 'Command Center' },
-  { href: '/goals', label: 'Goals' },
-  { href: '/timeline', label: 'Timeline' },
-  { href: '/analytics', label: 'Analytics' },
-  { href: '/pipeline', label: 'Pipeline' },
+  { href: '/goals', label: 'Goals & Life Plan' },
+  { href: '/work', label: 'Work & Career' },
+  { href: '/finance', label: 'Finance' },
+  { href: '/health', label: 'Health & Body' },
+  { href: '/timeline', label: 'Achievements & Timeline' },
+  { href: '/ideas', label: 'Ideas & Thinking' },
 ] satisfies NavItem[]
 
 const secondaryItems = [
   { href: '/schedule', label: 'Schedule' },
-  { href: '/finance', label: 'Finance' },
-  { href: '/health', label: 'Health' },
   { href: '/habits', label: 'Habits' },
   { href: '/mood', label: 'Mood' },
   { href: '/spiritual', label: 'Spiritual' },
+  { href: '/pipeline', label: 'Pipeline' },
   { href: '/marketing', label: 'Marketing' },
   { href: '/learning', label: 'Learning' },
   { href: '/family', label: 'Family' },
   { href: '/relationships', label: 'Relationships' },
-  { href: '/ideas', label: 'Ideas' },
+  { href: '/analytics', label: 'Analytics' },
   { href: '/decisions', label: 'Decisions' },
   { href: '/achievements', label: 'Achievements' },
 ] satisfies NavItem[]
@@ -98,7 +99,7 @@ export function AppShell({ children }: PropsWithChildren) {
             <h2 className="header-title">{activeItem?.label ?? 'Command Center'}</h2>
           </div>
           <p className="header-summary">
-            Keep the main page directive, let the deeper pages stay available, and make daily progress legible.
+            Seven clear workspaces on top, with legacy routes still reachable while the product settles into the PRD structure.
           </p>
         </header>
 

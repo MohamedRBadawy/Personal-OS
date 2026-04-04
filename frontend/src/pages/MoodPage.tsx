@@ -101,7 +101,7 @@ export function MoodPage() {
                   <strong>{formatDate(log.date)}</strong>
                   <p className="muted">
                     {log.mood_score} / 5
-                    {log.notes ? ` — ${log.notes}` : ''}
+                    {log.notes ? ` - ${log.notes}` : ''}
                   </p>
                 </li>
               ))}

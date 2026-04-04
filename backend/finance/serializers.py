@@ -1,7 +1,7 @@
 """Serializers for finance entries and summaries."""
 from rest_framework import serializers
 
-from finance.models import FinanceEntry
+from finance.models import FinanceEntry, IncomeSource
 from finance.services import FinanceMetricsService
 
 
@@ -17,3 +17,12 @@ class FinanceEntrySerializer(serializers.ModelSerializer):
 
     def get_amount_eur(self, obj):
         return round(FinanceMetricsService.convert_to_eur(obj.amount, obj.currency), 2)
+
+
+class IncomeSourceSerializer(serializers.ModelSerializer):
+    """Serializer for recurring or strategic income streams."""
+
+    class Meta:
+        model = IncomeSource
+        fields = "__all__"
+        read_only_fields = ["id", "created_at", "updated_at"]

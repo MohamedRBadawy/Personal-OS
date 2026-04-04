@@ -10,6 +10,7 @@ from analytics.models.learning import Learning
 from analytics.models.decision_log import DecisionLog
 from analytics.models.achievement import Achievement
 from analytics.models.idea import Idea
+from analytics.models.project_retrospective import ProjectRetrospective
 
 __all__ = [
     "AISuggestion",
@@ -20,4 +21,5 @@ __all__ = [
     "DecisionLog",
     "Achievement",
     "Idea",
+    "ProjectRetrospective",
 ]

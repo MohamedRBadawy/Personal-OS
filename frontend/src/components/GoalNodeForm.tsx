@@ -104,7 +104,7 @@ export function GoalNodeForm({
           <option value="">No parent (root)</option>
           {parentOptions.map((p) => (
             <option key={p.id} value={p.id}>
-              {p.title.length > 40 ? p.title.slice(0, 40) + '…' : p.title}
+              {p.title.length > 40 ? p.title.slice(0, 40) + '...' : p.title}
             </option>
           ))}
         </select>

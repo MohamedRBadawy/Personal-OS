@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 
 from pipeline.models import Client, MarketingAction, Opportunity
 from pipeline.serializers import ClientSerializer, MarketingActionSerializer, OpportunitySerializer
-from pipeline.services import OpportunityLifecycleService, PipelineWorkspaceService
+from pipeline.services import OpportunityLifecycleService, PipelineWorkspaceService, WorkOverviewService
 
 
 class ClientViewSet(viewsets.ModelViewSet):
@@ -50,3 +50,10 @@ class PipelineWorkspaceAPIView(APIView):
 
     def get(self, request):
         return Response(PipelineWorkspaceService.payload(), status=status.HTTP_200_OK)
+
+
+class WorkOverviewAPIView(APIView):
+    """Expose the grouped work and career workspace payload."""
+
+    def get(self, request):
+        return Response(WorkOverviewService.payload(), status=status.HTTP_200_OK)

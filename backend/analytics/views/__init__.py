@@ -6,11 +6,14 @@ from analytics.views.crud_models import (
     FamilyGoalViewSet,
     IdeaViewSet,
     LearningViewSet,
+    ProjectRetrospectiveViewSet,
     RelationshipViewSet,
 )
 from analytics.views.insights import (
     AnalyticsOverviewAPIView,
+    IdeasOverviewAPIView,
     OverwhelmAPIView,
+    TimelineOverviewAPIView,
     TimelineAPIView,
     WeeklyReviewPreviewAPIView,
 )
@@ -26,8 +29,11 @@ __all__ = [
     "DecisionLogViewSet",
     "AchievementViewSet",
     "IdeaViewSet",
+    "ProjectRetrospectiveViewSet",
     "OverwhelmAPIView",
     "TimelineAPIView",
+    "TimelineOverviewAPIView",
+    "IdeasOverviewAPIView",
     "WeeklyReviewGenerateAPIView",
     "WeeklyReviewPreviewAPIView",
 ]

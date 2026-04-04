@@ -456,6 +456,20 @@ th {
   gap: 10px;
 }
 
+.workspace-tabbar {
+  align-items: center;
+}
+
+.report-block {
+  margin: 0;
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  background: rgba(17, 50, 62, 0.05);
+  white-space: pre-wrap;
+  overflow-x: auto;
+  font: 400 0.92rem/1.6 var(--mono);
+}
+
 .command-capture__actions,
 .command-checkbox-grid,
 .command-reentry-grid {

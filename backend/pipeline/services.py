@@ -4,6 +4,7 @@ from django.utils import timezone
 
 from analytics.models.achievement import Achievement
 from analytics.models.decision_log import DecisionLog
+from analytics.services import ProjectRetrospectiveService
 from core.ai import get_ai_provider
 from finance.models import FinanceEntry
 from finance.services import FinanceMetricsService
@@ -93,6 +94,9 @@ class OpportunityLifecycleService:
                     "outcome": opportunity.outcome_notes,
                 },
             )
+
+        if opportunity.status in {Opportunity.Status.WON, Opportunity.Status.LOST, Opportunity.Status.REJECTED}:
+            ProjectRetrospectiveService.capture_for_opportunity(opportunity)
 
     @classmethod
     def summary(cls):
@@ -198,4 +202,54 @@ class PipelineWorkspaceService:
             "recent_outcomes": [cls._serialize_opportunity(item) for item in recent_outcomes],
             "due_follow_ups": [cls._serialize_marketing(item) for item in due_follow_ups],
             "recent_clients": [cls._serialize_client(item) for item in recent_clients],
+        }
+
+
+class WorkOverviewService:
+    """Build the grouped work and career workspace payload."""
+
+    @staticmethod
+    def _serialize_task(node):
+        from core.services import PriorityService
+
+        return PriorityService.serialize_priority(node, timezone.localdate())
+
+    @classmethod
+    def payload(cls, reference_date=None):
+        """Return grouped work data across tasks, pipeline, and marketing."""
+        reference_date = reference_date or timezone.localdate()
+        task_nodes = list(
+            Node.objects.select_related("parent").prefetch_related("deps", "dependents").filter(
+                type__in=[Node.NodeType.PROJECT, Node.NodeType.TASK, Node.NodeType.SUB_TASK],
+                status__in=[Node.Status.ACTIVE, Node.Status.AVAILABLE, Node.Status.BLOCKED],
+            ),
+        )
+        deadlines = sorted(
+            [node for node in task_nodes if node.due_date],
+            key=lambda item: (item.due_date, item.status, item.created_at),
+        )[:8]
+        marketing_actions = list(MarketingAction.objects.order_by("-date")[:8])
+        opportunities = PipelineWorkspaceService.payload(reference_date)
+        proposal_drafts = [
+            item for item in opportunities["active_opportunities"]
+            if item.get("proposal_draft")
+        ]
+        return {
+            "date": reference_date.isoformat(),
+            "summary": {
+                "active_task_count": sum(1 for node in task_nodes if node.status in {Node.Status.ACTIVE, Node.Status.AVAILABLE}),
+                "blocked_task_count": sum(1 for node in task_nodes if node.status == Node.Status.BLOCKED),
+                "deadline_count": len(deadlines),
+                "proposal_draft_count": len(proposal_drafts),
+                "due_follow_ups_count": opportunities["summary"]["due_follow_ups_count"],
+                "active_opportunity_count": opportunities["summary"]["new_or_reviewing_count"],
+            },
+            "task_board": [cls._serialize_task(node) for node in task_nodes[:10]],
+            "deadlines": [cls._serialize_task(node) for node in deadlines],
+            "pipeline": opportunities,
+            "marketing_actions": [
+                PipelineWorkspaceService._serialize_marketing(item)
+                for item in marketing_actions
+            ],
+            "proposal_drafts": proposal_drafts,
         }

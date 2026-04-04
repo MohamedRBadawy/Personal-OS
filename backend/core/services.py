@@ -568,7 +568,7 @@ class CommandCenterService:
                 "total": len(schedule["blocks"]),
                 "status": "attention" if schedule["summary"]["pending_count"] else "clear",
                 "detail": f"{schedule['summary']['pending_count']} pending · {schedule['summary']['skipped_count']} skipped",
-                "route": "/schedule",
+                "route": "/",
             },
             {
                 "id": "habits",
@@ -577,7 +577,7 @@ class CommandCenterService:
                 "total": health_today["summary"]["active_habits_count"],
                 "status": "attention" if not health_today["summary"]["health_logged_today"] else "clear",
                 "detail": f"{health_today['summary']['habit_completion_rate_7d'] or 0}% over the last 7 days",
-                "route": "/habits",
+                "route": "/health?tab=habits",
             },
             {
                 "id": "spiritual",
@@ -586,7 +586,7 @@ class CommandCenterService:
                 "total": 5,
                 "status": "warning" if prayer_count < 5 else "clear",
                 "detail": "Today's prayer count and spiritual anchor.",
-                "route": "/spiritual",
+                "route": "/health?tab=spiritual",
             },
             {
                 "id": "finance",
@@ -604,7 +604,7 @@ class CommandCenterService:
                 "total": pipeline["summary"]["new_or_reviewing_count"],
                 "status": "warning" if pipeline["summary"]["empty_pipeline"] else "attention" if pipeline["summary"]["due_follow_ups_count"] else "clear",
                 "detail": f"{pipeline['summary']['new_or_reviewing_count']} active leads",
-                "route": "/pipeline",
+                "route": "/work?tab=pipeline",
             },
             {
                 "id": "review",
@@ -613,7 +613,7 @@ class CommandCenterService:
                 "total": 3,
                 "status": "attention" if not review_status["review_exists"] or suggestions_summary["pending_count"] else "clear",
                 "detail": "Pending suggestions and weekly closeout readiness.",
-                "route": "/analytics",
+                "route": "/timeline?tab=review",
             },
         ]
 

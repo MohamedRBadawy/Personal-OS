@@ -8,8 +8,10 @@ from analytics.models.decision_log import DecisionLog
 from analytics.models.family_goal import FamilyGoal
 from analytics.models.idea import Idea
 from analytics.models.learning import Learning
+from analytics.models.project_retrospective import ProjectRetrospective
 from analytics.models.relationship import Relationship
 from analytics.services.overwhelm import OverwhelmService
+from analytics.services.reviews import WeeklyReviewService
 from core.ai import get_ai_provider
 from finance.models import FinanceEntry
 from finance.services import FinanceMetricsService
@@ -367,5 +369,123 @@ class TimelineService:
                     ai_note=note_by_date.get(day.isoformat(), ""),
                 )
                 for day in days
+            ],
+        }
+
+
+class TimelineOverviewService:
+    """Build the grouped achievements and timeline workspace payload."""
+
+    @staticmethod
+    def _serialize_retrospective(item):
+        return {
+            "id": str(item.id),
+            "title": item.title,
+            "source_type": item.source_type,
+            "status": item.status,
+            "summary": item.summary,
+            "what_worked": item.what_worked,
+            "what_didnt": item.what_didnt,
+            "next_time": item.next_time,
+            "closed_at": item.closed_at.isoformat(),
+        }
+
+    @classmethod
+    def payload(cls, reference_date=None):
+        reference_date = reference_date or timezone.localdate()
+        preview = WeeklyReviewService.preview(reference_date)
+        analytics_overview = AnalyticsOverviewService.payload(reference_date)
+        achievements = list(Achievement.objects.order_by("-date", "-created_at")[:8])
+        retrospectives = list(ProjectRetrospective.objects.order_by("-closed_at", "-created_at")[:8])
+        archived_goals = list(
+            Node.objects.filter(
+                type__in=[Node.NodeType.GOAL, Node.NodeType.PROJECT],
+                status=Node.Status.DONE,
+            ).order_by("-completed_at", "-updated_at")[:8],
+        )
+        return {
+            "date": reference_date.isoformat(),
+            "timeline": TimelineService.payload(),
+            "weekly_review": {
+                "status": WeeklyReviewService.status(reference_date),
+                "preview": WeeklyReviewService.serialize_preview(preview),
+            },
+            "pattern_analysis": analytics_overview["pattern_analysis"],
+            "achievements": [
+                {
+                    "id": str(item.id),
+                    "title": item.title,
+                    "domain": item.domain,
+                    "date": item.date.isoformat(),
+                    "notes": item.notes,
+                }
+                for item in achievements
+            ],
+            "retrospectives": [cls._serialize_retrospective(item) for item in retrospectives],
+            "archived_goals": [
+                {
+                    "id": str(item.id),
+                    "title": item.title,
+                    "type": item.type,
+                    "category": item.category,
+                    "completed_at": item.completed_at.isoformat() if item.completed_at else None,
+                    "notes": item.notes,
+                }
+                for item in archived_goals
+            ],
+        }
+
+
+class IdeasOverviewService:
+    """Build the grouped ideas and thinking workspace payload."""
+
+    @classmethod
+    def payload(cls, reference_date=None):
+        reference_date = reference_date or timezone.localdate()
+        ideas = list(Idea.objects.order_by("-created_at")[:12])
+        decisions = list(DecisionLog.objects.order_by("-date", "-created_at")[:12])
+        learnings = list(Learning.objects.order_by("-created_at")[:12])
+        return {
+            "date": reference_date.isoformat(),
+            "summary": {
+                "raw_ideas": Idea.objects.filter(status=Idea.Status.RAW).count(),
+                "validated_ideas": Idea.objects.filter(status=Idea.Status.VALIDATED).count(),
+                "decisions": DecisionLog.objects.count(),
+                "learning_items": Learning.objects.count(),
+            },
+            "ideas": [
+                {
+                    "id": str(item.id),
+                    "title": item.title,
+                    "context": item.context,
+                    "status": item.status,
+                    "linked_goal": str(item.linked_goal_id) if item.linked_goal_id else None,
+                    "created_at": item.created_at.isoformat(),
+                }
+                for item in ideas
+            ],
+            "decisions": [
+                {
+                    "id": str(item.id),
+                    "decision": item.decision,
+                    "reasoning": item.reasoning,
+                    "alternatives_considered": item.alternatives_considered,
+                    "outcome": item.outcome,
+                    "date": item.date.isoformat(),
+                    "created_at": item.created_at.isoformat(),
+                }
+                for item in decisions
+            ],
+            "learning": [
+                {
+                    "id": str(item.id),
+                    "topic": item.topic,
+                    "source": item.source,
+                    "status": item.status,
+                    "key_insights": item.key_insights,
+                    "linked_goal": str(item.linked_goal_id) if item.linked_goal_id else None,
+                    "created_at": item.created_at.isoformat(),
+                }
+                for item in learnings
             ],
         }
