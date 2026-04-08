@@ -8,8 +8,14 @@ from health.serializers.habit import HabitSerializer, HabitLogSerializer
 class HabitViewSet(viewsets.ModelViewSet):
     """CRUD API for Habit definitions."""
 
-    queryset = Habit.objects.all()
     serializer_class = HabitSerializer
+
+    def get_queryset(self):
+        qs = Habit.objects.all()
+        goal_id = self.request.query_params.get("goal")
+        if goal_id:
+            qs = qs.filter(goal_id=goal_id)
+        return qs
 
 
 class HabitLogViewSet(viewsets.ModelViewSet):

@@ -1133,3 +1133,361 @@ export type NamedReportPayload = {
   report: string
   sections: Record<string, unknown>
 }
+
+// ── New types for Life OS redesign ─────────────────────────────────────────
+
+export type NodeStatus = 'active' | 'available' | 'blocked' | 'done' | 'deferred'
+export type NodeType = 'goal' | 'project' | 'task' | 'subtask' | 'sub_task' | 'idea' | 'burden'
+
+export type ChecklistItem = {
+  text: string
+  done: boolean
+}
+
+export type Node = {
+  id: string
+  code: string | null
+  title: string
+  type: NodeType
+  category: string
+  status: NodeStatus
+  parent: string | null
+  parent_title: string | null
+  deps: string[]
+  blocked_by_titles: string[]
+  notes: string
+  why: string
+  checklist: ChecklistItem[]
+  attachment_count: number
+  order: number
+  priority: number | null
+  progress: number
+  tags: string[]
+  effort: string
+  start_date: string | null
+  target_date: string | null
+  due_date: string | null
+  focus_date: string | null
+  completed_at: string | null
+  total_logged_minutes: number
+  created_at: string
+  updated_at: string
+  children?: Node[]
+}
+
+export type NodeCreatePayload = {
+  title: string
+  type: NodeType
+  category?: string
+  status?: NodeStatus
+  parent?: string | null
+  deps?: string[]
+  notes?: string
+  why?: string
+  checklist?: ChecklistItem[]
+  priority?: number
+  progress?: number
+  tags?: string[]
+  effort?: string
+  start_date?: string
+  target_date?: string
+  focus_date?: string | null
+}
+
+export type NodeUpdatePayload = Partial<NodeCreatePayload>
+
+export type DashboardTask = {
+  id: string
+  title: string
+  status: NodeStatus
+  effort: string
+  target_date: string | null
+  tags: string[]
+  notes: string
+  blocked_by: string[]
+}
+
+export type DashboardMilestone = {
+  label: string
+  done: boolean
+  next: boolean
+}
+
+export type DashboardV2 = {
+  independent_monthly: number
+  target_independent: number
+  income_eur: number
+  income_egp: number
+  monthly_expenses_egp: number
+  surplus_egp: number
+  node_counts: {
+    active: number
+    available: number
+    blocked: number
+    done: number
+    deferred: number
+    total: number
+  }
+  top_tasks: DashboardTask[]
+  blocked_goals: Array<{ id: string; title: string; blocked_by: string[] }>
+  milestones: DashboardMilestone[]
+  routine_today: { done: number; total: number; pct: number }
+}
+
+export type FinanceSummaryV2 = {
+  id: number
+  income_eur: number
+  income_egp_direct: number
+  income_sources_text: string
+  independent_monthly: number
+  target_independent: number
+  monthly_expenses_egp: number
+  notes: string
+  debts: Array<{ name: string; amount_egp: number }>
+  savings_target_egp: number
+  savings_current_egp: number
+  monthly_budget_egp: number | null
+  surplus_egp: number
+  income_egp: number
+  exchange_rate: number
+  updated_at: string
+}
+
+export type IncomeEvent = {
+  id: number
+  date: string
+  source: string
+  amount_eur: number
+  notes: string
+  created_at: string
+}
+
+export type RoutineLogEntry = {
+  id: number
+  date: string
+  block_time: string
+  status: 'done' | 'partial' | 'late' | 'skipped'
+  actual_time: string | null
+  note: string
+  updated_at: string
+}
+
+export type RoutineBlock = {
+  id: number
+  time: string            // "05:00:00" raw from API
+  time_str: string        // "05:00" from SerializerMethodField
+  label: string
+  type: 'spiritual' | 'health' | 'work' | 'personal' | 'family'
+  importance: 'must' | 'should' | 'nice'
+  duration_minutes: number
+  is_fixed: boolean
+  order: number
+  active: boolean
+  linked_node: string | null
+  linked_node_title: string | null
+  linked_node_progress: number | null
+  // Detail fields (always present, default '')
+  description: string
+  days_of_week: string      // "" = all days; "135" = Mon/Wed/Fri
+  // Spiritual
+  location: string          // "" | "mosque" | "home" | "online"
+  target: string            // free text e.g. "1 juz Quran"
+  // Health
+  exercise_type: string     // "" | "cardio" | "strength" | "yoga" | "hiit" | "swimming" | "cycling"
+  intensity: string         // "" | "low" | "medium" | "high"
+  // Work
+  focus_area: string        // "" | "deep_work" | "email" | "calls" | "admin" | "outreach"
+  deliverable: string       // free text
+}
+
+export type Attachment = {
+  id: number
+  node: number | null
+  page_context: string
+  type: 'url' | 'file' | 'snippet'
+  title: string
+  url: string
+  file: string        // URL path to uploaded file
+  content: string
+  tags: string[]
+  created_at: string
+}
+
+export type RoutineMetrics = {
+  days: number
+  prayer_rate: number          // % of spiritual block slots done/partial
+  prayer_streak: number        // consecutive full-prayer days before today
+  prayer_blocks_per_day: number
+  exercise_rate: number        // % of health block slots done/partial
+  exercise_streak: number      // consecutive days with ≥1 health block done
+  exercise_blocks_per_day: number
+}
+
+export type RoutineDailyEntry = {
+  date: string
+  total: number
+  done: number
+  partial: number
+  late: number
+  skipped: number
+  pct: number
+}
+
+export type RoutineTypeStats = {
+  rate: number
+  done: number
+  partial: number
+  late: number
+  skipped: number
+  total: number
+}
+
+export type RoutineBlockStat = {
+  block_id: number
+  label: string
+  type: string
+  time_str: string
+  done: number
+  partial: number
+  late: number
+  skipped: number
+  total_days: number
+  rate: number
+  avg_drift_minutes: number | null
+}
+
+export type RoutineAnalyticsData = {
+  days: number
+  daily: RoutineDailyEntry[]
+  by_type: Record<string, RoutineTypeStats>
+  block_stats: RoutineBlockStat[]
+  by_weekday: Record<string, Record<string, number>>  // type -> weekday(1-7) -> rate%
+}
+
+// ── Journal ───────────────────────────────────────────────────────────────────
+
+export type JournalEntry = {
+  id: number
+  date: string
+  mood_note: string
+  gratitude: string
+  wins: string
+  tomorrow_focus: string
+  created_at: string
+  updated_at: string
+}
+
+export type JournalEntryPayload = {
+  mood_note?: string
+  gratitude?: string
+  wins?: string
+  tomorrow_focus?: string
+}
+
+// ── Learning tracker ──────────────────────────────────────────────────────────
+
+export type LearningItem = {
+  id: number
+  title: string
+  author: string
+  type: 'book' | 'course' | 'article' | 'video' | 'podcast' | 'other'
+  status: 'not_started' | 'in_progress' | 'done'
+  progress_pct: number
+  linked_node: string | null
+  started: string | null
+  finished: string | null
+  notes: string
+  created_at: string
+  updated_at: string
+}
+
+export type LearningItemPayload = Omit<LearningItem, 'id' | 'created_at' | 'updated_at'>
+
+// ── Contacts ──────────────────────────────────────────────────────────────────
+
+export type Contact = {
+  id: number
+  name: string
+  relation: 'client' | 'prospect' | 'mentor' | 'friend' | 'family' | 'colleague' | 'other'
+  company: string
+  email: string
+  phone: string
+  last_contact: string | null
+  next_followup: string | null
+  notes: string
+  linked_node: string | null
+  followup_overdue: boolean
+  days_since_contact: number | null
+  created_at: string
+  updated_at: string
+}
+
+export type ContactPayload = {
+  name: string
+  relation: Contact['relation']
+  company?: string
+  email?: string
+  phone?: string
+  last_contact?: string | null
+  next_followup?: string | null
+  notes?: string
+  linked_node?: string | null
+}
+
+// ── Time Logs ─────────────────────────────────────────────────────────────────
+
+export type TimeLog = {
+  id: number
+  node: string
+  started_at: string | null
+  ended_at: string | null
+  minutes: number
+  note: string
+  logged_at: string
+  total_minutes_for_node: number
+}
+
+export type TimeLogPayload = {
+  node: string
+  started_at?: string | null
+  ended_at?: string | null
+  minutes?: number
+  note?: string
+}
+
+// ── Goal Decomposition ────────────────────────────────────────────────────────
+
+export type DecomposeSubtask = {
+  title: string
+  type: string
+  effort: string
+  notes: string
+}
+
+export type DecomposeResponse = {
+  node_id: string
+  subtasks: DecomposeSubtask[]
+}
+
+// ── Scheduled Entries ─────────────────────────────────────────────────────────
+
+export type ScheduledEntry = {
+  id: number
+  date: string          // "2026-04-08"
+  time: string          // "09:00:00"
+  duration_minutes: number
+  node: string | null   // UUID
+  node_title: string | null
+  label: string
+  done: boolean
+  created_at: string
+}
+
+export type ScheduledEntryPayload = {
+  date: string
+  time: string
+  duration_minutes: number
+  node?: string | null
+  label?: string
+  done?: boolean
+}

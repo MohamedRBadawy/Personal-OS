@@ -8,6 +8,12 @@ import type {
   CheckInResponse,
   CommandCenterPayload,
   DashboardPayload,
+  DashboardV2,
+  FinanceSummaryV2,
+  Node,
+  NodeCreatePayload,
+  NodeUpdatePayload,
+  RoutineLogEntry,
   DecisionLog,
   DecisionLogPayload,
   FamilyGoal,
@@ -64,6 +70,13 @@ import type {
   WeeklyReviewUpdatePayload,
   TodaySchedulePayload,
   WorkOverviewPayload,
+  RoutineBlock,
+  RoutineMetrics,
+  RoutineAnalyticsData,
+  Attachment,
+  IncomeEvent,
+  JournalEntry,
+  JournalEntryPayload,
 } from './types'
 
 export function resolveApiBaseUrl(rawValue: string | undefined = import.meta.env.VITE_API_BASE_URL) {
@@ -505,6 +518,14 @@ export function getPersonalReviewReport() {
 }
 
 // ---------------------------------------------------------------------------
+// Data Export
+// ---------------------------------------------------------------------------
+
+export function getFullExport(): Promise<Record<string, unknown>> {
+  return request<Record<string, unknown>>('/core/export/')
+}
+
+// ---------------------------------------------------------------------------
 // AI Chat
 // ---------------------------------------------------------------------------
 
@@ -520,4 +541,312 @@ export async function sendChatMessage(
     method: 'POST',
     body: JSON.stringify({ messages, context }),
   })
+}
+
+// ---------------------------------------------------------------------------
+// Life OS Redesign — new simplified endpoints
+// ---------------------------------------------------------------------------
+
+export function getDashboardV2() {
+  return request<DashboardV2>('/dashboard/')
+}
+
+export async function listNodes(): Promise<Node[]> {
+  // Fetch all pages
+  const first = await request<{ count: number; results: Node[] }>('/nodes/?page_size=200')
+  return first.results
+}
+
+export function createNode(payload: NodeCreatePayload) {
+  return request<Node>('/nodes/', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updateNode(id: string, payload: NodeUpdatePayload) {
+  return request<Node>(`/nodes/${id}/`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function deleteNode(id: string) {
+  return request<null>(`/nodes/${id}/`, { method: 'DELETE' })
+}
+
+export function reorderNodes(items: { id: string; order: number }[]) {
+  return request<{ ok: boolean }>('/nodes/reorder/', {
+    method: 'POST',
+    body: JSON.stringify(items),
+  })
+}
+
+export function getFinanceSummaryV2() {
+  return request<FinanceSummaryV2>('/finance/summary/')
+}
+
+export function updateFinanceSummaryV2(payload: Partial<FinanceSummaryV2>) {
+  return request<FinanceSummaryV2>('/finance/summary/', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function getRoutineLogs(date: string) {
+  return request<RoutineLogEntry[]>(`/schedule/routine-log/?date=${date}`)
+}
+
+export function saveRoutineLog(entry: { date: string; block_time: string; status: string; actual_time?: string; note?: string }) {
+  return request<RoutineLogEntry>('/schedule/routine-log/', {
+    method: 'POST',
+    body: JSON.stringify(entry),
+  })
+}
+
+export function getRoutineStreak() {
+  return request<{ streak: number; total_blocks: number }>('/schedule/routine-streak/')
+}
+
+export function getRoutineMetrics(days = 30) {
+  return request<RoutineMetrics>(`/schedule/routine-metrics/?days=${days}`)
+}
+
+export function getRoutineAnalytics(days = 90) {
+  return request<RoutineAnalyticsData>(`/schedule/routine-analytics/?days=${days}`)
+}
+
+export function getRoutineBriefing() {
+  return request<{ briefing: string; fallback: boolean }>('/schedule/routine-briefing/', { method: 'POST', body: '{}' })
+}
+
+export function getRoutineNotes(blockTime: string, limit = 10) {
+  return request<{ date: string; status: string; actual_time: string | null; note: string }[]>(
+    `/schedule/routine-notes/?block_time=${encodeURIComponent(blockTime)}&limit=${limit}`
+  )
+}
+
+// ── Routine Blocks (editable schedule) ────────────────────────────────────────
+
+export function listRoutineBlocks() {
+  return request<RoutineBlock[]>('/schedule/routine-blocks/')
+}
+
+export function createRoutineBlock(data: Partial<RoutineBlock>) {
+  return request<RoutineBlock>('/schedule/routine-blocks/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export function updateRoutineBlock(id: number, data: Partial<RoutineBlock>) {
+  return request<RoutineBlock>(`/schedule/routine-blocks/${id}/`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  })
+}
+
+export function deleteRoutineBlock(id: number) {
+  return request<void>(`/schedule/routine-blocks/${id}/`, { method: 'DELETE' })
+}
+
+export function reorderRoutineBlocks(items: { id: number; order: number }[]) {
+  return request<{ ok: boolean }>('/schedule/routine-blocks/reorder/', {
+    method: 'POST',
+    body: JSON.stringify(items),
+  })
+}
+
+// ── Node Attachments ──────────────────────────────────────────────────────────
+
+export function listAttachments(nodeId: number) {
+  return request<Attachment[]>(`/goals/node-attachments/?node=${nodeId}`)
+}
+
+export function createAttachment(data: Partial<Attachment>) {
+  return request<Attachment>('/goals/node-attachments/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export function deleteAttachment(id: number) {
+  return request<void>(`/goals/node-attachments/${id}/`, { method: 'DELETE' })
+}
+
+// ── Income Events ─────────────────────────────────────────────────────────────
+
+export function listIncomeEvents() {
+  return request<IncomeEvent[]>('/finance/income-events/')
+}
+
+export function createIncomeEvent(data: Omit<IncomeEvent, 'id' | 'created_at'>) {
+  return request<IncomeEvent>('/finance/income-events/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export function deleteIncomeEvent(id: number) {
+  return request<void>(`/finance/income-events/${id}/`, { method: 'DELETE' })
+}
+
+// ── Journal ───────────────────────────────────────────────────────────────────
+
+export function getJournalToday() {
+  return request<JournalEntry>('/journal/today/')
+}
+
+export function upsertJournalToday(payload: JournalEntryPayload) {
+  return request<JournalEntry>('/journal/today/', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function listJournalEntries() {
+  return request<{ results: JournalEntry[] }>('/journal/entries/')
+}
+
+// ── Learning tracker ──────────────────────────────────────────────────────────
+
+export function listLearningItems(status?: string) {
+  const qs = status ? `?status=${status}` : ''
+  return request<{ results: import('./types').LearningItem[] }>(`/goals/learning/${qs}`)
+}
+
+export function createLearningItem(payload: import('./types').LearningItemPayload) {
+  return request<import('./types').LearningItem>('/goals/learning/', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updateLearningItem(id: number, payload: Partial<import('./types').LearningItemPayload>) {
+  return request<import('./types').LearningItem>(`/goals/learning/${id}/`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function deleteLearningItem(id: number) {
+  return request<void>(`/goals/learning/${id}/`, { method: 'DELETE' })
+}
+
+// ── Contacts ──────────────────────────────────────────────────────────────────
+
+export function listContacts(relation?: string) {
+  const qs = relation ? `?relation=${relation}` : ''
+  return request<{ results: import('./types').Contact[] }>(`/contacts/contacts/${qs}`)
+}
+
+export function getDueFollowups() {
+  return request<{ results: import('./types').Contact[]; count: number }>('/contacts/due-followups/')
+}
+
+export function createContact(payload: import('./types').ContactPayload) {
+  return request<import('./types').Contact>('/contacts/contacts/', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updateContact(id: number, payload: Partial<import('./types').ContactPayload>) {
+  return request<import('./types').Contact>(`/contacts/contacts/${id}/`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function deleteContact(id: number) {
+  return request<void>(`/contacts/contacts/${id}/`, { method: 'DELETE' })
+}
+
+// ── Cross-domain node connections ─────────────────────────────────────────────
+
+export function listRoutineBlocksForNode(nodeId: string) {
+  return request<import('./types').RoutineBlock[]>(`/schedule/routine-blocks/?linked_node=${nodeId}`)
+}
+
+export function listHabitsForNode(nodeId: string) {
+  return request<{ results: Array<{ id: number; name: string; target: string }> }>(`/health/habits/?goal=${nodeId}`)
+}
+
+export function listContactsForNode(nodeId: string) {
+  return request<{ results: import('./types').Contact[] }>(`/contacts/contacts/?linked_node=${nodeId}`)
+}
+
+export function listLearningItemsForNode(nodeId: string) {
+  return request<{ results: import('./types').LearningItem[] }>(`/goals/learning/?linked_node=${nodeId}`)
+}
+
+export function listMarketingActionsForNode(nodeId: string) {
+  return request<{ results: Array<{ id: number; action: string; platform: string; date: string }> }>(`/pipeline/marketing/?goal=${nodeId}`)
+}
+
+// ── Goals Analytics ───────────────────────────────────────────────────────────
+
+export type GoalsAnalyticsSummary = {
+  status_counts: Record<string, number>
+  stalled_goals: Array<{ id: string; title: string; category: string; type: string; updated_at: string }>
+  top_time_goals: Array<{ id: string; title: string; type: string; category: string; status: string; total_mins: number }>
+  completed_this_month: Array<{ id: string; title: string; type: string; category: string; completed_at: string }>
+  completed_this_month_count: number
+}
+
+export function getGoalsAnalyticsSummary() {
+  return request<GoalsAnalyticsSummary>('/goals/nodes/analytics_summary/')
+}
+
+// ── Time Logs ─────────────────────────────────────────────────────────────────
+
+export function listTimeLogs(nodeId: string) {
+  return request<import('./types').TimeLog[]>(`/goals/timelogs/?node=${nodeId}`)
+}
+
+export function createTimeLog(payload: import('./types').TimeLogPayload) {
+  return request<import('./types').TimeLog>('/goals/timelogs/', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function deleteTimeLog(id: number) {
+  return request<void>(`/goals/timelogs/${id}/`, { method: 'DELETE' })
+}
+
+// ── Goal Decomposition ────────────────────────────────────────────────────────
+
+export function decomposeNode(id: string) {
+  return request<import('./types').DecomposeResponse>(`/goals/nodes/${id}/decompose/`, { method: 'POST' })
+}
+
+// ── Scheduled Entries ─────────────────────────────────────────────────────────
+
+export function listScheduledEntries(date: string) {
+  return request<import('./types').ScheduledEntry[]>(`/schedule/scheduled-entries/?date=${date}`)
+}
+
+export function listScheduledEntriesRange(dateFrom: string, dateTo: string) {
+  return request<import('./types').ScheduledEntry[]>(
+    `/schedule/scheduled-entries/?date_from=${dateFrom}&date_to=${dateTo}`,
+  )
+}
+
+export function createScheduledEntry(payload: import('./types').ScheduledEntryPayload) {
+  return request<import('./types').ScheduledEntry>('/schedule/scheduled-entries/', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updateScheduledEntry(id: number, payload: Partial<import('./types').ScheduledEntryPayload>) {
+  return request<import('./types').ScheduledEntry>(`/schedule/scheduled-entries/${id}/`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function deleteScheduledEntry(id: number) {
+  return request<void>(`/schedule/scheduled-entries/${id}/`, { method: 'DELETE' })
 }

@@ -2,7 +2,7 @@
 from django.db import transaction
 from rest_framework import serializers
 
-from schedule.models import ScheduleTemplate, ScheduleBlock, ScheduleLog
+from schedule.models import ScheduleTemplate, ScheduleBlock, ScheduleLog, ScheduledEntry
 
 
 class ScheduleTemplateSerializer(serializers.ModelSerializer):
@@ -59,3 +59,20 @@ class ScheduleLogSerializer(serializers.ModelSerializer):
         model = ScheduleLog
         fields = "__all__"
         read_only_fields = ["id", "created_at"]
+
+
+class ScheduledEntrySerializer(serializers.ModelSerializer):
+    """Serializer for one-off scheduled task entries."""
+
+    node_title = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = ScheduledEntry
+        fields = [
+            "id", "date", "time", "duration_minutes",
+            "node", "node_title", "label", "done", "created_at",
+        ]
+        read_only_fields = ["id", "created_at", "node_title"]
+
+    def get_node_title(self, obj):
+        return obj.node.title if obj.node_id else None

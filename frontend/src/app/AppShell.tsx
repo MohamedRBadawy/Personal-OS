@@ -1,6 +1,15 @@
-import { useState, type PropsWithChildren } from 'react'
+import { useCallback, useState, type PropsWithChildren } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
+import { BottomNav } from '../components/BottomNav'
 import { ChatPanel } from '../components/chat/ChatPanel'
+import { CommandPalette } from '../components/CommandPalette'
+import { ExportButton } from '../components/ExportButton'
+import {
+  getFinanceOverview,
+  getHealthOverview,
+} from '../lib/api'
+import { useTheme } from '../lib/useTheme'
 
 type NavItem = {
   href: string
@@ -9,33 +18,42 @@ type NavItem = {
 
 const primaryItems = [
   { href: '/', label: 'Command Center' },
-  { href: '/goals', label: 'Goals & Life Plan' },
-  { href: '/work', label: 'Work & Career' },
+  { href: '/goals', label: 'Goals' },
+  { href: '/routine', label: 'Daily Routine' },
+  { href: '/schedule', label: 'Day Schedule' },
   { href: '/finance', label: 'Finance' },
-  { href: '/health', label: 'Health & Body' },
-  { href: '/timeline', label: 'Achievements & Timeline' },
-  { href: '/ideas', label: 'Ideas & Thinking' },
+  { href: '/health', label: 'Health' },
+  { href: '/analytics', label: 'Analytics' },
+  { href: '/contacts', label: 'Contacts' },
+  { href: '/journal', label: 'Journal' },
+  { href: '/learning', label: 'Learning' },
+  { href: '/profile', label: 'Life Stats' },
 ] satisfies NavItem[]
 
-const secondaryItems = [
-  { href: '/schedule', label: 'Schedule' },
-  { href: '/habits', label: 'Habits' },
-  { href: '/mood', label: 'Mood' },
-  { href: '/spiritual', label: 'Spiritual' },
-  { href: '/pipeline', label: 'Pipeline' },
-  { href: '/marketing', label: 'Marketing' },
-  { href: '/learning', label: 'Learning' },
-  { href: '/family', label: 'Family' },
-  { href: '/relationships', label: 'Relationships' },
-  { href: '/analytics', label: 'Analytics' },
-  { href: '/decisions', label: 'Decisions' },
-  { href: '/achievements', label: 'Achievements' },
-] satisfies NavItem[]
+const prefetchMap: Partial<Record<string, () => Promise<unknown>>> = {
+  '/finance': getFinanceOverview,
+  '/health': getHealthOverview,
+}
+
+const prefetchQueryKeys: Partial<Record<string, string[]>> = {
+  '/finance': ['finance-overview'],
+  '/health': ['health-overview'],
+}
 
 export function AppShell({ children }: PropsWithChildren) {
   const location = useLocation()
+  const queryClient = useQueryClient()
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const activeItem = [...primaryItems, ...secondaryItems].find((item) => item.href === location.pathname)
+  const { theme, toggleTheme } = useTheme()
+  const activeItem = primaryItems.find((item) => item.href === location.pathname)
+
+  const handlePrefetch = useCallback((href: string) => {
+    const queryFn = prefetchMap[href]
+    const queryKey = prefetchQueryKeys[href]
+    if (queryFn && queryKey) {
+      queryClient.prefetchQuery({ queryKey, queryFn, staleTime: 30_000 })
+    }
+  }, [queryClient])
 
   return (
     <div className="app-shell">
@@ -67,6 +85,7 @@ export function AppShell({ children }: PropsWithChildren) {
                   className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
                   to={item.href}
                   onClick={() => setDrawerOpen(false)}
+                  onMouseEnter={() => handlePrefetch(item.href)}
                 >
                   {item.label}
                 </NavLink>
@@ -74,22 +93,15 @@ export function AppShell({ children }: PropsWithChildren) {
             </div>
           </div>
 
-          <details className="nav-disclosure">
-            <summary className="nav-group-label">Secondary Workspaces</summary>
-            <div className="nav-group-links nav-group-links-secondary">
-              {secondaryItems.map((item) => (
-                <NavLink
-                  key={item.href}
-                  className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
-                  to={item.href}
-                  onClick={() => setDrawerOpen(false)}
-                >
-                  {item.label}
-                </NavLink>
-              ))}
-            </div>
-          </details>
         </nav>
+
+        <div className="sidebar-footer">
+          <button className="theme-toggle" type="button" onClick={toggleTheme}>
+            <span>{theme === 'dark' ? '☀ Light mode' : '☾ Dark mode'}</span>
+          </button>
+          <ExportButton />
+          <p className="sidebar-shortcut-hint">⌘K — quick search</p>
+        </div>
       </aside>
 
       <div className="app-main">
@@ -98,15 +110,14 @@ export function AppShell({ children }: PropsWithChildren) {
             <p className="eyebrow">Home base</p>
             <h2 className="header-title">{activeItem?.label ?? 'Command Center'}</h2>
           </div>
-          <p className="header-summary">
-            Seven clear workspaces on top, with legacy routes still reachable while the product settles into the PRD structure.
-          </p>
         </header>
 
         <main className="page-grid">{children}</main>
       </div>
 
       <ChatPanel />
+      <BottomNav />
+      <CommandPalette />
     </div>
   )
 }

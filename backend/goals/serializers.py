@@ -2,7 +2,7 @@
 from django.utils import timezone
 from rest_framework import serializers
 
-from goals.models import GoalAttachmentProfile, Node
+from goals.models import Attachment, GoalAttachmentProfile, Node
 from goals.services import (
     GoalAttachmentSuggestionService,
     NodeStatusService,
@@ -22,6 +22,8 @@ class NodeSerializer(serializers.ModelSerializer):
     blocked_by_titles = serializers.SerializerMethodField(read_only=True)
     recommended_tool = serializers.SerializerMethodField(read_only=True)
     tool_reasoning = serializers.SerializerMethodField(read_only=True)
+    attachment_count = serializers.SerializerMethodField(read_only=True)
+    total_logged_minutes = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Node
@@ -37,6 +39,16 @@ class NodeSerializer(serializers.ModelSerializer):
             "notes",
             "due_date",
             "manual_priority",
+            "priority",
+            "progress",
+            "tags",
+            "effort",
+            "start_date",
+            "target_date",
+            "why",
+            "checklist",
+            "order",
+            "focus_date",
             "created_at",
             "updated_at",
             "completed_at",
@@ -46,6 +58,8 @@ class NodeSerializer(serializers.ModelSerializer):
             "blocked_by_titles",
             "recommended_tool",
             "tool_reasoning",
+            "attachment_count",
+            "total_logged_minutes",
         ]
         read_only_fields = [
             "id",
@@ -58,6 +72,8 @@ class NodeSerializer(serializers.ModelSerializer):
             "blocked_by_titles",
             "recommended_tool",
             "tool_reasoning",
+            "attachment_count",
+            "total_logged_minutes",
         ]
 
     def get_progress_pct(self, obj):
@@ -77,6 +93,14 @@ class NodeSerializer(serializers.ModelSerializer):
 
     def get_tool_reasoning(self, obj):
         return TaskRecommendationService.recommend(obj)[1]
+
+    def get_attachment_count(self, obj):
+        return obj.attachments.count()
+
+    def get_total_logged_minutes(self, obj) -> int:
+        from django.db.models import Sum  # noqa: PLC0415
+        result = obj.timelogs.aggregate(total=Sum("minutes"))
+        return result["total"] or 0
 
     def validate(self, attrs):
         instance = self.instance
@@ -150,7 +174,7 @@ class NodeTreeSerializer(NodeSerializer):
         fields = NodeSerializer.Meta.fields + ["children"]
 
     def get_children(self, obj):
-        children = obj.children.all().order_by("created_at")
+        children = obj.children.all().order_by("order", "created_at")
         return NodeTreeSerializer(children, many=True).data
 
 

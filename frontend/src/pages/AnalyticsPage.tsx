@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { EmptyState } from '../components/EmptyState'
 import { MetricCard } from '../components/MetricCard'
 import { Panel } from '../components/Panel'
@@ -9,6 +9,10 @@ import {
   dismissSuggestion,
   generateWeeklyReview,
   getAnalyticsOverview,
+  getDashboardV2,
+  getFinanceSummaryV2,
+  getGoalsAnalyticsSummary,
+  getRoutineLogs,
   getWeeklyReviewPreview,
   listSuggestions,
   listWeeklyReviews,
@@ -16,6 +20,18 @@ import {
   updateWeeklyReview,
 } from '../lib/api'
 import { formatCurrency, formatDate, formatPercent, titleCase } from '../lib/formatters'
+
+const ROUTINE_TOTAL = 20
+
+const STATUS_COLORS: Record<string, string> = {
+  active: '#2563eb', available: '#16a34a', blocked: '#dc2626',
+  done: '#6b7280', deferred: '#9333ea',
+}
+
+function fmtK(n: number): string {
+  if (Math.abs(n) >= 1000) return `${Math.round(n / 1000)}k`
+  return String(Math.round(n))
+}
 
 type AnalyticsPageProps = {
   initialTab?: 'overview' | 'history' | 'patterns' | 'review'
@@ -40,6 +56,10 @@ export function AnalyticsPage({ initialTab = 'overview', hideTabs = false }: Ana
   const suggestionsQuery = useQuery({
     queryKey: ['suggestions'],
     queryFn: listSuggestions,
+  })
+  const goalsHealthQ = useQuery({
+    queryKey: ['goals-analytics'],
+    queryFn: getGoalsAnalyticsSummary,
   })
 
   async function invalidateReviewLoop() {
@@ -72,6 +92,22 @@ export function AnalyticsPage({ initialTab = 'overview', hideTabs = false }: Ana
   const dismissSuggestionMutation = useMutation({
     mutationFn: dismissSuggestion,
     onSuccess: invalidateReviewLoop,
+  })
+
+  // ── Supplementary data for new Overview panels ────────────────────────────
+  const dashQuery = useQuery({ queryKey: ['dashboard-v2'], queryFn: getDashboardV2 })
+  const financeQuery = useQuery({ queryKey: ['finance-summary-v2'], queryFn: getFinanceSummaryV2 })
+
+  const weekDates = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date()
+    d.setDate(d.getDate() - (6 - i))
+    return d.toLocaleDateString('en-CA')
+  })
+  const weekResults = useQueries({
+    queries: weekDates.map(date => ({
+      queryKey: ['routine-logs', date],
+      queryFn: () => getRoutineLogs(date),
+    })),
   })
 
   const [aiPatternAnalysis, setAiPatternAnalysis] = useState<string | null>(null)
@@ -161,76 +197,168 @@ export function AnalyticsPage({ initialTab = 'overview', hideTabs = false }: Ana
 
       {tab === 'overview' ? (
         <div className="stack">
+          {/* ── 4 metric cards (real data) ── */}
           <div className="metric-grid">
             <MetricCard
               label="Independent income"
               value={formatCurrency(overview.finance.independent_income_eur)}
-              hint={`${formatPercent(overview.finance.kyrgyzstan_progress_pct)} to relocation trigger`}
+              hint={`${formatPercent(overview.finance.kyrgyzstan_progress_pct)} to Kyrgyzstan trigger`}
               tone="success"
             />
             <MetricCard label="Net this month" value={formatCurrency(overview.finance.net_eur)} />
-            <MetricCard
-              label="Sleep 7d"
-              value={`${overview.health.avg_sleep_7d ?? 0} h`}
-              hint={overview.health.low_energy_today ? 'Low energy flagged today' : 'Energy steady today'}
-            />
-            <MetricCard
-              label="Prayer completion"
-              value={formatPercent(overview.health.prayer_completion_rate_7d ?? 0)}
-            />
+            <MetricCard label="Sleep 7d" value={`${overview.health.avg_sleep_7d ?? 0} h`} />
+            <MetricCard label="Prayer completion" value={formatPercent(overview.health.prayer_completion_rate_7d ?? 0)} />
           </div>
+
+          {/* ── Panel A: Routine 7-day bar chart ── */}
+          <Panel title="Routine — last 7 days" description="Blocks logged as done or partial out of 20 per day.">
+            <div className="analytics-week-chart">
+              {weekDates.map((date, i) => {
+                const logs = weekResults[i].data || []
+                const done = logs.filter(l => l.status === 'done' || l.status === 'partial').length
+                const pct = Math.round((done / ROUTINE_TOTAL) * 100)
+                const d = new Date(date + 'T00:00:00')
+                const dayLabel = d.toLocaleDateString('en-GB', { weekday: 'short' })
+                const dateLabel = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+                const isToday = date === new Date().toLocaleDateString('en-CA')
+                const barColor = pct >= 80 ? '#16a34a' : pct >= 50 ? '#f59e0b' : pct > 0 ? '#94a3b8' : '#e5e7eb'
+                return (
+                  <div key={date} className={`analytics-day-bar${isToday ? ' analytics-day-today' : ''}`}>
+                    <span className="analytics-bar-pct">{pct > 0 ? `${pct}%` : '—'}</span>
+                    <div className="analytics-bar-col">
+                      <div className="analytics-bar-fill" style={{ height: `${Math.max(pct, 2)}%`, background: barColor }} />
+                    </div>
+                    <span className="analytics-bar-day">{dayLabel}</span>
+                    <span className="analytics-bar-date">{dateLabel}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </Panel>
 
           <div className="two-column">
-            <Panel title="Cross-domain counts" description="The current size of the system outside the core surfaces.">
-              <div className="summary-strip">
-                <div>
-                  <strong>{counts.ideas}</strong>
-                  <p className="muted">Ideas</p>
-                </div>
-                <div>
-                  <strong>{counts.decisions}</strong>
-                  <p className="muted">Decisions</p>
-                </div>
-                <div>
-                  <strong>{counts.achievements}</strong>
-                  <p className="muted">Achievements</p>
-                </div>
-                <div>
-                  <strong>{counts.family_goals}</strong>
-                  <p className="muted">Family goals</p>
-                </div>
-                <div>
-                  <strong>{counts.relationships}</strong>
-                  <p className="muted">Relationships</p>
-                </div>
-                <div>
-                  <strong>{counts.learning_items ?? counts.learnings ?? 0}</strong>
-                  <p className="muted">Learning items</p>
-                </div>
-              </div>
+            {/* ── Panel B: Node breakdown by status ── */}
+            <Panel title="Goals breakdown" description="Current node count by status.">
+              {dashQuery.data ? (
+                <table className="finance-debt-table" style={{ width: '100%' }}>
+                  <tbody>
+                    {(['active', 'available', 'blocked', 'done', 'deferred'] as const).map(status => {
+                      const count = dashQuery.data.node_counts[status]
+                      const pct = dashQuery.data.node_counts.total > 0
+                        ? Math.round((count / dashQuery.data.node_counts.total) * 100) : 0
+                      return (
+                        <tr key={status}>
+                          <td style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0' }}>
+                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: STATUS_COLORS[status], flexShrink: 0, display: 'inline-block' }} />
+                            <span style={{ textTransform: 'capitalize' }}>{status}</span>
+                          </td>
+                          <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', fontWeight: 600, fontSize: 14, width: 36 }}>{count}</td>
+                          <td style={{ width: 80, paddingLeft: 12 }}>
+                            <div style={{ height: 6, background: 'var(--border)', borderRadius: 99, overflow: 'hidden' }}>
+                              <div style={{ height: '100%', width: `${pct}%`, background: STATUS_COLORS[status], borderRadius: 99 }} />
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                    <tr className="debt-total-row">
+                      <td style={{ padding: '10px 0 0' }}>Total</td>
+                      <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', padding: '10px 0 0' }}>{dashQuery.data.node_counts.total}</td>
+                      <td />
+                    </tr>
+                  </tbody>
+                </table>
+              ) : <p className="muted">Loading…</p>}
             </Panel>
 
-            <Panel title="Pipeline pressure" description="What is still open in work and visibility.">
-              <div className="summary-strip">
-                <div>
-                  <strong>{overview.pipeline.new_or_reviewing_count}</strong>
-                  <p className="muted">New / reviewing</p>
-                </div>
-                <div>
-                  <strong>{overview.pipeline.applied_count}</strong>
-                  <p className="muted">Applied</p>
-                </div>
-                <div>
-                  <strong>{overview.pipeline.won_count}</strong>
-                  <p className="muted">Won</p>
-                </div>
-                <div>
-                  <strong>{overview.pipeline.due_follow_ups_count}</strong>
-                  <p className="muted">Due follow-ups</p>
-                </div>
-              </div>
+            {/* ── Panel C: Finance snapshot ── */}
+            <Panel title="Finance snapshot" description="Income progress and debt payoff trajectory." >
+              {financeQuery.data ? (() => {
+                const f = financeQuery.data
+                const totalDebt = (f.debts || []).reduce((s, d) => s + d.amount_egp, 0)
+                const surplusEgp = f.surplus_egp
+                const debtFreeLabel = surplusEgp > 0 && totalDebt > 0
+                  ? (() => {
+                      const months = Math.ceil(totalDebt / surplusEgp)
+                      const d = new Date(); d.setMonth(d.getMonth() + months)
+                      return d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
+                    })()
+                  : null
+                return (
+                  <div className="finance-summary-view">
+                    <div className="finance-summary-row">
+                      <span className="finance-summary-key">Independent income</span>
+                      <span className="finance-summary-val">€{Math.round(Number(f.independent_monthly))}/mo</span>
+                    </div>
+                    <div className="finance-summary-row">
+                      <span className="finance-summary-key">Target</span>
+                      <span className="finance-summary-val">€{Math.round(Number(f.target_independent))}/mo</span>
+                    </div>
+                    <div className="finance-summary-row">
+                      <span className="finance-summary-key">Monthly surplus</span>
+                      <span className="finance-summary-val" style={{ color: surplusEgp >= 0 ? 'var(--success)' : '#dc2626' }}>
+                        ~{fmtK(surplusEgp)} EGP
+                      </span>
+                    </div>
+                    <div className="finance-summary-row">
+                      <span className="finance-summary-key">Total debt</span>
+                      <span className="finance-summary-val">{fmtK(totalDebt)} EGP</span>
+                    </div>
+                    {debtFreeLabel && (
+                      <div className="finance-summary-row">
+                        <span className="finance-summary-key">🎉 Debt-free by</span>
+                        <span className="finance-summary-val" style={{ color: 'var(--accent-strong)', fontWeight: 700 }}>{debtFreeLabel}</span>
+                      </div>
+                    )}
+                    {!debtFreeLabel && totalDebt === 0 && (
+                      <p className="muted" style={{ marginTop: 8 }}>No debts recorded.</p>
+                    )}
+                  </div>
+                )
+              })() : <p className="muted">Loading…</p>}
             </Panel>
           </div>
+
+          {/* ── Panel D: Goal health ── */}
+          <Panel title="Goal health" description="Stalled goals, time investment, and monthly completions.">
+            {goalsHealthQ.data ? (
+              <div className="goals-analytics-body">
+                {goalsHealthQ.data.stalled_goals.length > 0 && (
+                  <>
+                    <p className="goals-analytics-label">Stalled (&gt;14 days, no update)</p>
+                    <ul className="goals-analytics-list">
+                      {goalsHealthQ.data.stalled_goals.map(g => (
+                        <li key={g.id} className="goals-analytics-item">
+                          <span className="node-stalled-badge">stalled</span>
+                          <span>{g.title}</span>
+                          <span className="goals-analytics-meta">{g.category}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+                {goalsHealthQ.data.top_time_goals.length > 0 && (
+                  <>
+                    <p className="goals-analytics-label">Most time invested</p>
+                    <ul className="goals-analytics-list">
+                      {goalsHealthQ.data.top_time_goals.map(g => (
+                        <li key={g.id} className="goals-analytics-item">
+                          <span style={{ fontVariantNumeric: 'tabular-nums', fontFamily: 'var(--mono)', fontSize: 12 }}>
+                            {Math.floor(g.total_mins / 60) > 0 ? `${Math.floor(g.total_mins / 60)}h ` : ''}{g.total_mins % 60}m
+                          </span>
+                          <span>{g.title}</span>
+                          <span className="goals-analytics-meta">{g.status}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+                <p className="goals-analytics-label">
+                  Completed this month: <strong>{goalsHealthQ.data.completed_this_month_count}</strong>
+                </p>
+              </div>
+            ) : <p className="muted">Loading…</p>}
+          </Panel>
         </div>
       ) : null}
 
@@ -406,6 +534,9 @@ export function AnalyticsPage({ initialTab = 'overview', hideTabs = false }: Ana
                     initialValue={currentReview.personal_notes}
                     isSubmitting={saveNotesMutation.isPending}
                     onSubmit={(personalNotes) =>
+                      saveNotesMutation.mutate({ id: currentReview.id, personalNotes })
+                    }
+                    onAutoSave={(personalNotes) =>
                       saveNotesMutation.mutate({ id: currentReview.id, personalNotes })
                     }
                   />

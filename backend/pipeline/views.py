@@ -41,8 +41,14 @@ class OpportunityViewSet(viewsets.ModelViewSet):
 class MarketingActionViewSet(viewsets.ModelViewSet):
     """CRUD API for outreach and visibility actions."""
 
-    queryset = MarketingAction.objects.all()
     serializer_class = MarketingActionSerializer
+
+    def get_queryset(self):
+        qs = MarketingAction.objects.all()
+        goal_id = self.request.query_params.get("goal")
+        if goal_id:
+            qs = qs.filter(goal_id=goal_id)
+        return qs
 
 
 class PipelineWorkspaceAPIView(APIView):
