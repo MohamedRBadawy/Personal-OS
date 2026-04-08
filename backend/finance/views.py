@@ -4,8 +4,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from finance.models import FinanceEntry, IncomeSource
-from finance.serializers import FinanceEntrySerializer, IncomeSourceSerializer
+from finance.models import FinanceEntry, FinanceSummary, IncomeEvent, IncomeSource
+from finance.serializers import FinanceEntrySerializer, FinanceSummarySerializer, IncomeEventSerializer, IncomeSourceSerializer
 from finance.services import FinanceMetricsService, FinanceOverviewService
 
 
@@ -44,3 +44,26 @@ class FinanceOverviewAPIView(APIView):
 
     def get(self, request):
         return Response(FinanceOverviewService.payload(), status=status.HTTP_200_OK)
+
+
+class IncomeEventViewSet(viewsets.ModelViewSet):
+    """CRUD API for income history events."""
+
+    queryset = IncomeEvent.objects.all()
+    serializer_class = IncomeEventSerializer
+    pagination_class = None   # small list — return full array, not paginated
+
+
+class FinanceSummaryView(APIView):
+    """Singleton finance summary — GET to read, PUT to update."""
+
+    def get(self, request):
+        obj = FinanceSummary.get()
+        return Response(FinanceSummarySerializer(obj).data, status=status.HTTP_200_OK)
+
+    def put(self, request):
+        obj = FinanceSummary.get()
+        serializer = FinanceSummarySerializer(obj, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)

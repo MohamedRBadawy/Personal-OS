@@ -9,7 +9,7 @@ from core.models import AppSettings, Profile
 
 logger = logging.getLogger(__name__)
 
-MAX_ROUNDS = 5
+MAX_ROUNDS = 3  # Reduced from 5 to conserve Gemini free-tier quota (5 rounds × N msgs/day exhausts quickly)
 CAPTURE_MODES = {"command_center_capture"}
 STRUCTURAL_KEYWORDS = {
     "restructure",
@@ -59,6 +59,9 @@ def _build_system_prompt(context: dict | None = None) -> str:
     family = profile.family_context if profile else ""
     target = float(settings.independent_income_target_eur)
 
+    mode = str((context or {}).get("mode") or "")
+    is_thinking_mode = mode in {"task_thinking", "thinking"}
+
     base_prompt = f"""You are the AI inside {name}'s Personal Life OS, a unified system tracking goals, finance, health, schedule, and pipeline.
 
 ## Who Mohamed is
@@ -71,7 +74,15 @@ def _build_system_prompt(context: dict | None = None) -> str:
 {family}
 
 ## Your role
-You help Mohamed manage his life by both answering questions and taking actions directly inside the app when asked. You have tools to log health data, mark habits done, create tasks, log finances, capture ideas, and more.
+You help Mohamed manage his life by both answering questions and taking actions directly inside the app when asked. You have tools to log health data, mark habits and schedule blocks done, create tasks, update goals, log finances, capture ideas, record decisions, update opportunity status, and more.
+
+## Available actions (use tools for these)
+- Health: log sleep/energy/exercise, log mood, log prayers/Quran, mark habits done
+- Goals: create nodes (goal/project/task/idea/burden), update status, update notes
+- Schedule: mark schedule blocks as done/partial/late/skipped
+- Finance: add income or expense entries
+- Pipeline: add opportunities, update opportunity status (applied/won/lost), mark follow-ups done
+- Ideas & thinking: capture ideas, log decisions with reasoning, log achievements
 
 ## Rules
 - When Mohamed asks you to log, add, create, mark, or record something, use the appropriate tool immediately unless the request is explicitly marked as review-first.
@@ -81,6 +92,22 @@ You help Mohamed manage his life by both answering questions and taking actions 
 - The independent income target is EUR {target:.0f}/month. The Kyrgyzstan move is the north star.
 - Tone: direct, supportive, honest. You are always in his corner.
 - Today's date is available via the today-oriented tools, which default automatically."""
+
+    thinking_extension = """
+
+## Thinking mode — active
+Mohamed wants to reason through something, not just log data. Your job shifts:
+1. **Understand first.** Ask one focused clarifying question if the problem is ambiguous, then move forward.
+2. **Diagnose before prescribing.** Identify the real constraint or tension before suggesting a direction.
+3. **Present genuine trade-offs.** Don't flatten hard choices. Name what would be gained and what would be lost.
+4. **Challenge gently.** If you see a blind spot, a contradiction, or a softer path, say so clearly but without lecturing.
+5. **Concrete over abstract.** Ground every insight in Mohamed's actual situation: the income goal, the family move, the pipeline state.
+6. **End with one decision-forcing question or a crisp recommendation**, not a list of options.
+7. **If a conclusion or decision emerges**, offer to log it as a decision record immediately.
+Tone: a sharp, honest thinking partner — not a life coach, not a cheerleader. Say the hard thing if it's true."""
+
+    if is_thinking_mode:
+        base_prompt = base_prompt + thinking_extension
 
     if context:
         return (
@@ -447,6 +474,12 @@ def run_chat(messages: list[dict], context: dict | None = None) -> dict:
         if plan["proposed_actions"]:
             return _review_response(plan["proposed_actions"])
 
+    provider = os.environ.get("AI_PROVIDER", "deterministic").lower()
+    system_prompt = _build_system_prompt(context=context)
+
+    if provider == "gemini":
+        return _run_gemini_chat(messages, system_prompt)
+
     try:
         import anthropic
 
@@ -455,70 +488,256 @@ def run_chat(messages: list[dict], context: dict | None = None) -> dict:
         logger.warning("Anthropic client unavailable: %s - using fallback", exc)
         return _fallback_response()
 
-    system_prompt = _build_system_prompt(context=context)
     actions_taken = []
     current_messages = list(messages)
 
-    for _ in range(MAX_ROUNDS):
-        response = client.messages.create(
-            model="claude-sonnet-4-5",
-            max_tokens=1024,
-            system=system_prompt,
-            tools=TOOL_SCHEMAS,
-            messages=current_messages,
-        )
-
-        if response.stop_reason == "end_turn":
-            return {
-                "reply": _extract_text(response.content),
-                "actions": actions_taken,
-                "affected_modules": _affected_modules(actions_taken),
-                "proposed_actions": [],
-                "requires_confirmation": False,
-            }
-
-        tool_results = []
-        for block in response.content:
-            if block.type != "tool_use":
-                continue
-            logger.info("Chat tool call: %s(%s)", block.name, json.dumps(block.input)[:120])
-            result = execute_tool(block.name, block.input)
-            actions_taken.append({"tool": block.name, "result": result})
-            tool_results.append(
-                {
-                    "type": "tool_result",
-                    "tool_use_id": block.id,
-                    "content": json.dumps(result),
-                },
+    try:
+        for _ in range(MAX_ROUNDS):
+            response = client.messages.create(
+                model="claude-sonnet-4-5",
+                max_tokens=1024,
+                system=system_prompt,
+                tools=TOOL_SCHEMAS,
+                messages=current_messages,
             )
 
-        if not tool_results:
+            if response.stop_reason == "end_turn":
+                return {
+                    "reply": _extract_text(response.content),
+                    "actions": actions_taken,
+                    "affected_modules": _affected_modules(actions_taken),
+                    "proposed_actions": [],
+                    "requires_confirmation": False,
+                }
+
+            tool_results = []
+            for block in response.content:
+                if block.type != "tool_use":
+                    continue
+                logger.info("Chat tool call: %s(%s)", block.name, json.dumps(block.input)[:120])
+                result = execute_tool(block.name, block.input)
+                actions_taken.append({"tool": block.name, "result": result})
+                tool_results.append(
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": block.id,
+                        "content": json.dumps(result),
+                    },
+                )
+
+            if not tool_results:
+                return {
+                    "reply": _extract_text(response.content) or "Done.",
+                    "actions": actions_taken,
+                    "affected_modules": _affected_modules(actions_taken),
+                    "proposed_actions": [],
+                    "requires_confirmation": False,
+                }
+
+            current_messages.append({"role": "assistant", "content": response.content})
+            current_messages.append({"role": "user", "content": tool_results})
+
+        return {
+            "reply": "I've completed the actions. Let me know if you need anything else.",
+            "actions": actions_taken,
+            "affected_modules": _affected_modules(actions_taken),
+            "proposed_actions": [],
+            "requires_confirmation": False,
+        }
+
+    except Exception as exc:
+        exc_str = str(exc)
+        logger.warning("Anthropic chat error: %s", exc, exc_info=True)
+        if "401" in exc_str or "authentication" in exc_str.lower() or "invalid x-api-key" in exc_str.lower():
             return {
-                "reply": _extract_text(response.content) or "Done.",
-                "actions": actions_taken,
-                "affected_modules": _affected_modules(actions_taken),
+                "reply": "The Anthropic API key is invalid or missing. Check ANTHROPIC_API_KEY in your .env file.",
+                "actions": [],
+                "affected_modules": [],
+                "proposed_actions": [],
+                "requires_confirmation": False,
+            }
+        if "529" in exc_str or "overloaded" in exc_str.lower():
+            return {
+                "reply": "The AI is temporarily overloaded. Please try again in a moment.",
+                "actions": [],
+                "affected_modules": [],
+                "proposed_actions": [],
+                "requires_confirmation": False,
+            }
+        return {
+            "reply": f"I ran into an issue reaching the AI. Please try again in a moment.",
+            "actions": [],
+            "affected_modules": [],
+            "proposed_actions": [],
+            "requires_confirmation": False,
+        }
+
+
+def _build_gemini_tools():
+    """Build Gemini Tool list from the Anthropic-format TOOL_SCHEMAS."""
+    try:
+        from google.genai import types as gt
+
+        declarations = [
+            gt.FunctionDeclaration(
+                name=t["name"],
+                description=t.get("description", ""),
+                parameters=t.get("input_schema", {"type": "object", "properties": {}}),
+            )
+            for t in TOOL_SCHEMAS
+        ]
+        return [gt.Tool(function_declarations=declarations)]
+    except Exception as exc:
+        logger.warning("Could not build Gemini tool schemas: %s", exc)
+        return []
+
+
+def _run_gemini_chat(messages: list[dict], system_prompt: str) -> dict:
+    """Agentic chat loop powered by Gemini with function calling."""
+    try:
+        from google import genai as ggenai
+        from google.genai import types as gt
+    except Exception as exc:
+        logger.warning("google-genai unavailable: %s", exc)
+        return _fallback_response()
+
+    api_key = os.environ.get("GEMINI_API_KEY", "")
+    model_name = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
+    if not api_key:
+        return _fallback_response()
+
+    try:
+        client = ggenai.Client(api_key=api_key)
+        tools = _build_gemini_tools()
+
+        # Build contents list from message history
+        contents = []
+        for msg in messages:
+            role = "model" if msg["role"] == "assistant" else "user"
+            content = msg.get("content", "")
+            if isinstance(content, str) and content.strip():
+                contents.append(gt.Content(role=role, parts=[gt.Part(text=content)]))
+
+        if not contents:
+            return _fallback_response()
+
+        actions_taken = []
+
+        def _generate_with_retry(contents_arg):
+            """Call generate_content with one automatic retry on short-window 429s."""
+            import time as _time
+            for attempt in range(2):
+                try:
+                    return client.models.generate_content(
+                        model=model_name,
+                        contents=contents_arg,
+                        config=gt.GenerateContentConfig(
+                            system_instruction=system_prompt,
+                            tools=tools,
+                            max_output_tokens=1024,
+                        ),
+                    )
+                except Exception as _exc:
+                    _s = str(_exc)
+                    if attempt == 0 and ("429" in _s or "RESOURCE_EXHAUSTED" in _s):
+                        _m = re.search(r"retry in ([\d.]+)s", _s)
+                        _wait = float(_m.group(1)) + 1 if _m else None
+                        if _wait and _wait <= 65:  # only auto-retry for short RPM windows
+                            logger.info("Gemini 429 — waiting %.1fs then retrying", _wait)
+                            _time.sleep(_wait)
+                            continue
+                    raise
+            raise RuntimeError("unreachable")
+
+        for _ in range(MAX_ROUNDS):
+            response = _generate_with_retry(contents)
+
+            candidate = response.candidates[0] if response.candidates else None
+            if not candidate:
+                break
+
+            response_parts = candidate.content.parts if candidate.content else []
+
+            # Collect function calls
+            fn_calls = [
+                p.function_call for p in response_parts
+                if getattr(p, "function_call", None) and p.function_call.name
+            ]
+
+            if not fn_calls:
+                # End turn — extract text
+                text_parts = [p.text for p in response_parts if getattr(p, "text", None)]
+                return {
+                    "reply": " ".join(text_parts).strip() or "Done.",
+                    "actions": actions_taken,
+                    "affected_modules": _affected_modules(actions_taken),
+                    "proposed_actions": [],
+                    "requires_confirmation": False,
+                }
+
+            # Append assistant response to history
+            contents.append(gt.Content(role="model", parts=response_parts))
+
+            # Execute tools and build function response parts
+            fn_response_parts = []
+            for fc in fn_calls:
+                tool_input = dict(fc.args) if hasattr(fc, "args") else {}
+                logger.info("Gemini tool call: %s(%s)", fc.name, json.dumps(tool_input)[:120])
+                result = execute_tool(fc.name, tool_input)
+                actions_taken.append({"tool": fc.name, "result": result})
+                fn_response_parts.append(
+                    gt.Part(
+                        function_response=gt.FunctionResponse(
+                            name=fc.name,
+                            response={"result": json.dumps(result)},
+                        )
+                    )
+                )
+
+            # Append tool results as user turn
+            contents.append(gt.Content(role="user", parts=fn_response_parts))
+
+        return {
+            "reply": "Actions completed. Let me know if you need anything else.",
+            "actions": actions_taken,
+            "affected_modules": _affected_modules(actions_taken),
+            "proposed_actions": [],
+            "requires_confirmation": False,
+        }
+
+    except Exception as exc:
+        exc_str = str(exc)
+        logger.warning("Gemini chat error: %s", exc, exc_info=True)
+
+        # 429 quota / rate-limit: give a specific, actionable message
+        if "429" in exc_str or "RESOURCE_EXHAUSTED" in exc_str or "quota" in exc_str.lower():
+            # Try to extract the retry delay from the error message
+            import re as _re
+            delay_match = _re.search(r"retry in ([\d.]+)s", exc_str)
+            delay_hint = f" Please wait {int(float(delay_match.group(1))) + 1} seconds and try again." if delay_match else " Please wait a moment and try again."
+            return {
+                "reply": f"The AI is temporarily rate-limited (free tier quota).{delay_hint}",
+                "actions": [],
+                "affected_modules": [],
                 "proposed_actions": [],
                 "requires_confirmation": False,
             }
 
-        current_messages.append({"role": "assistant", "content": response.content})
-        current_messages.append({"role": "user", "content": tool_results})
-
-    return {
-        "reply": "I've completed the actions. Let me know if you need anything else.",
-        "actions": actions_taken,
-        "affected_modules": _affected_modules(actions_taken),
-        "proposed_actions": [],
-        "requires_confirmation": False,
-    }
+        return {
+            "reply": "I ran into an issue reaching the AI. Please try again in a moment.",
+            "actions": [],
+            "affected_modules": [],
+            "proposed_actions": [],
+            "requires_confirmation": False,
+        }
 
 
 def _fallback_response() -> dict:
-    """Deterministic fallback when Anthropic is unavailable."""
+    """Deterministic fallback when no AI provider is available."""
     return {
         "reply": (
-            "The AI service is not configured. Set ANTHROPIC_API_KEY in your .env file "
-            "to enable the AI assistant."
+            "The AI service is not configured. Set GEMINI_API_KEY or ANTHROPIC_API_KEY "
+            "in your .env file to enable the AI assistant."
         ),
         "actions": [],
         "affected_modules": [],

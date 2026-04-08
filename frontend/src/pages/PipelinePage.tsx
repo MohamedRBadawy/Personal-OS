@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { EmptyState } from '../components/EmptyState'
 import { MetricCard } from '../components/MetricCard'
@@ -14,9 +14,20 @@ import {
 import { formatDate } from '../lib/formatters'
 import type { Opportunity, OpportunityPayload, PipelineWorkspaceOpportunity } from '../lib/types'
 
+// ── Kanban column statuses ─────────────────────────────────────────────────────
+const KANBAN_COLS: { status: Opportunity['status']; label: string; color: string }[] = [
+  { status: 'new',       label: '🔍 New',       color: '#6366f1' },
+  { status: 'reviewing', label: '👁 Reviewing',  color: '#f59e0b' },
+  { status: 'applied',   label: '📤 Applied',    color: '#3b82f6' },
+  { status: 'won',       label: '🏆 Won',        color: '#16a34a' },
+  { status: 'lost',      label: '❌ Lost',       color: '#dc2626' },
+]
+
 export function PipelinePage() {
   const queryClient = useQueryClient()
   const [editingOpportunity, setEditingOpportunity] = useState<Opportunity | null>(null)
+  const draggingId = useRef<string | null>(null)
+  const [dragOverStatus, setDragOverStatus] = useState<string | null>(null)
   const workspaceQuery = useQuery({
     queryKey: ['pipeline-workspace'],
     queryFn: getPipelineWorkspace,
@@ -144,71 +155,98 @@ export function PipelinePage() {
         </Panel>
       </div>
 
-      <div className="two-column">
-        <Panel title="Active opportunities" description="Quickly update the pipeline without opening admin tables.">
-          {workspace.active_opportunities.length === 0 ? (
-            <EmptyState title="No active opportunities" body="Add a lead and the active workspace will populate here." />
-          ) : (
-            <div className="record-list">
-              {workspace.active_opportunities.map((opportunity) => (
-                <article key={opportunity.id} className="record-card">
-                  <div className="record-card-header">
-                    <div>
-                      <h3>{opportunity.name}</h3>
-                      <div className="list-inline">
-                        <span className="record-meta-chip">{opportunity.platform}</span>
-                        <span className="record-meta-chip">Found {formatDate(opportunity.date_found)}</span>
-                        <StatusPill label={opportunity.status} />
-                      </div>
-                    </div>
-                    <button
-                      className="button-muted"
-                      type="button"
-                      onClick={() =>
-                        setEditingOpportunity({
-                          id: opportunity.id,
-                          name: opportunity.name,
-                          platform: opportunity.platform,
-                          description: opportunity.description ?? '',
-                          budget: opportunity.budget,
-                          status: opportunity.status,
-                          fit_score: opportunity.fit_score,
-                          fit_reasoning: opportunity.fit_reasoning ?? '',
-                          date_found: opportunity.date_found,
-                          date_applied: opportunity.date_applied,
-                          date_closed: opportunity.date_closed ?? null,
-                          proposal_draft: opportunity.proposal_draft ?? '',
-                          outcome_notes: opportunity.outcome_notes,
-                          created_at: '',
-                          updated_at: '',
-                        })
-                      }
-                    >
-                      Edit
-                    </button>
+      {/* ── Kanban board ─────────────────────────────────────────────────── */}
+      <Panel title="Pipeline board" description="Drag cards between columns to advance stage. Click Edit to open the full form.">
+        {workspace.active_opportunities.length === 0 ? (
+          <EmptyState title="No active opportunities" body="Add a lead and the board will populate here." />
+        ) : (
+          <div className="kanban-board">
+            {KANBAN_COLS.filter(col =>
+              col.status === 'won' || col.status === 'lost'
+                ? workspace.active_opportunities.some(o => o.status === col.status)
+                : true
+            ).map(col => {
+              const colOps = workspace.active_opportunities.filter(o => o.status === col.status)
+              const isDragOver = dragOverStatus === col.status
+              return (
+                <div
+                  key={col.status}
+                  className={`kanban-col${isDragOver ? ' kanban-col-dragover' : ''}`}
+                  onDragOver={e => { e.preventDefault(); setDragOverStatus(col.status) }}
+                  onDragLeave={() => setDragOverStatus(null)}
+                  onDrop={e => {
+                    e.preventDefault()
+                    setDragOverStatus(null)
+                    const id = draggingId.current
+                    if (id) statusMutation.mutate({ id, status: col.status })
+                    draggingId.current = null
+                  }}
+                >
+                  <div className="kanban-col-header" style={{ borderColor: col.color }}>
+                    <span>{col.label}</span>
+                    <span className="kanban-col-count">{colOps.length}</span>
                   </div>
-                  <p className="muted">{opportunity.fit_reasoning || opportunity.description || 'No AI reasoning yet.'}</p>
-                  <div className="button-row">
-                    {(['applied', 'won', 'lost'] as const).map((status) => (
-                      <button
-                        key={status}
-                        className={opportunity.status === status ? 'button-muted active' : 'button-muted'}
-                        disabled={statusMutation.isPending}
-                        type="button"
-                        onClick={() => statusMutation.mutate({ id: opportunity.id, status })}
+                  <div className="kanban-col-body">
+                    {colOps.length === 0 ? (
+                      <p className="kanban-empty-hint">Drop here</p>
+                    ) : colOps.map(opportunity => (
+                      <article
+                        key={opportunity.id}
+                        className="kanban-card"
+                        draggable
+                        onDragStart={() => { draggingId.current = opportunity.id }}
+                        onDragEnd={() => { draggingId.current = null; setDragOverStatus(null) }}
                       >
-                        {status}
-                      </button>
+                        <p className="kanban-card-name">{opportunity.name}</p>
+                        <div className="list-inline" style={{ marginBottom: 6 }}>
+                          <span className="record-meta-chip">{opportunity.platform}</span>
+                          {opportunity.budget && <span className="record-meta-chip">{opportunity.budget}</span>}
+                        </div>
+                        <p className="muted" style={{ fontSize: 12, margin: 0 }}>
+                          {opportunity.fit_reasoning
+                            ? opportunity.fit_reasoning.slice(0, 80) + (opportunity.fit_reasoning.length > 80 ? '…' : '')
+                            : opportunity.description?.slice(0, 80) ?? ''}
+                        </p>
+                        <div className="button-row" style={{ marginTop: 8 }}>
+                          <button
+                            className="button-muted"
+                            style={{ fontSize: 12, padding: '2px 8px' }}
+                            type="button"
+                            onClick={() =>
+                              setEditingOpportunity({
+                                id: opportunity.id,
+                                name: opportunity.name,
+                                platform: opportunity.platform,
+                                description: opportunity.description ?? '',
+                                budget: opportunity.budget,
+                                status: opportunity.status,
+                                fit_score: opportunity.fit_score,
+                                fit_reasoning: opportunity.fit_reasoning ?? '',
+                                date_found: opportunity.date_found,
+                                date_applied: opportunity.date_applied,
+                                date_closed: opportunity.date_closed ?? null,
+                                proposal_draft: opportunity.proposal_draft ?? '',
+                                outcome_notes: opportunity.outcome_notes,
+                                created_at: '',
+                                updated_at: '',
+                              })
+                            }
+                          >
+                            Edit
+                          </button>
+                        </div>
+                      </article>
                     ))}
                   </div>
-                </article>
-              ))}
-            </div>
-          )}
-        </Panel>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </Panel>
 
-        <div className="stack">
-          <Panel title="Recent outcomes" description="Wins, losses, and recent closed loops.">
+      <div className="two-column">
+        <Panel title="Recent outcomes" description="Wins, losses, and recent closed loops.">
             {workspace.recent_outcomes.length === 0 ? (
               <EmptyState title="No outcomes yet" body="Closed opportunities will show up here." />
             ) : (
@@ -248,7 +286,6 @@ export function PipelinePage() {
               </ul>
             )}
           </Panel>
-        </div>
       </div>
     </section>
   )

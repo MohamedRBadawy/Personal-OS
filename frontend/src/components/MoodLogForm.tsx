@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { MoodLog, MoodLogPayload } from '../lib/types'
+import { EmojiMoodPicker } from './EmojiMoodPicker'
 
 type MoodLogFormProps = {
   today: string
@@ -24,14 +25,8 @@ export function MoodLogForm({ today, initialValue, isSubmitting, onSubmit }: Moo
   return (
     <form className="form-grid single" onSubmit={handleSubmit}>
       <div className="field">
-        <label htmlFor="mood-score">Mood score</label>
-        <select id="mood-score" value={moodScore} onChange={(event) => setMoodScore(Number(event.target.value))}>
-          {[1, 2, 3, 4, 5].map((value) => (
-            <option key={value} value={value}>
-              {value}
-            </option>
-          ))}
-        </select>
+        <label htmlFor="mood-score">How are you feeling?</label>
+        <EmojiMoodPicker id="mood-score" value={moodScore} onChange={setMoodScore} />
       </div>
       <div className="field">
         <label htmlFor="mood-notes">Mood notes</label>

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
+import { PageSkeleton } from '../components/PageSkeleton'
 import { MetricCard } from '../components/MetricCard'
 import { Panel } from '../components/Panel'
 import { WorkspaceTabs } from '../components/WorkspaceTabs'
@@ -36,7 +37,7 @@ export function IdeasThinkingPage() {
   })
 
   if (overviewQuery.isLoading) {
-    return <section className="loading-state">Loading ideas workspace...</section>
+    return <PageSkeleton />
   }
 
   if (overviewQuery.isError || !overviewQuery.data) {

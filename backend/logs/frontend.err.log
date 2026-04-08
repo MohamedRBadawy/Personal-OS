@@ -1,0 +1,424 @@
+[2m6:03:15 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mIn HTML, <button> cannot be a descendant of <button>.
+This will cause a hydration error.
+
+  ...
+    <AppRoutes>
+      <QueryErrorBoundary>
+        <PageTransition>
+          <div ref={{...}} className="page-fade-in">
+            <Routes>
+              <RenderedRoute match={{params:{}, ...}} routeContext={{outlet:null, ...}}>
+                <GoalsPage>
+                  <div className="goals-page">
+                    <div>
+                    <div>
+                    <div className="node-tree">
+                      <NodeRow>
+                      <NodeRow node={{id:"ca766e...", ...}} depth={0} onSelect={function bound dispatchSetState}>
+                        <div className="node-tree-...">
+                          <button>
+                          <div>
+                          <div className="node-children">
+                            <NodeRow node={{id:"ef28f6...", ...}} depth={1} onSelect={function bound dispatchSetState}>
+                              <div className="node-tree-...">
+>                               <button
+>                                 className="node-card"
+>                                 style={{paddingLeft:36}}
+>                                 title="Propose carpet purchase to neighbors. Estimated cost €0 if they accept old ca..."
+>                                 onClick={function onClick}
+>                               >
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+>                                 <button
+>                                   className="node-quick-done"
+>                                   title="Mark done"
+>                                   disabled={false}
+>                                   onClick={function onClick}
+>                                 >
+                      ...
+
+[2m6:05:00 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled error] [1mReferenceError[22m: AchievementsTimelinePage is not defined
+[39m > AppRoutes src/app/AppRoutes.tsx:21:45
+    19 |            <Route path="/finance" element={<FinanceWorkspacePage />} />
+    20 |            <Route path="/health" element={<HealthBodyPage />} />
+    21 |            <Route path="/analytics" element={<AchievementsTimelinePage />} />
+       |                                               ^
+    22 |            <Route path="*" element={<Navigate to="/" replace />} />
+    23 |          </Routes>
+ > Object.react_stack_bottom_frame node_modules/react-dom/cjs/react-dom-client.development.js:25904:19
+ > renderWithHooks node_modules/react-dom/cjs/react-dom-client.development.js:7662:21
+ > updateFunctionComponent node_modules/react-dom/cjs/react-dom-client.development.js:10166:18
+ > beginWork node_modules/react-dom/cjs/react-dom-client.development.js:11778:17
+ > runWithFiberInDEV node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+ > performUnitOfWork node_modules/react-dom/cjs/react-dom-client.development.js:17641:21
+ > workLoopSync node_modules/react-dom/cjs/react-dom-client.development.js:17469:40
+ > renderRootSync node_modules/react-dom/cjs/react-dom-client.development.js:17450:10
+ > performWorkOnRoot node_modules/react-dom/cjs/react-dom-client.development.js:16583:34
+
+[2m6:05:00 PM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mAn error occurred in the <AppRoutes> component.
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries.
+
+[2m6:05:01 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled error] [1mReferenceError[22m: AchievementsTimelinePage is not defined
+[39m > AppRoutes src/app/AppRoutes.tsx:21:45
+    19 |            <Route path="/finance" element={<FinanceWorkspacePage />} />
+    20 |            <Route path="/health" element={<HealthBodyPage />} />
+    21 |            <Route path="/analytics" element={<AchievementsTimelinePage />} />
+       |                                               ^
+    22 |            <Route path="*" element={<Navigate to="/" replace />} />
+    23 |          </Routes>
+ > Object.react_stack_bottom_frame node_modules/react-dom/cjs/react-dom-client.development.js:25904:19
+ > renderWithHooks node_modules/react-dom/cjs/react-dom-client.development.js:7662:21
+ > updateFunctionComponent node_modules/react-dom/cjs/react-dom-client.development.js:10166:18
+ > beginWork node_modules/react-dom/cjs/react-dom-client.development.js:11778:17
+ > runWithFiberInDEV node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+ > performUnitOfWork node_modules/react-dom/cjs/react-dom-client.development.js:17641:21
+ > workLoopSync node_modules/react-dom/cjs/react-dom-client.development.js:17469:40
+ > renderRootSync node_modules/react-dom/cjs/react-dom-client.development.js:17450:10
+ > performWorkOnRoot node_modules/react-dom/cjs/react-dom-client.development.js:16583:34
+
+[2m6:05:01 PM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mAn error occurred in the <AppRoutes> component.
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries.
+
+[2m6:09:46 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mIn HTML, <button> cannot be a descendant of <button>.
+This will cause a hydration error.
+
+  ...
+    <AppRoutes>
+      <QueryErrorBoundary>
+        <PageTransition>
+          <div ref={{...}} className="page-fade-in">
+            <Routes>
+              <RenderedRoute match={{params:{}, ...}} routeContext={{outlet:null, ...}}>
+                <GoalsPage>
+                  <div className="goals-page">
+                    <div>
+                    <div>
+                    <div className="node-tree">
+                      <NodeRow>
+                      <NodeRow node={{id:"ca766e...", ...}} depth={0} onSelect={function bound dispatchSetState} ...>
+                        <div className="node-tree-...">
+                          <button>
+                          <div>
+                          <div className="node-children">
+                            <NodeRow node={{id:"ef28f6...", ...}} depth={1} onSelect={function bound dispatchSetState} ...>
+                              <div className="node-tree-...">
+>                               <button
+>                                 className="node-card"
+>                                 style={{paddingLeft:36}}
+>                                 title="Propose carpet purchase to neighbors. Estimated cost €0 if they accept old ca..."
+>                                 onClick={function onClick}
+>                               >
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+>                                 <button
+>                                   className="node-quick-done"
+>                                   title="Mark done"
+>                                   disabled={false}
+>                                   onClick={function onClick}
+>                                 >
+                      ...
+
+[2m6:14:05 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mIn HTML, <button> cannot be a descendant of <button>.
+This will cause a hydration error.
+
+  ...
+    <AppRoutes>
+      <QueryErrorBoundary>
+        <PageTransition>
+          <div ref={{...}} className="page-fade-in">
+            <Routes>
+              <RenderedRoute match={{params:{}, ...}} routeContext={{outlet:null, ...}}>
+                <GoalsPage>
+                  <div className="goals-page">
+                    <div>
+                    <div>
+                    <div className="node-tree">
+                      <NodeRow>
+                      <NodeRow node={{id:"ca766e...", ...}} depth={0} onSelect={function bound dispatchSetState} ...>
+                        <div className="node-tree-...">
+                          <button>
+                          <div>
+                          <div className="node-children">
+                            <NodeRow node={{id:"ef28f6...", ...}} depth={1} onSelect={function bound dispatchSetState} ...>
+                              <div className="node-tree-...">
+>                               <button
+>                                 className="node-card"
+>                                 style={{paddingLeft:36}}
+>                                 title="Propose carpet purchase to neighbors. Estimated cost €0 if they accept old ca..."
+>                                 onClick={function onClick}
+>                               >
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+>                                 <button
+>                                   className="node-quick-done"
+>                                   title="Mark done"
+>                                   disabled={false}
+>                                   onClick={function onClick}
+>                                 >
+                      ...
+
+[2m6:28:54 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mIn HTML, <button> cannot be a descendant of <button>.
+This will cause a hydration error.
+
+  ...
+    <AppRoutes>
+      <QueryErrorBoundary>
+        <PageTransition>
+          <div ref={{...}} className="page-fade-in">
+            <Routes>
+              <RenderedRoute match={{params:{}, ...}} routeContext={{outlet:null, ...}}>
+                <GoalsPage>
+                  <div className="goals-page">
+                    <div>
+                    <div>
+                    <div className="node-tree">
+                      <NodeRow>
+                      <NodeRow node={{id:"ca766e...", ...}} depth={0} onSelect={function bound dispatchSetState} ...>
+                        <div className="node-tree-...">
+                          <button>
+                          <div>
+                          <div className="node-children">
+                            <NodeRow node={{id:"ef28f6...", ...}} depth={1} onSelect={function bound dispatchSetState} ...>
+                              <div className="node-tree-...">
+>                               <button
+>                                 className="node-card"
+>                                 style={{paddingLeft:36}}
+>                                 title="Propose carpet purchase to neighbors. Estimated cost €0 if they accept old ca..."
+>                                 onClick={function onClick}
+>                               >
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+>                                 <button
+>                                   className="node-quick-done"
+>                                   title="Mark done"
+>                                   disabled={false}
+>                                   onClick={function onClick}
+>                                 >
+                      ...
+
+[2m6:55:44 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mIn HTML, <button> cannot be a descendant of <button>.
+This will cause a hydration error.
+
+  ...
+    <AppRoutes>
+      <QueryErrorBoundary>
+        <PageTransition>
+          <div ref={{...}} className="page-fade-in">
+            <Routes>
+              <RenderedRoute match={{params:{}, ...}} routeContext={{outlet:null, ...}}>
+                <GoalsPage>
+                  <div className="goals-page">
+                    <div>
+                    <div>
+                    <div className="node-tree">
+                      <NodeRow>
+                      <NodeRow node={{id:"ca766e...", ...}} depth={0} onSelect={function bound dispatchSetState} ...>
+                        <div className="node-tree-...">
+                          <button>
+                          <div>
+                          <div className="node-children">
+                            <NodeRow node={{id:"ef28f6...", ...}} depth={1} onSelect={function bound dispatchSetState} ...>
+                              <div className="node-tree-...">
+>                               <button
+>                                 className="node-card"
+>                                 style={{paddingLeft:36}}
+>                                 title="Propose carpet purchase to neighbors. Estimated cost €0 if they accept old ca..."
+>                                 onClick={function onClick}
+>                               >
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+>                                 <button
+>                                   className="node-quick-done"
+>                                   title="Mark done"
+>                                   disabled={false}
+>                                   onClick={function onClick}
+>                                 >
+                      ...
+
+[2m9:08:55 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mIn HTML, <button> cannot be a descendant of <button>.
+This will cause a hydration error.
+
+  ...
+    <PageTransition>
+      <div ref={{...}} className="page-fade-in">
+        <Routes>
+          <RenderedRoute match={{params:{}, ...}} routeContext={{outlet:null, ...}}>
+            <GoalsPage>
+              <div className="goals-page">
+                <div>
+                <div>
+                <div className="node-tree">
+                  <NodeList nodes={[...]} depth={0} onSelect={function bound dispatchSetState} ...>
+                    <NodeRow>
+                    <NodeRow node={{id:"ca766e...", ...}} depth={0} onSelect={function bound dispatchSetState} ...>
+                      <div className="node-tree-..." draggable={true} onDragStart={function onDragStart} ...>
+                        <button>
+                        <div>
+                        <div className="node-children">
+                          <NodeList nodes={[...]} depth={1} onSelect={function bound dispatchSetState} ...>
+                            <NodeRow node={{id:"ef28f6...", ...}} depth={1} onSelect={function bound dispatchSetState} ...>
+                              <div className="node-tree-..." draggable={true} onDragStart={function onDragStart} ...>
+>                               <button
+>                                 className="node-card"
+>                                 style={{paddingLeft:36}}
+>                                 title="Propose carpet purchase to neighbors. Estimated cost €0 if they accept old ca..."
+>                                 onClick={function onClick}
+>                               >
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+>                                 <button
+>                                   className="node-quick-done"
+>                                   title="Mark done"
+>                                   disabled={false}
+>                                   onClick={function onClick}
+>                                 >
+                    ...
+
+[2m9:51:26 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mTypeError: events.map is not a function
+    at IncomeHistory (http://localhost:5173/src/pages/FinanceWorkspacePage.tsx?t=1775588165223:848:67)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:12867:12)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:4212:19)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:5568:16)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:6139:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:850:66)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:8428:92)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:8324:37)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:8308:6)
+    at performWorkOnRoot (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:7993:27)
+
+The above error occurred in the <IncomeHistory> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, QueryErrorBoundary.
+
+[2m9:51:26 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mQueryErrorBoundary caught: TypeError: events.map is not a function
+    at IncomeHistory (http://localhost:5173/src/pages/FinanceWorkspacePage.tsx?t=1775588165223:848:67)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:12867:12)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:4212:19)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:5568:16)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:6139:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:850:66)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:8428:92)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:8324:37)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:8308:6)
+    at performWorkOnRoot (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:7993:27) {"componentStack":"\n    at IncomeHistory (http://localhost:5173/src/pages/FinanceWorkspacePage.tsx?t=1775588165223:611:13)\n    at div (<anonymous>)\n    at FinanceWorkspacePage (http://localhost:5173/src/pages/FinanceWorkspacePage.tsx?t=1775588165223:939:13)\n    at RenderedRoute (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=8786c60f:4003:26)\n    at Routes (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=8786c60f:4622:19)\n    at div (<anonymous>)\n    at PageTransition (http://localhost:5173/src/components/PageTransition.tsx:6:34)\n    at QueryErrorBoundary (http://localhost:5173/src/components/QueryErrorBoundary.tsx:6:3)\n    at AppRoutes (<anonymous>)\n    at main (<anonymous>)\n    at div (<anonymous>)\n    at div (<anonymous>)\n    at AppShell (http://localhost:5173/src/app/AppShell.tsx?t=1775588165223:46:28)\n    at Router (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=8786c60f:4574:29)\n    at BrowserRouter (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=8786c60f:6992:26)\n    at InfraProviders (http://localhost:5173/src/app/AppProviders.tsx:10:27)\n    at QueryClientProvider (http://localhost:5173/node_modules/.vite/deps/@tanstack_react-query.js?v=ca6cd1e9:2516:30)\n    at AppProviders (http://localhost:5173/src/app/AppProviders.tsx:55:32)\n    at App (<anonymous>)"}
+[2m9:51:31 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mTypeError: events.map is not a function
+    at IncomeHistory (http://localhost:5173/src/pages/FinanceWorkspacePage.tsx?t=1775588165223:848:67)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:12867:12)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:4212:19)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:5568:16)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:6139:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:850:66)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:8428:92)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:8324:37)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:8308:6)
+    at performWorkOnRoot (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:7993:27)
+
+The above error occurred in the <IncomeHistory> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, QueryErrorBoundary.
+
+[2m9:51:31 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mQueryErrorBoundary caught: TypeError: events.map is not a function
+    at IncomeHistory (http://localhost:5173/src/pages/FinanceWorkspacePage.tsx?t=1775588165223:848:67)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:12867:12)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:4212:19)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:5568:16)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:6139:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:850:66)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:8428:92)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:8324:37)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:8308:6)
+    at performWorkOnRoot (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b5c76ed:7993:27) {"componentStack":"\n    at IncomeHistory (http://localhost:5173/src/pages/FinanceWorkspacePage.tsx?t=1775588165223:611:13)\n    at div (<anonymous>)\n    at FinanceWorkspacePage (http://localhost:5173/src/pages/FinanceWorkspacePage.tsx?t=1775588165223:939:13)\n    at RenderedRoute (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=8786c60f:4003:26)\n    at Routes (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=8786c60f:4622:19)\n    at div (<anonymous>)\n    at PageTransition (http://localhost:5173/src/components/PageTransition.tsx:6:34)\n    at QueryErrorBoundary (http://localhost:5173/src/components/QueryErrorBoundary.tsx:6:3)\n    at AppRoutes (<anonymous>)\n    at main (<anonymous>)\n    at div (<anonymous>)\n    at div (<anonymous>)\n    at AppShell (http://localhost:5173/src/app/AppShell.tsx?t=1775588165223:46:28)\n    at Router (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=8786c60f:4574:29)\n    at BrowserRouter (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=8786c60f:6992:26)\n    at InfraProviders (http://localhost:5173/src/app/AppProviders.tsx:10:27)\n    at QueryClientProvider (http://localhost:5173/node_modules/.vite/deps/@tanstack_react-query.js?v=ca6cd1e9:2516:30)\n    at AppProviders (http://localhost:5173/src/app/AppProviders.tsx:55:32)\n    at App (<anonymous>)"}
+[2m10:19:00 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mIn HTML, <button> cannot be a descendant of <button>.
+This will cause a hydration error.
+
+  ...
+    <PageTransition>
+      <div ref={{...}} className="page-fade-in">
+        <Routes>
+          <RenderedRoute match={{params:{}, ...}} routeContext={{outlet:null, ...}}>
+            <GoalsPage>
+              <div className="goals-page">
+                <div>
+                <div>
+                <div className="node-tree">
+                  <NodeList nodes={[...]} depth={0} onSelect={function bound dispatchSetState} ...>
+                    <NodeRow>
+                    <NodeRow node={{id:"ca766e...", ...}} depth={0} onSelect={function bound dispatchSetState} ...>
+                      <div className="node-tree-..." draggable={true} onDragStart={function onDragStart} ...>
+                        <button>
+                        <div>
+                        <div className="node-children">
+                          <NodeList nodes={[...]} depth={1} onSelect={function bound dispatchSetState} ...>
+                            <NodeRow node={{id:"ef28f6...", ...}} depth={1} onSelect={function bound dispatchSetState} ...>
+                              <div className="node-tree-..." draggable={true} onDragStart={function onDragStart} ...>
+>                               <button
+>                                 className="node-card"
+>                                 style={{paddingLeft:36}}
+>                                 title="Propose carpet purchase to neighbors. Estimated cost €0 if they accept old ca..."
+>                                 onClick={function onClick}
+>                               >
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+                                  <span>
+>                                 <button
+>                                   className="node-quick-done"
+>                                   title="Mark done"
+>                                   disabled={false}
+>                                   onClick={function onClick}
+>                                 >
+                    ...
+

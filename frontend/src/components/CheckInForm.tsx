@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { CheckInPayload } from '../lib/types'
+import { EmojiMoodPicker } from './EmojiMoodPicker'
 
 type CheckInFormProps = {
   onSubmit: (payload: CheckInPayload) => void
@@ -13,7 +14,7 @@ export function CheckInForm({ onSubmit, isSubmitting }: CheckInFormProps) {
   const [exerciseDone, setExerciseDone] = useState(false)
   const [exerciseType, setExerciseType] = useState('')
   const [exerciseDuration, setExerciseDuration] = useState('')
-  const [moodScore, setMoodScore] = useState('3')
+  const [moodScore, setMoodScore] = useState(3)
   const [financeSource, setFinanceSource] = useState('')
   const [financeAmount, setFinanceAmount] = useState('')
   const [financeType, setFinanceType] = useState<'income' | 'expense'>('income')
@@ -44,7 +45,7 @@ export function CheckInForm({ onSubmit, isSubmitting }: CheckInFormProps) {
       exercise_done: exerciseDone,
       exercise_type: exerciseDone ? exerciseType : '',
       exercise_duration_mins: exerciseDone && exerciseDuration ? Number(exerciseDuration) : null,
-      mood_score: Number(moodScore),
+      mood_score: moodScore,
       finance_deltas: financeDeltas,
       inbox_text: inboxText,
       blockers_text: blockersText,
@@ -94,18 +95,8 @@ export function CheckInForm({ onSubmit, isSubmitting }: CheckInFormProps) {
         </select>
       </div>
       <div className="field">
-        <label htmlFor="mood-score">Mood score</label>
-        <select
-          id="mood-score"
-          value={moodScore}
-          onChange={(event) => setMoodScore(event.target.value)}
-        >
-          {[1, 2, 3, 4, 5].map((value) => (
-            <option key={value} value={value}>
-              {value}
-            </option>
-          ))}
-        </select>
+        <label htmlFor="mood-score">How are you feeling?</label>
+        <EmojiMoodPicker id="mood-score" value={moodScore} onChange={setMoodScore} />
       </div>
       <div className="field span-2 checkbox-row">
         <input

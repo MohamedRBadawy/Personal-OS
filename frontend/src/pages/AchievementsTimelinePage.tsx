@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
+import { BarChart } from '../components/charts/BarChart'
 import { EmptyState } from '../components/EmptyState'
+import { PageSkeleton } from '../components/PageSkeleton'
 import { MetricCard } from '../components/MetricCard'
 import { Panel } from '../components/Panel'
 import { WorkspaceTabs } from '../components/WorkspaceTabs'
@@ -31,7 +33,7 @@ export function AchievementsTimelinePage() {
   })
 
   if (overviewQuery.isLoading) {
-    return <section className="loading-state">Loading timeline workspace...</section>
+    return <PageSkeleton />
   }
 
   if (overviewQuery.isError || !overviewQuery.data) {
@@ -64,8 +66,25 @@ export function AchievementsTimelinePage() {
             <MetricCard label="Archived goals" value={`${overview.archived_goals.length}`} />
           </div>
 
+          {overview.timeline.days.length > 0 ? (
+            <BarChart
+              title="Day scores this week (0–100)"
+              maxValue={100}
+              color="var(--accent)"
+              data={overview.timeline.days.map((day) => ({
+                label: new Date(`${day.date}T12:00:00`).toLocaleDateString('en-GB', { weekday: 'short' }),
+                value: day.score,
+                color: day.score >= 70 ? 'var(--success)' : day.score >= 40 ? 'var(--warning)' : day.score > 0 ? '#c0392b' : 'rgba(17,50,62,0.15)',
+              }))}
+            />
+          ) : null}
+
           <div className="two-column">
-            <Panel title="Weekly review status" description="Review stays connected to timeline and retrospectives.">
+            <Panel
+              title="Weekly review status"
+              description="Review stays connected to timeline and retrospectives."
+              aside={<button className="button-muted" type="button" onClick={() => window.print()}>Print</button>}
+            >
               <div className="summary-strip">
                 <div>
                   <strong>{overview.weekly_review.status.review_exists ? 'Saved' : 'Open'}</strong>

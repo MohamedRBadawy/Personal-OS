@@ -14,8 +14,15 @@ from core.ai_prompts import (
 
 try:
     from anthropic import Anthropic
-except Exception:  # pragma: no cover - exercised indirectly through fallback tests
+except Exception:  # pragma: no cover
     Anthropic = None
+
+try:
+    from google import genai as google_genai
+    from google.genai import types as genai_types
+except Exception:  # pragma: no cover
+    google_genai = None
+    genai_types = None
 
 
 logger = logging.getLogger(__name__)
@@ -47,6 +54,14 @@ class AIProvider(ABC):
     @abstractmethod
     def summarize_timeline_week(self, *, week_start, week_end, today, days, top_priorities):
         """Generate one prep/debrief note per day for a timeline week."""
+
+    @abstractmethod
+    def generate_live_suggestions(self, *, context):
+        """Generate 3–5 data-grounded suggestions from 30-day cross-domain context."""
+
+    @abstractmethod
+    def decompose_node(self, *, node_title, node_type, node_notes, node_why, active_goal_titles):
+        """Break a node down into 3–5 specific child task suggestions."""
 
 
 class DeterministicAIProvider(AIProvider):
@@ -118,6 +133,7 @@ class DeterministicAIProvider(AIProvider):
         finance = context["finance"]
         health = context["health"]
         schedule = context.get("schedule", {})
+        routine = context.get("routine", {})
         habit_rate = (
             f"{health['habit_completion_rate_7d']}%"
             if health["habit_completion_rate_7d"] is not None
@@ -128,6 +144,12 @@ class DeterministicAIProvider(AIProvider):
             if health["prayer_completion_rate_7d"] is not None
             else "n/a"
         )
+        routine_line = ""
+        if routine.get("completion_pct") is not None:
+            routine_line = f"- Routine completion this week: {routine['completion_pct']}%"
+            if routine.get("top_skipped_blocks"):
+                routine_line += f" | Most skipped: {', '.join(routine['top_skipped_blocks'][:2])}"
+
         honest_assessment = "This week was mainly about rebuilding momentum from the current constraints."
         if health.get("low_mood_streak", 0) >= 2:
             honest_assessment = (
@@ -144,7 +166,7 @@ class DeterministicAIProvider(AIProvider):
             schedule_line = (
                 f"- Schedule friction: {top_skip['label']} was skipped {top_skip['count']} times this week"
             )
-        return "\n".join([
+        lines = [
             "Weekly Review",
             f"- Independent income this month: EUR {finance['independent_income_eur']}",
             f"- Net this month: EUR {finance['net_eur']}",
@@ -152,9 +174,11 @@ class DeterministicAIProvider(AIProvider):
             f"- Avg mood (7d): {health['avg_mood_7d']}",
             f"- Habit completion (7d): {habit_rate}",
             f"- Prayer completion (7d): {prayer_rate}",
-            schedule_line,
-            f"- Honest assessment: {honest_assessment}",
-        ])
+        ]
+        if routine_line:
+            lines.append(routine_line)
+        lines.extend([schedule_line, f"- Honest assessment: {honest_assessment}"])
+        return "\n".join(lines)
 
     def cross_domain_insights(self, *, finance_summary, health_summary):
         insights = []
@@ -219,6 +243,88 @@ class DeterministicAIProvider(AIProvider):
             )
 
         return " ".join(insights[:3])
+
+    def generate_live_suggestions(self, *, context):
+        """Rule-based fallback that produces grounded suggestions from context."""
+        suggestions = []
+        health = context.get("health", {})
+        finance = context.get("finance", {})
+        pipeline = context.get("pipeline", {})
+        routine = context.get("routine", {})
+        goals = context.get("goals", {})
+
+        if health.get("avg_sleep_7d") is not None and health["avg_sleep_7d"] < 6.5:
+            suggestions.append({
+                "topic": "sleep_recovery",
+                "module": "health",
+                "text": f"Average sleep is {health['avg_sleep_7d']}h over 7 days — protect a consistent 7h window to recover baseline capacity.",
+            })
+        if health.get("habit_completion_rate_7d") is not None and health["habit_completion_rate_7d"] < 60:
+            suggestions.append({
+                "topic": "habit_reset",
+                "module": "health",
+                "text": f"Habit follow-through is at {health['habit_completion_rate_7d']}% — pick one anchor habit and protect it above all others this week.",
+            })
+        if pipeline.get("empty_pipeline"):
+            suggestions.append({
+                "topic": "pipeline_outreach",
+                "module": "pipeline",
+                "text": "The active pipeline is empty — block one hour today to research and capture one new opportunity.",
+            })
+        elif pipeline.get("due_follow_ups_count", 0) > 0:
+            suggestions.append({
+                "topic": "pipeline_follow_up",
+                "module": "pipeline",
+                "text": f"{pipeline['due_follow_ups_count']} follow-up(s) are due — close at least one pipeline loop before end of day.",
+            })
+        if finance.get("kyrgyzstan_progress_pct") is not None and finance["kyrgyzstan_progress_pct"] < 100:
+            suggestions.append({
+                "topic": "income_focus",
+                "module": "analytics",
+                "text": f"Independent income is at {finance['kyrgyzstan_progress_pct']}% of target — prioritise income-generating work over internal projects this week.",
+            })
+        if goals.get("stalled_nodes", 0) >= 3:
+            suggestions.append({
+                "topic": "goals_focus",
+                "module": "goals",
+                "text": f"{goals['stalled_nodes']} nodes haven't been updated in 14+ days — archive or reactivate them to keep the system honest.",
+            })
+        if routine.get("completion_pct_30d") is not None and routine["completion_pct_30d"] < 60:
+            suggestions.append({
+                "topic": "routine_rebuild",
+                "module": "routine",
+                "text": f"30-day routine completion is {routine['completion_pct_30d']}% — simplify the block list to what you can actually protect.",
+            })
+        return suggestions[:5]
+
+    def decompose_node(self, *, node_title, node_type, node_notes, node_why, active_goal_titles):
+        """Rule-based fallback decomposition — returns generic but useful child tasks."""
+        return [
+            {
+                "title": f"Research and define scope for: {node_title}",
+                "type": "task",
+                "effort": "1h",
+                "notes": "Clarify the exact deliverable before starting execution.",
+            },
+            {
+                "title": f"Draft a first version or prototype",
+                "type": "task",
+                "effort": "2h",
+                "notes": "Get something concrete on paper — imperfect is fine.",
+            },
+            {
+                "title": f"Review and iterate on first draft",
+                "type": "task",
+                "effort": "1h",
+                "notes": "Apply one round of improvements based on the initial output.",
+            },
+            {
+                "title": f"Share or deliver the result",
+                "type": "task",
+                "effort": "30min",
+                "notes": "Close the loop — send, publish, or hand off the finished item.",
+            },
+        ]
 
     def _summarize_day(self, *, context, is_future):
         if is_future:
@@ -499,10 +605,351 @@ class AnthropicAIProvider(DeterministicAIProvider):
             ),
         )
 
+    def generate_live_suggestions(self, *, context):
+        def call_live():
+            from core.ai_prompts import build_ai_suggestions_request  # noqa: PLC0415
+            request = build_ai_suggestions_request(context=context)
+            payload = self._request_json(
+                system_prompt=request["system"],
+                user_prompt=request["user"],
+                schema=request["schema"],
+                max_tokens=min(self.max_tokens, 1200),
+            )
+            items = payload.get("suggestions", [])
+            if not isinstance(items, list):
+                raise ValueError("Expected suggestions list.")
+            result = []
+            for item in items[:5]:
+                if not isinstance(item, dict):
+                    continue
+                result.append({
+                    "topic": str(item.get("topic", "ai_insight")),
+                    "module": str(item.get("module", "analytics")),
+                    "text": str(item.get("text", "")).strip(),
+                })
+            return [s for s in result if s["text"]]
+
+        return self._run_or_fallback(
+            operation_name="generate_live_suggestions",
+            call_live=call_live,
+            call_fallback=lambda: super(AnthropicAIProvider, self).generate_live_suggestions(context=context),
+        )
+
+    def decompose_node(self, *, node_title, node_type, node_notes, node_why, active_goal_titles):
+        def call_live():
+            from core.ai_prompts import build_node_decomposition_request  # noqa: PLC0415
+            request = build_node_decomposition_request(
+                node_title=node_title,
+                node_type=node_type,
+                node_notes=node_notes,
+                node_why=node_why,
+                active_goal_titles=active_goal_titles,
+            )
+            payload = self._request_json(
+                system_prompt=request["system"],
+                user_prompt=request["user"],
+                schema=request["schema"],
+                max_tokens=min(self.max_tokens, 1000),
+            )
+            items = payload.get("subtasks", [])
+            if not isinstance(items, list):
+                raise ValueError("Expected subtasks list.")
+            result = []
+            for item in items[:5]:
+                if not isinstance(item, dict):
+                    continue
+                result.append({
+                    "title": str(item.get("title", "")).strip(),
+                    "type": str(item.get("type", "task")),
+                    "effort": str(item.get("effort", "1h")),
+                    "notes": str(item.get("notes", "")).strip(),
+                })
+            return [s for s in result if s["title"]]
+
+        return self._run_or_fallback(
+            operation_name="decompose_node",
+            call_live=call_live,
+            call_fallback=lambda: super(AnthropicAIProvider, self).decompose_node(
+                node_title=node_title,
+                node_type=node_type,
+                node_notes=node_notes,
+                node_why=node_why,
+                active_goal_titles=active_goal_titles,
+            ),
+        )
+
+
+class GeminiAIProvider(DeterministicAIProvider):
+    """Gemini-backed provider with deterministic fallback on any error."""
+
+    def __init__(self, *, api_key, model, max_tokens):
+        self.api_key = api_key
+        self.model = model
+        self.max_tokens = max_tokens
+
+    def _request_json(self, *, system_prompt, user_prompt, schema, max_tokens=None):
+        if google_genai is None:
+            raise RuntimeError("google-genai package is not installed.")
+        client = google_genai.Client(api_key=self.api_key)
+        response = client.models.generate_content(
+            model=self.model,
+            contents=user_prompt,
+            config=genai_types.GenerateContentConfig(
+                system_instruction=system_prompt,
+                response_mime_type="application/json",
+                max_output_tokens=max_tokens or self.max_tokens,
+            ),
+        )
+        return json.loads(response.text)
+
+    @staticmethod
+    def _require_string(payload, key):
+        value = payload.get(key)
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"Expected a non-empty string for '{key}'.")
+        return value.strip()
+
+    @classmethod
+    def _require_string_list(cls, payload, key, *, max_items=None):
+        value = payload.get(key)
+        if not isinstance(value, list) or any(not isinstance(item, str) or not item.strip() for item in value):
+            raise ValueError(f"Expected '{key}' to be a list of non-empty strings.")
+        cleaned = [item.strip() for item in value]
+        if max_items is not None and len(cleaned) > max_items:
+            cleaned = cleaned[:max_items]
+        return cleaned
+
+    def _run_or_fallback(self, *, operation_name, call_live, call_fallback):
+        try:
+            return call_live()
+        except Exception as exc:
+            logger.warning("Gemini provider fell back during %s: %s", operation_name, exc, exc_info=True)
+            try:
+                return call_fallback()
+            except Exception:
+                logger.exception("Deterministic fallback also failed for %s", operation_name)
+                raise
+
+    def generate_morning_briefing(self, *, profile, finance_summary, health_summary, top_priorities, blockers_text):
+        signals = self.cross_domain_insights(finance_summary=finance_summary, health_summary=health_summary)
+        if blockers_text:
+            signals.append("A blocker was captured today and should be addressed early.")
+
+        def call_live():
+            from core.ai_prompts import build_morning_briefing_request
+            request = build_morning_briefing_request(
+                profile=profile,
+                finance_summary=finance_summary,
+                health_summary=health_summary,
+                top_priorities=top_priorities,
+                blockers_text=blockers_text,
+                signals=signals,
+            )
+            payload = self._request_json(
+                system_prompt=request["system"],
+                user_prompt=request["user"],
+                schema=request["schema"],
+                max_tokens=900,
+            )
+            return {
+                "briefing_text": self._require_string(payload, "briefing_text"),
+                "top_priorities": self._require_string_list(payload, "top_priorities", max_items=3),
+                "observations": self._require_string_list(payload, "observations", max_items=4),
+                "encouragement": self._require_string(payload, "encouragement"),
+            }
+
+        return self._run_or_fallback(
+            operation_name="generate_morning_briefing",
+            call_live=call_live,
+            call_fallback=lambda: super(GeminiAIProvider, self).generate_morning_briefing(
+                profile=profile,
+                finance_summary=finance_summary,
+                health_summary=health_summary,
+                top_priorities=top_priorities,
+                blockers_text=blockers_text,
+            ),
+        )
+
+    def score_opportunity(self, *, opportunity, active_goal_titles):
+        def call_live():
+            from core.ai_prompts import build_opportunity_scoring_request
+            request = build_opportunity_scoring_request(opportunity=opportunity, active_goal_titles=active_goal_titles)
+            payload = self._request_json(
+                system_prompt=request["system"],
+                user_prompt=request["user"],
+                schema=request["schema"],
+                max_tokens=1000,
+            )
+            fit_score = payload.get("fit_score")
+            if not isinstance(fit_score, int) or fit_score < 0 or fit_score > 100:
+                raise ValueError("Expected fit_score to be an integer between 0 and 100.")
+            return {
+                "fit_score": fit_score,
+                "fit_reasoning": self._require_string(payload, "fit_reasoning"),
+                "proposal_draft": self._require_string(payload, "proposal_draft"),
+            }
+
+        return self._run_or_fallback(
+            operation_name="score_opportunity",
+            call_live=call_live,
+            call_fallback=lambda: super(GeminiAIProvider, self).score_opportunity(
+                opportunity=opportunity, active_goal_titles=active_goal_titles
+            ),
+        )
+
+    def generate_weekly_review(self, *, context):
+        def call_live():
+            from core.ai_prompts import build_weekly_review_request
+            request = build_weekly_review_request(context=context)
+            payload = self._request_json(
+                system_prompt=request["system"],
+                user_prompt=request["user"],
+                schema=request["schema"],
+                max_tokens=self.max_tokens,
+            )
+            return self._require_string(payload, "report")
+
+        return self._run_or_fallback(
+            operation_name="generate_weekly_review",
+            call_live=call_live,
+            call_fallback=lambda: super(GeminiAIProvider, self).generate_weekly_review(context=context),
+        )
+
+    def analyze_patterns(self, *, overview):
+        def call_live():
+            from core.ai_prompts import build_pattern_analysis_request
+            request = build_pattern_analysis_request(overview=overview)
+            payload = self._request_json(
+                system_prompt=request["system"],
+                user_prompt=request["user"],
+                schema=request["schema"],
+                max_tokens=700,
+            )
+            return self._require_string(payload, "pattern_analysis")
+
+        return self._run_or_fallback(
+            operation_name="analyze_patterns",
+            call_live=call_live,
+            call_fallback=lambda: super(GeminiAIProvider, self).analyze_patterns(overview=overview),
+        )
+
+    def summarize_timeline_week(self, *, week_start, week_end, today, days, top_priorities):
+        def call_live():
+            from core.ai_prompts import build_timeline_week_request
+            request = build_timeline_week_request(
+                week_start=week_start, week_end=week_end, today=today,
+                top_priorities=top_priorities, days=days,
+            )
+            payload = self._request_json(
+                system_prompt=request["system"],
+                user_prompt=request["user"],
+                schema=request["schema"],
+                max_tokens=self.max_tokens,
+            )
+            entries = payload.get("days")
+            if not isinstance(entries, list):
+                raise ValueError("Expected timeline response to contain a days list.")
+            note_by_date = {}
+            for entry in entries:
+                if not isinstance(entry, dict):
+                    raise ValueError("Expected each timeline entry to be an object.")
+                date_value = self._require_string(entry, "date")
+                note_by_date[date_value] = self._require_string(entry, "ai_note")
+            expected_dates = [day["date"] for day in days]
+            return [{"date": d, "ai_note": note_by_date[d]} for d in expected_dates if d in note_by_date]
+
+        return self._run_or_fallback(
+            operation_name="summarize_timeline_week",
+            call_live=call_live,
+            call_fallback=lambda: super(GeminiAIProvider, self).summarize_timeline_week(
+                week_start=week_start, week_end=week_end, today=today,
+                days=days, top_priorities=top_priorities,
+            ),
+        )
+
+    def generate_live_suggestions(self, *, context):
+        def call_live():
+            from core.ai_prompts import build_ai_suggestions_request  # noqa: PLC0415
+            request = build_ai_suggestions_request(context=context)
+            payload = self._request_json(
+                system_prompt=request["system"],
+                user_prompt=request["user"],
+                schema=request["schema"],
+                max_tokens=1200,
+            )
+            items = payload.get("suggestions", [])
+            if not isinstance(items, list):
+                raise ValueError("Expected suggestions list.")
+            result = []
+            for item in items[:5]:
+                if not isinstance(item, dict):
+                    continue
+                result.append({
+                    "topic": str(item.get("topic", "ai_insight")),
+                    "module": str(item.get("module", "analytics")),
+                    "text": str(item.get("text", "")).strip(),
+                })
+            return [s for s in result if s["text"]]
+
+        return self._run_or_fallback(
+            operation_name="generate_live_suggestions",
+            call_live=call_live,
+            call_fallback=lambda: super(GeminiAIProvider, self).generate_live_suggestions(context=context),
+        )
+
+    def decompose_node(self, *, node_title, node_type, node_notes, node_why, active_goal_titles):
+        def call_live():
+            from core.ai_prompts import build_node_decomposition_request  # noqa: PLC0415
+            request = build_node_decomposition_request(
+                node_title=node_title,
+                node_type=node_type,
+                node_notes=node_notes,
+                node_why=node_why,
+                active_goal_titles=active_goal_titles,
+            )
+            payload = self._request_json(
+                system_prompt=request["system"],
+                user_prompt=request["user"],
+                schema=request["schema"],
+                max_tokens=1000,
+            )
+            items = payload.get("subtasks", [])
+            if not isinstance(items, list):
+                raise ValueError("Expected subtasks list.")
+            result = []
+            for item in items[:5]:
+                if not isinstance(item, dict):
+                    continue
+                result.append({
+                    "title": str(item.get("title", "")).strip(),
+                    "type": str(item.get("type", "task")),
+                    "effort": str(item.get("effort", "1h")),
+                    "notes": str(item.get("notes", "")).strip(),
+                })
+            return [s for s in result if s["title"]]
+
+        return self._run_or_fallback(
+            operation_name="decompose_node",
+            call_live=call_live,
+            call_fallback=lambda: super(GeminiAIProvider, self).decompose_node(
+                node_title=node_title,
+                node_type=node_type,
+                node_notes=node_notes,
+                node_why=node_why,
+                active_goal_titles=active_goal_titles,
+            ),
+        )
+
 
 def get_ai_provider():
     """Return the currently configured AI provider."""
     config = project_settings.get_ai_runtime_config()
+    if config["provider"] == "gemini" and config.get("gemini_api_key"):
+        return GeminiAIProvider(
+            api_key=config["gemini_api_key"],
+            model=config["gemini_model"],
+            max_tokens=config["gemini_max_tokens"],
+        )
     if config["provider"] == "anthropic" and config["api_key"]:
         return AnthropicAIProvider(
             api_key=config["api_key"],

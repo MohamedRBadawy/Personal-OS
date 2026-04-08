@@ -5,7 +5,7 @@ from urllib.parse import unquote, urlparse
 
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -110,15 +110,20 @@ def _database_config():
 
 def get_ai_runtime_config():
     provider = (_env_string("AI_PROVIDER", "deterministic") or "deterministic").lower()
-    if provider not in {"deterministic", "anthropic"}:
-        raise ValueError("AI_PROVIDER must be either deterministic or anthropic.")
+    if provider not in {"deterministic", "anthropic", "gemini"}:
+        raise ValueError("AI_PROVIDER must be 'deterministic', 'anthropic', or 'gemini'.")
 
     return {
         "provider": provider,
+        # Anthropic settings
         "api_key": _env_string("ANTHROPIC_API_KEY"),
         "model": _env_string("ANTHROPIC_MODEL", "claude-sonnet-4-6"),
         "timeout_seconds": _env_float("ANTHROPIC_TIMEOUT_SECONDS", 20.0),
         "max_tokens": _env_int("ANTHROPIC_MAX_TOKENS", 1400),
+        # Gemini settings
+        "gemini_api_key": _env_string("GEMINI_API_KEY"),
+        "gemini_model": _env_string("GEMINI_MODEL", "gemini-2.0-flash"),
+        "gemini_max_tokens": _env_int("GEMINI_MAX_TOKENS", 1400),
     }
 
 
@@ -142,6 +147,8 @@ INSTALLED_APPS = [
     "schedule.apps.ScheduleConfig",
     "pipeline.apps.PipelineConfig",
     "analytics.apps.AnalyticsConfig",
+    "journal.apps.JournalConfig",
+    "contacts.apps.ContactsConfig",
 ]
 
 MIDDLEWARE = [
@@ -192,12 +199,20 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "DEFAULT_PAGINATION_CLASS": "config.pagination.FlexiblePageNumberPagination",
     "PAGE_SIZE": 20,
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
 }
 
 CORS_ALLOWED_ORIGINS = _env_csv(
     "CORS_ALLOWED_ORIGINS",
-    "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173",
+    "http://localhost:3000,http://127.0.0.1:3000,"
+    "http://localhost:5173,http://127.0.0.1:5173,"
+    "http://localhost:5174,http://127.0.0.1:5174,"
+    "http://localhost:5175,http://127.0.0.1:5175,"
+    "http://localhost:5176,http://127.0.0.1:5176,"
+    "http://localhost:5177,http://127.0.0.1:5177,"
+    "http://localhost:5178,http://127.0.0.1:5178,"
+    "http://localhost:5179,http://127.0.0.1:5179,"
+    "http://localhost:5180,http://127.0.0.1:5180",
 )

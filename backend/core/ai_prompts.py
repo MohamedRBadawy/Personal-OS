@@ -140,10 +140,17 @@ def build_opportunity_scoring_request(*, opportunity, active_goal_titles):
 def build_weekly_review_request(*, context):
     return {
         "system": (
-            "You are generating a weekly review narrative for Mohamed's personal operating system. "
-            "Use only the supplied context. Return JSON only with one report string. "
-            "The report must start with 'Weekly Review' and then continue as concise bullet-style lines "
-            "inside the same string. Keep it concrete, honest, and cross-domain."
+            "You are writing Mohamed's personal weekly review. "
+            "Your job: surface honest patterns from the data, not just restate numbers. "
+            "Find connections across domains — e.g. 'low sleep correlates with skipped morning blocks', "
+            "'prayer completion dropped when pipeline was quiet'. "
+            "Be specific and direct. Avoid filler phrases. "
+            "Format: start with 'Weekly Review' then use bullet lines. "
+            "Include: (1) one headline insight — the most important pattern this week, "
+            "(2) health & routine signals, (3) finance & pipeline status, "
+            "(4) goals momentum, (5) one honest gap or risk, "
+            "(6) one concrete focus for next week. "
+            "Use only the supplied context. Return JSON only with one report string."
         ),
         "user": _json_payload(context),
         "schema": WEEKLY_REVIEW_SCHEMA,
@@ -174,6 +181,91 @@ def build_pattern_analysis_request(*, overview):
         ),
         "user": _json_payload(context),
         "schema": PATTERN_ANALYSIS_SCHEMA,
+    }
+
+
+AI_SUGGESTIONS_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "suggestions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "topic": {"type": "string"},
+                    "module": {"type": "string"},
+                    "text": {"type": "string"},
+                },
+                "required": ["topic", "module", "text"],
+                "additionalProperties": False,
+            },
+        },
+    },
+    "required": ["suggestions"],
+    "additionalProperties": False,
+}
+
+NODE_DECOMPOSITION_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "subtasks": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "type": {"type": "string"},
+                    "effort": {"type": "string"},
+                    "notes": {"type": "string"},
+                },
+                "required": ["title", "type", "effort", "notes"],
+                "additionalProperties": False,
+            },
+        },
+    },
+    "required": ["subtasks"],
+    "additionalProperties": False,
+}
+
+
+def build_ai_suggestions_request(*, context):
+    return {
+        "system": (
+            "You are Mohamed Badawy's AI operating-system assistant. "
+            "Analyse the 30-day cross-domain data and return 3 to 5 specific, "
+            "actionable suggestions. Each suggestion must have: "
+            "'topic' (a snake_case tag like 'sleep_recovery', 'pipeline_outreach', 'goals_focus'), "
+            "'module' (one of: analytics, health, pipeline, goals, routine), "
+            "and 'text' (one direct, concrete sentence — no filler). "
+            "Ground every suggestion in the numbers provided. Return JSON only."
+        ),
+        "user": _json_payload(context),
+        "schema": AI_SUGGESTIONS_SCHEMA,
+    }
+
+
+def build_node_decomposition_request(*, node_title, node_type, node_notes, node_why, active_goal_titles):
+    context = {
+        "node": {
+            "title": node_title,
+            "type": node_type,
+            "notes": node_notes or "",
+            "why": node_why or "",
+        },
+        "active_goal_titles": active_goal_titles[:5],
+    }
+    return {
+        "system": (
+            "You are helping Mohamed break down a goal or project into actionable subtasks. "
+            "Return 3 to 5 specific child tasks. Each task must have: "
+            "'title' (clear action, 5-12 words), "
+            "'type' (one of: task, subtask), "
+            "'effort' (one of: 15min, 30min, 1h, 2h, 4h, 1day), "
+            "'notes' (one sentence of context or empty string). "
+            "Be specific to the node provided. Return JSON only."
+        ),
+        "user": _json_payload(context),
+        "schema": NODE_DECOMPOSITION_SCHEMA,
     }
 
 

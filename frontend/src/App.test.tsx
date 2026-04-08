@@ -1084,8 +1084,15 @@ beforeEach(() => {
 })
 
 describe('route smoke tests', () => {
+  test('renders / command center with briefing and capture form', async () => {
+    renderRoute('/')
+    // Briefing text is always visible in the BriefingStrip
+    await screen.findByText(/protect the income system first/i)
+    // Capture form textarea is present
+    expect(screen.getByLabelText(/capture input/i)).toBeInTheDocument()
+  })
+
   test.each([
-    ['/', /unified capture/i],
     ['/goals', /map the structure, then support it with people and systems\./i],
     ['/work', /run tasks, deadlines, pipeline, marketing, and proposals from one work surface\./i],
     ['/finance', /see money clearly, track income streams, and generate reports\./i],
@@ -1140,7 +1147,7 @@ describe('command center behavior', () => {
       } as never)
 
     renderRoute('/')
-    await screen.findByText(/unified capture/i)
+    await screen.findByLabelText(/capture input/i)
 
     fireEvent.change(screen.getByLabelText(/capture input/i), {
       target: {
@@ -1157,6 +1164,52 @@ describe('command center behavior', () => {
 
     await waitFor(() => expect(api.sendChatMessage).toHaveBeenCalledTimes(2))
     expect(await screen.findByText(/applied 2 changes across finance, analytics/i)).toBeInTheDocument()
+  })
+})
+
+describe('command center redesign components', () => {
+  test('renders first priority row with "Work on next" eyebrow', async () => {
+    renderRoute('/')
+
+    await screen.findByText(/protect the income system first/i)
+    // The first priority row shows a "Work on next" eyebrow label
+    expect(screen.getByText(/work on next/i)).toBeInTheDocument()
+    // The priority title is visible in the row body (may also appear as a linked chip in schedule rows)
+    expect(screen.getAllByText(/build command center backend/i).length).toBeGreaterThan(0)
+  })
+
+  test('progress strip chips are present on the command center', async () => {
+    renderRoute('/')
+
+    await screen.findByText(/protect the income system first/i)
+    // Habits chip
+    expect(screen.getByRole('button', { name: /habits/i })).toBeInTheDocument()
+    // Schedule chip
+    expect(screen.getByRole('button', { name: /schedule/i })).toBeInTheDocument()
+  })
+
+  test('InlineHealthLog is visible in the today section', async () => {
+    renderRoute('/')
+
+    await screen.findByText(/protect the income system first/i)
+    // Health row is always visible — since health_log is null in mock, shows "not logged today"
+    expect(screen.getByText(/not logged today/i)).toBeInTheDocument()
+    // Expand button is present
+    expect(screen.getByRole('button', { name: /expand health log/i })).toBeInTheDocument()
+  })
+
+  test('Habit rows are visible in the today section', async () => {
+    renderRoute('/')
+
+    await screen.findByText(/protect the income system first/i)
+
+    // Both habits from mock data should be rendered as inline rows
+    expect(screen.getByText(/cold shower/i)).toBeInTheDocument()
+    expect(screen.getByText(/linkedin outreach/i)).toBeInTheDocument()
+
+    // Each habit row has Done and Missed buttons
+    const doneButtons = screen.getAllByRole('button', { name: /^done$/i })
+    expect(doneButtons.length).toBeGreaterThanOrEqual(2)
   })
 })
 
@@ -1183,8 +1236,10 @@ describe('grouped workspace flows', () => {
 
     renderRoute('/work?tab=board')
 
-    await screen.findByRole('heading', { name: /task board/i })
-    await userEvent.click(screen.getByRole('button', { name: /open ai thinking session/i }))
+    // PriorityRow renders a "Work on next" eyebrow for the first task — confirms board loaded
+    await screen.findByText(/work on next/i)
+    // AI thinking session button is now the inline "AI" button in PriorityRow
+    await userEvent.click(screen.getByRole('button', { name: /^ai$/i }))
 
     await waitFor(() =>
       expect(api.sendChatMessage).toHaveBeenCalledWith(

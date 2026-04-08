@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { EmptyState } from './EmptyState'
+import { PageSkeleton } from './PageSkeleton'
 import { Panel } from './Panel'
 import { StatusPill } from './StatusPill'
+import { useConfirm } from '../lib/useConfirm'
+import { useToast } from '../lib/useToast'
 import type { PaginatedResponse } from '../lib/types'
 
 type FormValue = string | boolean
@@ -70,6 +73,8 @@ export function RecordWorkspace<TItem>({
   invalidateKeys = [],
 }: RecordWorkspaceProps<TItem>) {
   const queryClient = useQueryClient()
+  const toast = useToast()
+  const confirm = useConfirm()
   const [editingId, setEditingId] = useState<string | null>(null)
   const [values, setValues] = useState<Record<string, FormValue>>(initialValues)
 
@@ -89,25 +94,33 @@ export function RecordWorkspace<TItem>({
     mutationFn: (payload: Record<string, unknown>) =>
       editingId ? updateRecord(editingId, payload) : createRecord(payload),
     onSuccess: async () => {
+      toast.success(editingId ? `${itemLabel} updated.` : `${itemLabel} saved.`)
       setEditingId(null)
       setValues(initialValues)
       await invalidateAll()
+    },
+    onError: () => {
+      toast.error(`Could not save ${itemLabel.toLowerCase()}.`)
     },
   })
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteRecord(id),
     onSuccess: async () => {
+      toast.success(`${itemLabel} deleted.`)
       if (editingId) {
         setEditingId(null)
         setValues(initialValues)
       }
       await invalidateAll()
     },
+    onError: () => {
+      toast.error(`Could not delete ${itemLabel.toLowerCase()}.`)
+    },
   })
 
   if (recordsQuery.isLoading) {
-    return <section className="loading-state">{`Loading ${itemLabel.toLowerCase()} workspace...`}</section>
+    return <PageSkeleton variant="record" />
   }
 
   if (recordsQuery.isError || !recordsQuery.data) {
@@ -276,7 +289,10 @@ export function RecordWorkspace<TItem>({
                           className="button-ghost"
                           disabled={deleteMutation.isPending}
                           type="button"
-                          onClick={() => deleteMutation.mutate(id)}
+                          onClick={async () => {
+                            const ok = await confirm('Delete record', `Are you sure you want to delete this ${itemLabel.toLowerCase()}? This cannot be undone.`)
+                            if (ok) deleteMutation.mutate(id)
+                          }}
                         >
                           Delete
                         </button>

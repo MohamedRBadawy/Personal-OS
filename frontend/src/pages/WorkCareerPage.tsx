@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
+import { PageSkeleton } from '../components/PageSkeleton'
 import { MetricCard } from '../components/MetricCard'
 import { Panel } from '../components/Panel'
 import { WorkspaceTabs } from '../components/WorkspaceTabs'
-import { CommandPriorityCard } from '../components/command-center/CommandPriorityCard'
+import { PriorityRow } from '../components/command-center/PriorityRow'
 import { getWorkOverview, sendChatMessage, updateGoalNode } from '../lib/api'
-import { formatDate, titleCase } from '../lib/formatters'
+import { titleCase } from '../lib/formatters'
 import { MarketingPage } from './SimpleWorkspacePages'
 import { PipelinePage } from './PipelinePage'
 import { SchedulePage } from './SchedulePage'
@@ -36,6 +37,8 @@ export function WorkCareerPage() {
   const [thinkingTarget, setThinkingTarget] = useState<string | null>(null)
   const [proposalReply, setProposalReply] = useState<string | null>(null)
   const [proposalTarget, setProposalTarget] = useState<string | null>(null)
+  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null)
+  const [expandedDeadlineId, setExpandedDeadlineId] = useState<string | null>(null)
 
   const taskMutation = useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: Parameters<typeof updateGoalNode>[1] }) => updateGoalNode(id, payload),
@@ -68,7 +71,7 @@ export function WorkCareerPage() {
   })
 
   if (overviewQuery.isLoading) {
-    return <section className="loading-state">Loading work workspace...</section>
+    return <PageSkeleton />
   }
 
   if (overviewQuery.isError || !overviewQuery.data) {
@@ -104,107 +107,94 @@ export function WorkCareerPage() {
           </div>
 
           <div className="two-column">
-            <Panel title="Deadline pressure" description="Deadlines and tool recommendations are grouped into the same work surface.">
+            <div className="cc-section">
+              <div className="cc-section-header">
+                <span className="cc-section-label">Deadline Pressure</span>
+              </div>
               {overview.deadlines.length === 0 ? (
                 <EmptyState title="No deadline pressure" body="Add due dates to tasks and they will surface here." />
               ) : (
-                <div className="record-list">
-                  {overview.deadlines.map((item) => (
-                    <article key={item.id} className="record-card">
-                      <div className="record-card-header">
-                        <div>
-                          <h3>{item.title}</h3>
-                          <div className="list-inline">
-                            <span className="record-meta-chip">{titleCase(item.type)}</span>
-                            <span className="record-meta-chip">{item.recommended_tool}</span>
-                            <span className="record-meta-chip">{item.due_date ? formatDate(item.due_date) : 'No due date'}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="muted">{item.tool_reasoning}</p>
-                    </article>
-                  ))}
-                </div>
+                overview.deadlines.map((item, i) => (
+                  <PriorityRow
+                    key={item.id}
+                    priority={item}
+                    isFirst={i === 0}
+                    isExpanded={expandedDeadlineId === item.id}
+                    onToggle={() => setExpandedDeadlineId((id) => id === item.id ? null : item.id)}
+                    isSaving={taskMutation.isPending && taskMutation.variables?.id === item.id}
+                    onSave={(payload) => taskMutation.mutate({ id: item.id, payload: { title: payload.title, notes: payload.notes, status: payload.status, due_date: payload.dueDate, manual_priority: payload.manualPriority } })}
+                    onMarkDone={() => taskMutation.mutate({ id: item.id, payload: { status: 'done' } })}
+                  />
+                ))
               )}
-            </Panel>
+            </div>
 
-            <Panel title="Pipeline urgency" description="Proposal drafting and client pursuit stay visible next to task execution.">
-              <div className="record-list">
-                {overview.proposal_drafts.slice(0, 3).map((opportunity) => (
-                  <article key={opportunity.id} className="record-card">
-                    <div className="record-card-header">
-                      <div>
-                        <h3>{opportunity.name}</h3>
-                        <div className="list-inline">
+            <div className="cc-section">
+              <div className="cc-section-header">
+                <span className="cc-section-label">Pipeline Urgency</span>
+              </div>
+              {overview.proposal_drafts.length === 0 ? (
+                <EmptyState title="No proposal drafts" body="When AI enriches opportunities, proposal drafts will appear here." />
+              ) : (
+                overview.proposal_drafts.slice(0, 3).map((opportunity) => (
+                  <div key={opportunity.id} className="row-item">
+                    <div className="row-item__head">
+                      <div className="row-item__body">
+                        <strong style={{ fontSize: '0.9rem' }}>{opportunity.name}</strong>
+                        <div className="row-item__sub">
                           <span className="record-meta-chip">{opportunity.platform}</span>
                           <span className="record-meta-chip">{titleCase(opportunity.status)}</span>
                         </div>
                       </div>
                     </div>
-                    <p className="muted">{opportunity.fit_reasoning || opportunity.description || 'No fit reasoning yet.'}</p>
-                  </article>
-                ))}
-                {overview.proposal_drafts.length === 0 ? (
-                  <EmptyState title="No proposal drafts" body="When AI enriches opportunities, proposal drafts will appear here." />
-                ) : null}
-              </div>
-            </Panel>
+                    <p className="muted" style={{ fontSize: '0.85rem', marginTop: 4 }}>
+                      {opportunity.fit_reasoning || opportunity.description || 'No fit reasoning yet.'}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       ) : null}
 
       {activeTab === 'board' ? (
         <div className="stack">
-          <Panel title="Task board" description="Edit priorities inline and open an AI thinking session from any task.">
+          <div className="cc-section">
+            <div className="cc-section-header">
+              <span className="cc-section-label">Task Board</span>
+            </div>
             {overview.task_board.length === 0 ? (
               <EmptyState title="No active work items" body="Activate a project or task and it will appear here." />
             ) : (
-              <div className="record-list">
-                {overview.task_board.map((priority) => (
-                  <div key={priority.id} className="stack">
-                    <CommandPriorityCard
-                      isSaving={taskMutation.isPending && taskMutation.variables?.id === priority.id}
-                      priority={priority}
-                      onSave={(payload) => taskMutation.mutate({
-                        id: priority.id,
-                        payload: {
-                          title: payload.title,
-                          notes: payload.notes,
-                          status: payload.status,
-                          due_date: payload.dueDate,
-                          manual_priority: payload.manualPriority,
-                        },
-                      })}
-                      onMarkDone={() => taskMutation.mutate({ id: priority.id, payload: { status: 'done' } })}
-                    />
-                    <div className="button-row">
-                      <button
-                        className="button-muted"
-                        disabled={thinkingMutation.isPending}
-                        type="button"
-                        onClick={() =>
-                          thinkingMutation.mutate({
-                            id: priority.id,
-                            prompt: `Think through this task and give me the clearest next move.\nTask: ${priority.title}\nType: ${priority.type}\nNotes: ${priority.notes}\nTool recommendation: ${priority.recommended_tool}\nBlocked by: ${priority.blocked_by_titles.join(', ') || 'Nothing currently blocking it.'}`,
-                          })
-                        }
-                      >
-                        {thinkingMutation.isPending && thinkingMutation.variables?.id === priority.id
-                          ? 'Thinking...'
-                          : 'Open AI thinking session'}
-                      </button>
+              overview.task_board.map((priority, i) => (
+                <div key={priority.id}>
+                  <PriorityRow
+                    priority={priority}
+                    isFirst={i === 0}
+                    isExpanded={expandedTaskId === priority.id}
+                    onToggle={() => setExpandedTaskId((id) => id === priority.id ? null : priority.id)}
+                    isSaving={taskMutation.isPending && taskMutation.variables?.id === priority.id}
+                    onSave={(payload) => taskMutation.mutate({
+                      id: priority.id,
+                      payload: { title: payload.title, notes: payload.notes, status: payload.status, due_date: payload.dueDate, manual_priority: payload.manualPriority },
+                    })}
+                    onMarkDone={() => taskMutation.mutate({ id: priority.id, payload: { status: 'done' } })}
+                    onOpenChat={() => thinkingMutation.mutate({
+                      id: priority.id,
+                      prompt: `Think through this task and give me the clearest next move.\nTask: ${priority.title}\nType: ${priority.type}\nNotes: ${priority.notes}\nTool recommendation: ${priority.recommended_tool}\nBlocked by: ${priority.blocked_by_titles.join(', ') || 'Nothing currently blocking it.'}`,
+                    })}
+                  />
+                  {thinkingReply && thinkingTarget === priority.id ? (
+                    <div className="command-inline-note">
+                      <strong>Thinking session</strong>
+                      <p>{thinkingReply}</p>
                     </div>
-                    {thinkingReply && thinkingTarget === priority.id ? (
-                      <div className="command-inline-note">
-                        <strong>Thinking session</strong>
-                        <p>{thinkingReply}</p>
-                      </div>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
+                  ) : null}
+                </div>
+              ))
             )}
-          </Panel>
+          </div>
         </div>
       ) : null}
 

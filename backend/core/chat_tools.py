@@ -16,6 +16,7 @@ from goals.services import NodeStatusService
 from health.models import Habit, HabitLog, HealthLog, MoodLog, SpiritualLog
 from pipeline.models import MarketingAction, Opportunity
 from pipeline.services import OpportunityLifecycleService
+from schedule.models import ScheduleBlock, ScheduleLog
 
 logger = logging.getLogger(__name__)
 
@@ -186,6 +187,55 @@ TOOL_SCHEMAS = [
             },
         },
     },
+    {
+        "name": "log_schedule_status",
+        "description": "Mark a today's schedule block as done, partial, late, or skipped. Use the block label (e.g. 'Focused work slot', 'Fajr and morning anchor').",
+        "input_schema": {
+            "type": "object",
+            "required": ["block_label", "status"],
+            "properties": {
+                "block_label": {"type": "string", "description": "Partial or full label of the schedule block"},
+                "status": {"type": "string", "enum": ["done", "partial", "late", "skipped"]},
+                "note": {"type": "string"},
+            },
+        },
+    },
+    {
+        "name": "update_opportunity_status",
+        "description": "Update the status of a pipeline opportunity (e.g. mark it applied, won, or lost).",
+        "input_schema": {
+            "type": "object",
+            "required": ["name", "status"],
+            "properties": {
+                "name": {"type": "string", "description": "Partial or full opportunity name"},
+                "status": {"type": "string", "enum": ["new", "reviewing", "applied", "won", "lost", "rejected"]},
+                "outcome_notes": {"type": "string"},
+            },
+        },
+    },
+    {
+        "name": "mark_followup_done",
+        "description": "Mark a marketing or pipeline follow-up as completed.",
+        "input_schema": {
+            "type": "object",
+            "required": ["action_text"],
+            "properties": {
+                "action_text": {"type": "string", "description": "Partial or full text of the marketing action to mark done"},
+            },
+        },
+    },
+    {
+        "name": "update_node_notes",
+        "description": "Update the notes or details on an existing goal, project, or task.",
+        "input_schema": {
+            "type": "object",
+            "required": ["title", "notes"],
+            "properties": {
+                "title": {"type": "string", "description": "Partial or full title of the goal/project/task"},
+                "notes": {"type": "string"},
+            },
+        },
+    },
 ]
 
 
@@ -202,12 +252,16 @@ def execute_tool(name: str, inputs: dict) -> dict:
         "mark_habit_done": _mark_habit_done,
         "create_node": _create_node,
         "update_node_status": _update_node_status,
+        "update_node_notes": _update_node_notes,
         "add_finance_entry": _add_finance_entry,
         "add_opportunity": _add_opportunity,
         "log_marketing_action": _log_marketing_action,
         "capture_idea": _capture_idea,
         "log_achievement": _log_achievement,
         "log_decision": _log_decision,
+        "log_schedule_status": _log_schedule_status,
+        "update_opportunity_status": _update_opportunity_status,
+        "mark_followup_done": _mark_followup_done,
     }
     executor = executors.get(name)
     if not executor:
@@ -348,3 +402,55 @@ def _log_decision(inputs: dict) -> dict:
         date=date.today(),
     )
     return {"status": "logged", "id": str(dec.id), "decision": dec.decision}
+
+
+def _log_schedule_status(inputs: dict) -> dict:
+    today = date.today()
+    label = inputs.get("block_label", "")
+    status = inputs["status"]
+    block = ScheduleBlock.objects.filter(label__icontains=label).first()
+    if not block:
+        return {"error": f"No schedule block found matching '{label}'"}
+    log, created = ScheduleLog.objects.update_or_create(
+        block=block,
+        date=today,
+        defaults={"status": status, "note": inputs.get("note", "")},
+    )
+    return {"status": "logged", "block": block.label, "log_status": status, "date": str(today), "created": created}
+
+
+def _update_opportunity_status(inputs: dict) -> dict:
+    name = inputs.get("name", "")
+    opp = Opportunity.objects.filter(name__icontains=name).first()
+    if not opp:
+        return {"error": f"No opportunity found matching '{name}'"}
+    opp.status = inputs["status"]
+    if inputs.get("outcome_notes"):
+        opp.outcome_notes = inputs["outcome_notes"]
+    opp.save()
+    if inputs["status"] in {"won", "lost", "rejected"}:
+        from analytics.services import ProjectRetrospectiveService
+        ProjectRetrospectiveService.maybe_create_for_opportunity(opp)
+    return {"status": "updated", "opportunity": opp.name, "new_status": opp.status}
+
+
+def _mark_followup_done(inputs: dict) -> dict:
+    action_text = inputs.get("action_text", "")
+    action = MarketingAction.objects.filter(
+        action__icontains=action_text, follow_up_done=False,
+    ).first()
+    if not action:
+        return {"error": f"No pending follow-up found matching '{action_text}'"}
+    action.follow_up_done = True
+    action.save()
+    return {"status": "marked done", "action": action.action, "date": str(action.date)}
+
+
+def _update_node_notes(inputs: dict) -> dict:
+    title = inputs.get("title", "")
+    node = Node.objects.filter(title__icontains=title).first()
+    if not node:
+        return {"error": f"No goal/task found matching '{title}'"}
+    node.notes = inputs["notes"]
+    node.save()
+    return {"status": "updated", "title": node.title, "notes_length": len(node.notes)}

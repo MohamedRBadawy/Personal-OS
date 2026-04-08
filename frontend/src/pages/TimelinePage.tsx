@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
+import { DayScoreBadge } from '../components/DayScoreBadge'
 import { EmptyState } from '../components/EmptyState'
 import { MetricCard } from '../components/MetricCard'
 import { Panel } from '../components/Panel'
@@ -115,7 +116,7 @@ export function TimelinePage() {
               onClick={() => setSelectedDate(day.date)}
             >
               <strong>{formatDate(day.date)}</strong>
-              <span>{day.score}/100</span>
+              <DayScoreBadge score={day.score} />
               <div className="timeline-indicators" aria-hidden="true">
                 {Object.entries(day.indicators).map(([key, value]) => (
                   <span key={key} className={value ? 'timeline-indicator on' : 'timeline-indicator'} />
