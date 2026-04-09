@@ -8,6 +8,7 @@ import { ContactsPage } from '../pages/ContactsPage'
 import { JournalPage } from '../pages/JournalPage'
 import { LearningPage } from '../pages/LearningPage'
 import { ProfilePage } from '../pages/ProfilePage'
+import { AboutPage } from '../pages/AboutPage'
 import { RoutinePage } from '../pages/RoutinePage'
 import DaySchedulePage from '../pages/DaySchedulePage'
 import { PageTransition } from '../components/PageTransition'
@@ -19,6 +20,7 @@ export function AppRoutes() {
       <PageTransition>
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/about" element={<AboutPage />} />
           <Route path="/goals" element={<GoalsPage />} />
           <Route path="/routine" element={<RoutinePage />} />
           <Route path="/schedule" element={<DaySchedulePage />} />

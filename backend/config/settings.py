@@ -156,6 +156,7 @@ INSTALLED_APPS = [
     "analytics.apps.AnalyticsConfig",
     "journal.apps.JournalConfig",
     "contacts.apps.ContactsConfig",
+    "profile.apps.ProfileConfig",
 ]
 
 MIDDLEWARE = [

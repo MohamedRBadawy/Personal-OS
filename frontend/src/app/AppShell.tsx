@@ -17,6 +17,7 @@ type NavItem = {
 }
 
 const primaryItems = [
+  { href: '/about', label: 'About Me' },
   { href: '/', label: 'Command Center' },
   { href: '/goals', label: 'Goals' },
   { href: '/routine', label: 'Daily Routine' },

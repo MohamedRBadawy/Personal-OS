@@ -1491,3 +1491,35 @@ export type ScheduledEntryPayload = {
   label?: string
   done?: boolean
 }
+
+// ── About Me / Self Profile ───────────────────────────────────────────────────
+
+export type ProfileSection = {
+  id: number
+  title: string
+  content: string
+  order: number
+  updated_at: string
+}
+
+export type UserProfile = {
+  id: number
+  full_name: string
+  date_of_birth: string | null
+  location: string
+  personality_type: string
+  religion: string
+  weight_kg: number | null
+  height_cm: number | null
+  monthly_income: string | null
+  income_currency: string
+  monthly_expenses: string | null
+  monthly_independent_income: string | null
+  financial_target_monthly: string | null
+  financial_target_currency: string
+  total_debt: string | null
+  debt_currency: string
+  sections: ProfileSection[]
+  ai_context: string
+  updated_at: string
+}

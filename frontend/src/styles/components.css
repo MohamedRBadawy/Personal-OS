@@ -4743,3 +4743,439 @@ th {
   align-items: center; justify-content: center;
 }
 .ds-slot-compact .ds-slot-label { display: none; }
+
+
+/* === ABOUT PAGE === */
+
+.about-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.about-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.about-ai-ctx-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  align-self: center;
+}
+.about-ai-ctx-btn:hover { background: var(--accent-strong); }
+
+/* Two-column layout */
+.about-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .about-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Quick Facts card */
+.about-facts-card {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: sticky;
+  top: 20px;
+}
+
+.about-facts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.about-facts-title {
+  margin: 0;
+  font-family: var(--heading);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.about-edit-btn {
+  padding: 5px 12px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid transparent;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.about-edit-btn:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.about-facts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.about-fact-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.88rem;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+.about-fact-row:last-child { border-bottom: none; }
+
+.about-fact-label {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.about-fact-value {
+  font-weight: 500;
+  text-align: right;
+  word-break: break-word;
+}
+.about-fact-value--accent {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* Finance block */
+.about-finance-block {
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.about-finance-heading {
+  margin: 0 0 4px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.about-progress-bar-wrap {
+  margin-top: 8px;
+}
+
+.about-progress-bar-track {
+  height: 6px;
+  background: var(--surface-muted);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.about-progress-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+.about-progress-label {
+  margin: 5px 0 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* Left/right columns */
+.about-col-left,
+.about-col-right {
+  min-width: 0;
+}
+
+.about-sections-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Section card */
+.about-section-card {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.about-section-card--editing {
+  border-color: var(--accent);
+  background: var(--bg-elevated, var(--surface));
+}
+
+.about-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.about-section-title {
+  margin: 0;
+  font-family: var(--heading);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.about-section-title-input {
+  font-family: var(--heading);
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+.about-section-edit-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: none;
+  border-radius: 50%;
+  font-size: 1rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.about-section-edit-btn:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.about-section-content {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  color: var(--text);
+}
+
+.about-section-empty {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.about-section-textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 120px;
+  margin-bottom: 10px;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.about-section-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.about-btn-danger {
+  color: #c0392b;
+}
+.about-btn-danger:hover {
+  background: rgba(192, 57, 43, 0.1);
+  color: #c0392b;
+}
+
+.about-add-section-btn {
+  padding: 14px;
+  border: 2px dashed var(--border);
+  background: transparent;
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+  width: 100%;
+  transition: border-color 0.15s, color 0.15s;
+}
+.about-add-section-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Quick Facts Edit Modal */
+.about-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 50, 62, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.about-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow);
+}
+
+.about-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.about-modal-title {
+  margin: 0;
+  font-family: var(--heading);
+  font-size: 1.1rem;
+}
+
+.about-modal-close {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 1rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.about-modal-close:hover { background: var(--surface-muted); }
+
+.about-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.about-modal-footer {
+  padding: 16px 24px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Form helpers for the modal */
+.about-form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.about-form-section-label {
+  margin: 0 0 2px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.about-form-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.about-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 140px;
+}
+.about-form-field--half { flex: 0 0 calc(50% - 5px); min-width: 100px; }
+.about-form-field--currency { flex: 0 0 80px; min-width: 70px; }
+
+.about-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Reusable button helpers */
+.btn-primary {
+  padding: 9px 18px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-primary:hover:not(:disabled) { background: var(--accent-strong); }
+.btn-primary:disabled { opacity: 0.5; cursor: default; }
+
+.btn-ghost {
+  padding: 9px 18px;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.btn-ghost:hover:not(:disabled) { background: var(--surface-muted); color: var(--text); }
+.btn-ghost:disabled { opacity: 0.5; cursor: default; }
+
+/* Dark mode adjustments */
+[data-theme='dark'] .about-modal-overlay {
+  background: rgba(0, 0, 0, 0.6);
+}
+[data-theme='dark'] .about-section-card--editing {
+  background: var(--surface-muted);
+}

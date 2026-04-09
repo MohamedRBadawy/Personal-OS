@@ -850,3 +850,20 @@ export function updateScheduledEntry(id: number, payload: Partial<import('./type
 export function deleteScheduledEntry(id: number) {
   return request<void>(`/schedule/scheduled-entries/${id}/`, { method: 'DELETE' })
 }
+
+// ── About Me / Self Profile ───────────────────────────────────────────────────
+
+export function getProfile(): Promise<import('./types').UserProfile> {
+  return request<import('./types').UserProfile>('/profile/')
+}
+
+export function updateProfile(data: Partial<import('./types').UserProfile>): Promise<import('./types').UserProfile> {
+  return request<import('./types').UserProfile>('/profile/', {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  })
+}
+
+export function getAIContext(): Promise<{ context: string }> {
+  return request<{ context: string }>('/profile/ai-context/')
+}
