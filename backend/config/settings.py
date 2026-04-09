@@ -129,7 +129,14 @@ def get_ai_runtime_config():
 
 SECRET_KEY = _env_string("SECRET_KEY", "insecure-dev-key-change-me")
 DEBUG = _env_bool("DEBUG", True)
-ALLOWED_HOSTS = _env_csv("ALLOWED_HOSTS", "localhost,127.0.0.1")
+
+# Build ALLOWED_HOSTS from the env var, then also add the Render-injected
+# RENDER_EXTERNAL_HOSTNAME (automatically set by Render for every web service).
+_allowed_hosts = _env_csv("ALLOWED_HOSTS", "localhost,127.0.0.1")
+_render_host = _env_string("RENDER_EXTERNAL_HOSTNAME")
+if _render_host and _render_host not in _allowed_hosts:
+    _allowed_hosts.append(_render_host)
+ALLOWED_HOSTS = _allowed_hosts
 
 INSTALLED_APPS = [
     "django.contrib.admin",
