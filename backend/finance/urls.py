@@ -2,7 +2,18 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from finance.views import ExchangeRatesView, FinanceEntryViewSet, FinanceOverviewAPIView, FinanceSummaryView, IncomeEventViewSet, IncomeSourceViewSet
+from finance.views import (
+    CategoryBreakdownView,
+    ExchangeRatesView,
+    FinanceEntryViewSet,
+    FinanceExportView,
+    FinanceOverviewAPIView,
+    FinanceSummaryView,
+    IncomeEventViewSet,
+    IncomeSourceViewSet,
+    MonthlyChartView,
+    RecurringChecklistView,
+)
 
 router = DefaultRouter()
 router.register("entries", FinanceEntryViewSet, basename="financeentry")
@@ -13,5 +24,9 @@ urlpatterns = [
     path("overview/", FinanceOverviewAPIView.as_view(), name="finance-overview"),
     path("summary/", FinanceSummaryView.as_view(), name="finance-summary-v2"),
     path("exchange-rates/", ExchangeRatesView.as_view(), name="exchange-rates"),
+    path("monthly-chart/", MonthlyChartView.as_view(), name="monthly-chart"),
+    path("category-breakdown/", CategoryBreakdownView.as_view(), name="category-breakdown"),
+    path("recurring-checklist/", RecurringChecklistView.as_view(), name="recurring-checklist"),
+    path("export/", FinanceExportView.as_view(), name="finance-export"),
     path("", include(router.urls)),
 ]

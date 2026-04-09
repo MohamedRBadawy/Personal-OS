@@ -19,6 +19,22 @@ class FinanceEntry(BaseModel):
         USD = "USD", "USD"
         EGP = "EGP", "EGP"
 
+    class Category(models.TextChoices):
+        FOOD = "food", "Food & Groceries"
+        HOUSING = "housing", "Housing & Rent"
+        TRANSPORT = "transport", "Transport"
+        UTILITIES = "utilities", "Utilities & Bills"
+        EDUCATION = "education", "Education"
+        CHILDREN = "children", "Children"
+        HEALTH = "health", "Health"
+        DEBT_PAYMENT = "debt_payment", "Debt Payment"
+        BUSINESS = "business", "Business"
+        SAVINGS = "savings", "Savings"
+        OTHER = "other", "Other"
+        INCOME_EMPLOYMENT = "income_employment", "Employment Income"
+        INCOME_INDEPENDENT = "income_independent", "Independent Income"
+        INCOME_OTHER = "income_other", "Other Income"
+
     type = models.CharField(max_length=10, choices=EntryType.choices)
     source = models.CharField(
         max_length=255,
@@ -29,6 +45,13 @@ class FinanceEntry(BaseModel):
         max_length=3,
         choices=Currency.choices,
         default=Currency.EUR,
+    )
+    category = models.CharField(
+        max_length=30,
+        choices=Category.choices,
+        blank=True,
+        default="",
+        help_text="Spending or income category.",
     )
     is_independent = models.BooleanField(
         default=False,
@@ -97,6 +120,10 @@ class FinanceSummary(BaseModel):
     monthly_budget_egp = models.DecimalField(
         max_digits=12, decimal_places=2, null=True, blank=True,
         help_text="Optional monthly spending budget in EGP. Enables the budget progress bar.",
+    )
+    category_budgets = models.JSONField(
+        default=dict, blank=True,
+        help_text="Monthly budget per category in EGP: {category: amount}.",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

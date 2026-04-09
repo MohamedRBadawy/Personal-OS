@@ -36,7 +36,7 @@ class FinanceSummarySerializer(serializers.ModelSerializer):
             "independent_monthly", "target_independent", "monthly_expenses_egp",
             "exchange_rate", "notes", "debts",
             "savings_target_egp", "savings_current_egp",
-            "monthly_budget_egp",
+            "monthly_budget_egp", "category_budgets",
             "surplus_egp", "income_egp", "updated_at",
         ]
         read_only_fields = ["id", "updated_at", "surplus_egp", "income_egp"]
