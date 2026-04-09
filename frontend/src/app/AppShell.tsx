@@ -16,20 +16,48 @@ type NavItem = {
   label: string
 }
 
-const primaryItems = [
-  { href: '/about', label: 'About Me' },
-  { href: '/', label: 'Command Center' },
-  { href: '/goals', label: 'Goals' },
-  { href: '/routine', label: 'Daily Routine' },
-  { href: '/schedule', label: 'Day Schedule' },
-  { href: '/finance', label: 'Finance' },
-  { href: '/health', label: 'Health' },
-  { href: '/analytics', label: 'Analytics' },
-  { href: '/contacts', label: 'Contacts' },
-  { href: '/journal', label: 'Journal' },
-  { href: '/learning', label: 'Learning' },
-  { href: '/profile', label: 'Life Stats' },
-] satisfies NavItem[]
+type NavGroup = {
+  label: string
+  items: NavItem[]
+}
+
+const navGroups: NavGroup[] = [
+  {
+    label: 'Overview',
+    items: [
+      { href: '/', label: 'Command Center' },
+      { href: '/about', label: 'About Me' },
+    ],
+  },
+  {
+    label: 'Execute',
+    items: [
+      { href: '/goals', label: 'Goals' },
+      { href: '/routine', label: 'Daily Routine' },
+      { href: '/schedule', label: 'Day Schedule' },
+    ],
+  },
+  {
+    label: 'Life',
+    items: [
+      { href: '/finance', label: 'Finance' },
+      { href: '/health', label: 'Health' },
+      { href: '/journal', label: 'Journal' },
+      { href: '/contacts', label: 'Contacts' },
+      { href: '/learning', label: 'Learning' },
+    ],
+  },
+  {
+    label: 'Review',
+    items: [
+      { href: '/analytics', label: 'Analytics' },
+      { href: '/profile', label: 'Life Stats' },
+    ],
+  },
+]
+
+// Flat list used for active-item lookup and prefetch
+const allNavItems = navGroups.flatMap((g) => g.items)
 
 const prefetchMap: Partial<Record<string, () => Promise<unknown>>> = {
   '/finance': getFinanceOverview,
@@ -46,7 +74,7 @@ export function AppShell({ children }: PropsWithChildren) {
   const queryClient = useQueryClient()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const { theme, toggleTheme } = useTheme()
-  const activeItem = primaryItems.find((item) => item.href === location.pathname)
+  const activeItem = allNavItems.find((item) => item.href === location.pathname)
 
   const handlePrefetch = useCallback((href: string) => {
     const queryFn = prefetchMap[href]
@@ -77,23 +105,24 @@ export function AppShell({ children }: PropsWithChildren) {
         </div>
 
         <nav aria-label="Primary" className="sidebar-nav">
-          <div className="nav-group">
-            <p className="nav-group-label">Primary</p>
-            <div className="nav-group-links">
-              {primaryItems.map((item) => (
-                <NavLink
-                  key={item.href}
-                  className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
-                  to={item.href}
-                  onClick={() => setDrawerOpen(false)}
-                  onMouseEnter={() => handlePrefetch(item.href)}
-                >
-                  {item.label}
-                </NavLink>
-              ))}
+          {navGroups.map((group) => (
+            <div key={group.label} className="nav-group">
+              <p className="nav-group-label">{group.label}</p>
+              <div className="nav-group-links">
+                {group.items.map((item) => (
+                  <NavLink
+                    key={item.href}
+                    className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+                    to={item.href}
+                    onClick={() => setDrawerOpen(false)}
+                    onMouseEnter={() => handlePrefetch(item.href)}
+                  >
+                    {item.label}
+                  </NavLink>
+                ))}
+              </div>
             </div>
-          </div>
-
+          ))}
         </nav>
 
         <div className="sidebar-footer">
