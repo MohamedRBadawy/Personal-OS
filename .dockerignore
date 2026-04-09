@@ -1,0 +1,10 @@
+frontend/
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+backend/db.sqlite3
+backend/.env
+backend/logs/
+.git/
+.claude/
+docs/
