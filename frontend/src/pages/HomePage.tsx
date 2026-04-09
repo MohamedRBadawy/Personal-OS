@@ -18,12 +18,13 @@ const STATUS_COLORS: Record<NodeStatus, string> = {
   deferred: '#9333ea',
 }
 
-function StatusPopover({
-  task, onClose,
-}: {
-  task: DashboardTask
-  onClose: () => void
-}) {
+const HEALTH_ALERT_LABELS: Record<string, string> = {
+  low_sleep:  'Low sleep',
+  low_mood:   'Low mood',
+  prayer_gap: 'Prayer gap',
+}
+
+function StatusPopover({ task, onClose }: { task: DashboardTask; onClose: () => void }) {
   const qc = useQueryClient()
   const mut = useMutation({
     mutationFn: (status: NodeStatus) => updateNode(task.id, { status } as NodeUpdatePayload),
@@ -154,22 +155,20 @@ export function HomePage() {
 
   const today = new Date().toLocaleDateString('en-CA')
 
-  const statCards = [
-    { label: 'Active',     value: data.node_counts.active,    to: '/goals?status=active' },
-    { label: 'Available',  value: data.node_counts.available, to: '/goals?status=available' },
-    { label: 'Blocked',    value: data.node_counts.blocked,   to: '/goals?status=blocked' },
-    { label: 'Done',       value: data.node_counts.done,      to: '/goals?status=done' },
-    { label: 'Surplus EGP',value: `~${formatK(data.surplus_egp)}`, to: '/finance' },
-    { label: 'Nodes total',value: data.node_counts.total,     to: '/goals' },
-  ]
+  const hp = data.health_pulse
+  const js = data.journal_status
+  const cd = data.contacts_due
+  const fd = data.finance_detail
 
   return (
     <div className="home-page" onClick={() => setActivePopover(null)}>
 
       {/* ── Date ── */}
-      <p className="home-date">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+      <p className="home-date">
+        {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+      </p>
 
-      {/* ── Section 1: Unlock Bar ── */}
+      {/* ── SECTION 1: North Star ── */}
       <div className="unlock-bar">
         <p className="unlock-eyebrow">The number that unlocks everything</p>
         <div className="unlock-numbers">
@@ -184,36 +183,100 @@ export function HomePage() {
           {independentPct === 0
             ? 'First outreach message → first client → first €'
             : 'Kyrgyzstan unlocks at 100%'}
+          {' · '}
+          <Link to="/finance" style={{ color: 'inherit', opacity: 0.7 }}>Finance →</Link>
         </p>
       </div>
 
-      {/* ── Section 2: Stat Cards ── */}
-      <div className="stat-grid">
-        {statCards.map(card => (
-          <Link key={card.label} to={card.to} className="stat-card">
-            <span className="stat-value">{card.value}</span>
-            <span className="stat-label">{card.label}</span>
+      {/* ── SECTION 2: Today ── */}
+      <div className="home-section">
+        <div className="home-section-header">
+          <p className="home-section-title">Today</p>
+        </div>
+
+        {/* Routine */}
+        <Link to="/routine" className="pulse-row">
+          <span className="pulse-icon">▦</span>
+          <span className="pulse-label">Routine</span>
+          <span className="pulse-value">{data.routine_today.done}/{data.routine_today.total}</span>
+          <div className="pulse-bar-wrap">
+            <div className="pulse-bar-fill" style={{ width: `${data.routine_today.pct}%` }} />
+          </div>
+          <span className="pulse-pct">{data.routine_today.pct}%</span>
+        </Link>
+
+        {/* Journal */}
+        <Link
+          to="/journal"
+          className={`pulse-row${!js.journaled_today ? ' pulse-row--alert' : ''}`}
+        >
+          <span className="pulse-icon">✏</span>
+          <span className="pulse-label">Journal</span>
+          {js.journaled_today
+            ? <span className="pulse-value pulse-value--ok">Done</span>
+            : <span className="pulse-value pulse-value--warn">Not yet</span>
+          }
+          {js.tomorrow_focus && (
+            <span className="pulse-sub">Focus: {js.tomorrow_focus}</span>
+          )}
+        </Link>
+
+        {/* Health */}
+        <Link
+          to="/health"
+          className={`pulse-row${hp.alerts.length > 0 ? ' pulse-row--alert' : ''}`}
+        >
+          <span className="pulse-icon">❤</span>
+          <span className="pulse-label">Health</span>
+          {hp.avg_sleep_7d !== null && (
+            <span className="pulse-value">{hp.avg_sleep_7d}h sleep</span>
+          )}
+          {hp.avg_mood_7d !== null && (
+            <span className="pulse-meta">· mood {hp.avg_mood_7d}/5</span>
+          )}
+          {hp.full_prayer_streak > 0 && (
+            <span className="pulse-meta">· {hp.full_prayer_streak}d prayer</span>
+          )}
+          {hp.alerts.map(a => (
+            <span key={a} className="pulse-chip">{HEALTH_ALERT_LABELS[a]}</span>
+          ))}
+          {!hp.health_logged_today && (
+            <span className="pulse-chip">Log today</span>
+          )}
+        </Link>
+
+        {/* Contacts — only when there are overdue follow-ups */}
+        {cd.count > 0 && (
+          <Link to="/contacts" className="pulse-row pulse-row--alert">
+            <span className="pulse-icon">👥</span>
+            <span className="pulse-label">Contacts</span>
+            <span className="pulse-value pulse-value--warn">{cd.count} follow-up{cd.count !== 1 ? 's' : ''} due</span>
+            <span className="pulse-sub">{cd.top.map(c => c.name).join(', ')}</span>
           </Link>
-        ))}
+        )}
       </div>
 
-      {/* ── Section 2.5: Routine Today ── */}
-      <Link to="/routine" className="routine-today-row">
-        <span className="routine-today-icon">▦</span>
-        <span className="routine-today-label">Daily Routine</span>
-        <span className="routine-today-count">{data.routine_today.done}/{data.routine_today.total} done</span>
-        <span className="routine-today-pct">{data.routine_today.pct}%</span>
-        <div className="routine-today-bar-wrap">
-          <div className="routine-today-bar-fill" style={{ width: `${data.routine_today.pct}%` }} />
-        </div>
-      </Link>
-
-      {/* ── Section 3: Top Priority Tasks ── */}
+      {/* ── SECTION 3: Priorities ── */}
       <div className="home-section">
         <div className="section-header">
-          <h2 className="section-title">Top priority tasks</h2>
-          <button className="btn-ghost-sm" onClick={e => { e.stopPropagation(); setShowAddTask(true) }}>+ Add task</button>
+          <h2 className="section-title">Priorities</h2>
+          <button
+            className="btn-ghost-sm"
+            onClick={e => { e.stopPropagation(); setShowAddTask(true) }}
+          >
+            + Add task
+          </button>
         </div>
+
+        {/* Tomorrow's focus note */}
+        {js.tomorrow_focus && (
+          <div className="focus-note">
+            <span style={{ fontSize: 13, color: 'var(--text-muted)', flexShrink: 0 }}>Focus:</span>
+            <em>{js.tomorrow_focus}</em>
+            <Link to="/journal" className="focus-note-link">Edit →</Link>
+          </div>
+        )}
+
         {data.top_tasks.length === 0 ? (
           <p className="empty-hint">No P1 tasks available. <Link to="/goals">Go to Goals to add.</Link></p>
         ) : (
@@ -262,28 +325,77 @@ export function HomePage() {
             ))}
           </div>
         )}
+
+        {/* Blocked goals — inside Priorities section */}
+        {data.blocked_goals.length > 0 && (
+          <div className="blocked-panel" style={{ marginTop: 8 }}>
+            <p className="section-title" style={{ marginBottom: 6 }}>⚠ Blocked goals</p>
+            <div className="blocked-list">
+              {data.blocked_goals.map(g => (
+                <Link key={g.id} to={`/goals?node=${g.id}`} className="blocked-row" style={{ textDecoration: 'none' }}>
+                  <span className="blocked-title">{g.title}</span>
+                  {g.blocked_by.length > 0 && (
+                    <span className="blocked-by">blocked by: {g.blocked_by.join(', ')}</span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* ── Section 4: Blocked Goals ── */}
-      {data.blocked_goals.length > 0 && (
-        <div className="home-section blocked-panel">
-          <h2 className="section-title">⚠ Blocked goals</h2>
-          <div className="blocked-list">
-            {data.blocked_goals.map(g => (
-              <div key={g.id} className="blocked-row">
-                <span className="blocked-title">{g.title}</span>
-                {g.blocked_by.length > 0 && (
-                  <span className="blocked-by">blocked by: {g.blocked_by.join(', ')}</span>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── Section 5: Road to Kyrgyzstan ── */}
+      {/* ── SECTION 4: Finance Snapshot ── */}
       <div className="home-section">
-        <h2 className="section-title">Road to Kyrgyzstan</h2>
+        <div className="home-section-header">
+          <p className="home-section-title">Finance</p>
+          <Link to="/finance" className="home-section-link">Details →</Link>
+        </div>
+        <Link to="/finance" className="finance-snapshot">
+          <div className="finance-snap-grid">
+            <div className="finance-snap-item">
+              <span className="finance-snap-value">~{formatK(data.surplus_egp)} EGP</span>
+              <span className="finance-snap-label">Monthly surplus</span>
+            </div>
+            {fd.savings_pct !== null && fd.savings_target_egp > 0 && (
+              <div className="finance-snap-item">
+                <span className="finance-snap-value">{fd.savings_pct}%</span>
+                <span className="finance-snap-label">Savings target</span>
+              </div>
+            )}
+            {fd.total_debt_egp > 0 && (
+              <div className="finance-snap-item finance-snap-item--warn">
+                <span className="finance-snap-value">{formatK(fd.total_debt_egp)} EGP</span>
+                <span className="finance-snap-label">Total debt</span>
+              </div>
+            )}
+          </div>
+        </Link>
+      </div>
+
+      {/* ── SECTION 5: Goals Overview ── */}
+      <div className="home-section">
+        <div className="home-section-header">
+          <p className="home-section-title">Goals</p>
+          <Link to="/goals" className="home-section-link">All goals →</Link>
+        </div>
+        <div className="stat-grid">
+          {[
+            { label: 'Active',    value: data.node_counts.active,    to: '/goals?status=active' },
+            { label: 'Available', value: data.node_counts.available, to: '/goals?status=available' },
+            { label: 'Blocked',   value: data.node_counts.blocked,   to: '/goals?status=blocked' },
+            { label: 'Done',      value: data.node_counts.done,      to: '/goals?status=done' },
+          ].map(card => (
+            <Link key={card.label} to={card.to} className="stat-card">
+              <span className="stat-value">{card.value}</span>
+              <span className="stat-label">{card.label}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* ── SECTION 6: Road to Kyrgyzstan ── */}
+      <div className="home-section">
+        <p className="home-section-title">Road to Kyrgyzstan</p>
         <div className="milestone-chain">
           {data.milestones.map((m, i) => (
             <div key={i} className={`milestone-row ${m.done ? 'done' : m.next ? 'next' : ''}`}>

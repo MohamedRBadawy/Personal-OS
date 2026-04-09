@@ -1216,6 +1216,36 @@ export type DashboardMilestone = {
   next: boolean
 }
 
+export type DashboardHealthPulse = {
+  avg_sleep_7d: number | null
+  avg_mood_7d: number | null
+  exercise_streak: number
+  full_prayer_streak: number
+  prayer_completion_rate_7d: number | null
+  health_logged_today: boolean
+  mood_logged_today: boolean
+  spiritual_logged_today: boolean
+  alerts: Array<'low_sleep' | 'low_mood' | 'prayer_gap'>
+}
+
+export type DashboardJournalStatus = {
+  journaled_today: boolean
+  tomorrow_focus: string
+}
+
+export type DashboardContactsDue = {
+  count: number
+  top: Array<{ id: number; name: string; relation: string }>
+}
+
+export type DashboardFinanceDetail = {
+  savings_current_egp: number
+  savings_target_egp: number
+  savings_pct: number | null
+  total_debt_egp: number
+  monthly_budget_egp: number | null
+}
+
 export type DashboardV2 = {
   independent_monthly: number
   target_independent: number
@@ -1235,6 +1265,10 @@ export type DashboardV2 = {
   blocked_goals: Array<{ id: string; title: string; blocked_by: string[] }>
   milestones: DashboardMilestone[]
   routine_today: { done: number; total: number; pct: number }
+  health_pulse: DashboardHealthPulse
+  journal_status: DashboardJournalStatus
+  contacts_due: DashboardContactsDue
+  finance_detail: DashboardFinanceDetail
 }
 
 export type FinanceSummaryV2 = {
