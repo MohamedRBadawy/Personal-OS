@@ -128,7 +128,27 @@
       "Bash(grep -v \"^$\")",
       "Bash(python -c ':*)",
       "Bash(python manage.py makemigrations schedule --name=\"scheduled_entry\")",
-      "Bash(python manage.py runserver)"
+      "Bash(python manage.py runserver)",
+      "Bash(curl -s http://127.0.0.1:8000/api/profile/)",
+      "Bash(taskkill /F /IM python.exe)",
+      "Bash(findstr :8000)",
+      "Bash(taskkill /F /PID 10924 /PID 31956 /PID 4964 /PID 17864 /PID 33584)",
+      "Bash(taskkill /F /PID 10924)",
+      "Bash(taskkill /F /PID 31956)",
+      "Bash(taskkill /F /PID 4964)",
+      "Bash(taskkill /F /PID 17864)",
+      "Bash(taskkill /F /PID 33584)",
+      "Bash(powershell -Command \"Stop-Process -Id 10924,31956,4964,17864,33584 -Force -ErrorAction SilentlyContinue; Write-Host 'Done'\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('OK - profile id:', d.get\\('id'\\)\\)\")",
+      "Bash(curl -s -X PATCH http://127.0.0.1:8000/api/profile/ -H 'Content-Type: application/json' -d '{:*)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('Updated:', d.get\\('full_name'\\)\\)\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('Sections:', len\\(d.get\\('sections', []\\)\\)\\)\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('Sections created:', len\\(d.get\\('sections',[]\\)\\), '| Name:', d.get\\('full_name'\\)\\)\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('id:', d.get\\('id'\\), 'name:', d.get\\('full_name'\\), 'sections:', len\\(d.get\\('sections',[]\\)\\)\\)\")",
+      "Bash(curl -s -X PATCH http://127.0.0.1:8000/api/profile/ -H 'Content-Type: application/json' -d '{\"sections\": [{\"title\": \"Test\", \"content\": \"Hello\", \"order\": 0}]}')",
+      "Bash(python -c \"import sys,json; raw=sys.stdin.read\\(\\); print\\(raw[:300]\\)\")",
+      "Bash(curl -s http://127.0.0.1:8000/api/finance/exchange-rates/)",
+      "Bash(curl -s -X PATCH http://127.0.0.1:8000/api/finance/exchange-rates/ -H 'Content-Type: application/json' -d '{\"eur_to_egp\": 60.0, \"eur_to_usd\": 1.08}')"
     ]
   }
 }

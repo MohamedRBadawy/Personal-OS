@@ -9,6 +9,7 @@ import type {
   CommandCenterPayload,
   DashboardPayload,
   DashboardV2,
+  ExchangeRates,
   FinanceSummaryV2,
   Node,
   NodeCreatePayload,
@@ -866,4 +867,17 @@ export function updateProfile(data: Partial<import('./types').UserProfile>): Pro
 
 export function getAIContext(): Promise<{ context: string }> {
   return request<{ context: string }>('/profile/ai-context/')
+}
+
+// ── Exchange Rates ────────────────────────────────────────────────────────────
+
+export function getExchangeRates(): Promise<ExchangeRates> {
+  return request<ExchangeRates>('/finance/exchange-rates/')
+}
+
+export function updateExchangeRates(data: { eur_to_egp?: number; eur_to_usd?: number }): Promise<ExchangeRates> {
+  return request<ExchangeRates>('/finance/exchange-rates/', {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  })
 }

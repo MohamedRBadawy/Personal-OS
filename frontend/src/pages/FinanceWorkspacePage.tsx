@@ -4,8 +4,9 @@ import { PageSkeleton } from '../components/PageSkeleton'
 import {
   getFinanceSummaryV2, updateFinanceSummaryV2,
   listIncomeEvents, createIncomeEvent, deleteIncomeEvent,
+  getExchangeRates, updateExchangeRates,
 } from '../lib/api'
-import type { FinanceSummaryV2, IncomeEvent } from '../lib/types'
+import type { ExchangeRates, FinanceSummaryV2, IncomeEvent } from '../lib/types'
 
 type Debt = { name: string; amount_egp: number }
 
@@ -280,6 +281,91 @@ function DebtPayoffPlan({ debts, surplusEgp }: { debts: Debt[]; surplusEgp: numb
   )
 }
 
+// ── Forex Widget ──────────────────────────────────────────────────────────
+
+function ForexWidget() {
+  const queryClient = useQueryClient()
+  const [editing, setEditing] = useState(false)
+  const [egpInput, setEgpInput] = useState('')
+  const [usdInput, setUsdInput] = useState('')
+
+  const ratesQuery = useQuery({ queryKey: ['exchange-rates'], queryFn: getExchangeRates })
+  const updateMutation = useMutation({
+    mutationFn: updateExchangeRates,
+    onSuccess: (data: ExchangeRates) => {
+      queryClient.setQueryData(['exchange-rates'], data)
+      queryClient.invalidateQueries({ queryKey: ['finance-summary-v2'] })
+      queryClient.invalidateQueries({ queryKey: ['finance-summary'] })
+      setEditing(false)
+    },
+  })
+
+  const rates = ratesQuery.data
+
+  function startEdit() {
+    if (!rates) return
+    setEgpInput(String(rates.eur_to_egp))
+    setUsdInput(String(rates.eur_to_usd))
+    setEditing(true)
+  }
+
+  function handleSave() {
+    updateMutation.mutate({
+      eur_to_egp: parseFloat(egpInput),
+      eur_to_usd: parseFloat(usdInput),
+    })
+  }
+
+  if (ratesQuery.isLoading || !rates) return null
+
+  return (
+    <div className="forex-widget">
+      <div className="forex-widget-header">
+        <span className="forex-widget-title">Exchange Rates</span>
+        {!editing && (
+          <button className="about-edit-btn" onClick={startEdit} type="button">Update</button>
+        )}
+      </div>
+
+      {editing ? (
+        <div>
+          <div className="forex-edit-row">
+            <div className="sp-field">
+              <label className="sp-label">1 EUR = ? EGP</label>
+              <input className="form-input" type="number" step="0.01" value={egpInput} onChange={e => setEgpInput(e.target.value)} />
+            </div>
+            <div className="sp-field">
+              <label className="sp-label">1 EUR = ? USD</label>
+              <input className="form-input" type="number" step="0.0001" value={usdInput} onChange={e => setUsdInput(e.target.value)} />
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            <button className="btn-ghost" onClick={() => setEditing(false)} type="button">Cancel</button>
+            <button className="btn-primary" onClick={handleSave} type="button" disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? 'Saving…' : 'Save Rates'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="forex-rates">
+          <div className="forex-rate-item">
+            <span className="forex-rate-label">EUR → EGP</span>
+            <span className="forex-rate-value">1 € = {rates.eur_to_egp.toFixed(2)} EGP</span>
+          </div>
+          <div className="forex-rate-item">
+            <span className="forex-rate-label">EUR → USD</span>
+            <span className="forex-rate-value">1 € = {rates.eur_to_usd.toFixed(4)} $</span>
+          </div>
+          <div className="forex-rate-item">
+            <span className="forex-rate-label">USD → EGP (derived)</span>
+            <span className="forex-rate-value forex-rate-derived">1 $ = {rates.usd_to_egp.toFixed(2)} EGP</span>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Income History ─────────────────────────────────────────────────────────
 
 function IncomeHistory() {
@@ -446,6 +532,9 @@ export function FinanceWorkspacePage() {
             : 'Keep going. Every client gets you closer.'}
         </p>
       </div>
+
+      {/* Exchange Rates Widget */}
+      <ForexWidget />
 
       {/* Section 2: 4 stat cards */}
       <div className="stat-grid finance-stat-grid">

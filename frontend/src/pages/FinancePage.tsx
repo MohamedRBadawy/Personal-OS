@@ -82,6 +82,7 @@ export function FinancePage() {
                   <th>Type</th>
                   <th>Currency</th>
                   <th>Amount (EUR)</th>
+                  <th>In EGP</th>
                 </tr>
               </thead>
               <tbody>
@@ -91,6 +92,7 @@ export function FinancePage() {
                     <td>{entry.type}</td>
                     <td>{entry.currency}</td>
                     <td>{formatCurrency(entry.amount_eur)}</td>
+                    <td>{entry.amount_egp.toLocaleString('en-EG')} EGP</td>
                   </tr>
                 ))}
               </tbody>

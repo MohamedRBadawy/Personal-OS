@@ -67,3 +67,29 @@ class FinanceSummaryView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class ExchangeRatesView(APIView):
+    """GET / PATCH the live EUR/EGP and EUR/USD exchange rates."""
+
+    def get(self, request):
+        from core.models import AppSettings
+        s = AppSettings.get_solo()
+        egp_rate = float(s.eur_to_egp_rate)
+        usd_rate = float(s.eur_to_usd_rate)
+        return Response({
+            "eur_to_egp": egp_rate,
+            "eur_to_usd": usd_rate,
+            "usd_to_egp": round(egp_rate / usd_rate, 4),
+        })
+
+    def patch(self, request):
+        from core.models import AppSettings
+        from decimal import Decimal
+        s = AppSettings.get_solo()
+        if "eur_to_egp" in request.data:
+            s.eur_to_egp_rate = Decimal(str(request.data["eur_to_egp"]))
+        if "eur_to_usd" in request.data:
+            s.eur_to_usd_rate = Decimal(str(request.data["eur_to_usd"]))
+        s.save()
+        return self.get(request)

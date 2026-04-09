@@ -29,6 +29,21 @@ class FinanceMetricsService:
             return amount / settings_obj.eur_to_egp_rate
         return amount
 
+    @classmethod
+    def convert_to_egp(cls, amount, currency):
+        """Convert any currency amount to EGP using AppSettings rates."""
+        settings_obj = cls.app_settings()
+        amount = Decimal(amount)
+        egp_rate = settings_obj.eur_to_egp_rate
+        usd_rate = settings_obj.eur_to_usd_rate
+        if currency == FinanceEntry.Currency.EGP:
+            return amount
+        if currency == FinanceEntry.Currency.EUR:
+            return amount * egp_rate
+        if currency == FinanceEntry.Currency.USD:
+            return amount / usd_rate * egp_rate
+        return amount
+
     @staticmethod
     def month_window(reference_date):
         month_start = reference_date.replace(day=1)

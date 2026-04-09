@@ -5172,6 +5172,17 @@ th {
 .btn-ghost:hover:not(:disabled) { background: var(--surface-muted); color: var(--text); }
 .btn-ghost:disabled { opacity: 0.5; cursor: default; }
 
+/* === FOREX WIDGET === */
+.forex-widget { border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; background: var(--surface); }
+.forex-widget-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.forex-widget-title { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.forex-rates { display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap; }
+.forex-rate-item { display: flex; flex-direction: column; gap: 2px; }
+.forex-rate-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.forex-rate-value { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.forex-rate-derived { font-size: 15px; color: var(--muted); }
+.forex-edit-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+
 /* Dark mode adjustments */
 [data-theme='dark'] .about-modal-overlay {
   background: rgba(0, 0, 0, 0.6);

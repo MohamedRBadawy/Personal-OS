@@ -9,14 +9,18 @@ class FinanceEntrySerializer(serializers.ModelSerializer):
     """Serializer for income and expense records."""
 
     amount_eur = serializers.SerializerMethodField(read_only=True)
+    amount_egp = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = FinanceEntry
         fields = "__all__"
-        read_only_fields = ["id", "created_at", "amount_eur"]
+        read_only_fields = ["id", "created_at", "amount_eur", "amount_egp"]
 
     def get_amount_eur(self, obj):
-        return round(FinanceMetricsService.convert_to_eur(obj.amount, obj.currency), 2)
+        return round(float(FinanceMetricsService.convert_to_eur(obj.amount, obj.currency)), 2)
+
+    def get_amount_egp(self, obj):
+        return round(float(FinanceMetricsService.convert_to_egp(obj.amount, obj.currency)), 2)
 
 
 class FinanceSummarySerializer(serializers.ModelSerializer):

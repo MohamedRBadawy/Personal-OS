@@ -76,7 +76,7 @@ class AppSettings(BaseModel):
         return {
             "name": cls._string_env("APP_SETTINGS_NAME", "Default Settings"),
             "eur_to_usd_rate": cls._decimal_env("CURRENCY_EUR_USD_RATE", "1.08"),
-            "eur_to_egp_rate": cls._decimal_env("CURRENCY_EUR_EGP_RATE", "33.50"),
+            "eur_to_egp_rate": cls._decimal_env("CURRENCY_EUR_EGP_RATE", "60.00"),
             "independent_income_target_eur": cls._decimal_env(
                 "INDEPENDENT_INCOME_TARGET_EUR",
                 "1000",

@@ -132,6 +132,7 @@ export type FinanceEntry = {
   source: string
   amount: string
   amount_eur: number
+  amount_egp: number
   currency: CurrencyCode
   is_independent: boolean
   is_recurring: boolean
@@ -1522,4 +1523,10 @@ export type UserProfile = {
   sections: ProfileSection[]
   ai_context: string
   updated_at: string
+}
+
+export type ExchangeRates = {
+  eur_to_egp: number
+  eur_to_usd: number
+  usd_to_egp: number
 }

@@ -4,6 +4,7 @@ from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from core.models import AppSettings
 from finance.models import FinanceSummary
 from goals.models import Node
 from schedule.models import RoutineLog
@@ -71,6 +72,7 @@ class DashboardV2View(APIView):
 
     def get(self, request):
         finance = FinanceSummary.get()
+        egp_rate = float(AppSettings.get_solo().eur_to_egp_rate)
 
         # Node counts by status
         counts = {
@@ -122,9 +124,9 @@ class DashboardV2View(APIView):
             "independent_monthly": float(finance.independent_monthly),
             "target_independent": float(finance.target_independent),
             "income_eur": float(finance.income_eur),
-            "income_egp": round(float(finance.income_eur) * 60 + float(finance.income_egp_direct), 0),
+            "income_egp": round(float(finance.income_eur) * egp_rate + float(finance.income_egp_direct), 0),
             "monthly_expenses_egp": float(finance.monthly_expenses_egp),
-            "surplus_egp": round(float(finance.income_eur) * 60 + float(finance.income_egp_direct) - float(finance.monthly_expenses_egp), 0),
+            "surplus_egp": round(float(finance.income_eur) * egp_rate + float(finance.income_egp_direct) - float(finance.monthly_expenses_egp), 0),
             "node_counts": {
                 "active": counts.get("active", 0),
                 "available": counts.get("available", 0),
