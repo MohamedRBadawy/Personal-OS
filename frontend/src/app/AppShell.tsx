@@ -76,6 +76,11 @@ export function AppShell({ children }: PropsWithChildren) {
   const { theme, toggleTheme } = useTheme()
   const activeItem = allNavItems.find((item) => item.href === location.pathname)
 
+  // All sections start expanded; clicking the label toggles collapse
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
+  const toggleGroup = (label: string) =>
+    setCollapsed((prev) => ({ ...prev, [label]: !prev[label] }))
+
   const handlePrefetch = useCallback((href: string) => {
     const queryFn = prefetchMap[href]
     const queryKey = prefetchQueryKeys[href]
@@ -105,24 +110,37 @@ export function AppShell({ children }: PropsWithChildren) {
         </div>
 
         <nav aria-label="Primary" className="sidebar-nav">
-          {navGroups.map((group) => (
-            <div key={group.label} className="nav-group">
-              <p className="nav-group-label">{group.label}</p>
-              <div className="nav-group-links">
-                {group.items.map((item) => (
-                  <NavLink
-                    key={item.href}
-                    className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
-                    to={item.href}
-                    onClick={() => setDrawerOpen(false)}
-                    onMouseEnter={() => handlePrefetch(item.href)}
-                  >
-                    {item.label}
-                  </NavLink>
-                ))}
+          {navGroups.map((group) => {
+            const isCollapsed = collapsed[group.label] ?? false
+            return (
+              <div key={group.label} className="nav-group">
+                <button
+                  type="button"
+                  className="nav-group-toggle"
+                  onClick={() => toggleGroup(group.label)}
+                  aria-expanded={!isCollapsed}
+                >
+                  <span className="nav-group-label">{group.label}</span>
+                  <span className={`nav-group-chevron${isCollapsed ? ' collapsed' : ''}`}>›</span>
+                </button>
+                {!isCollapsed && (
+                  <div className="nav-group-links">
+                    {group.items.map((item) => (
+                      <NavLink
+                        key={item.href}
+                        className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+                        to={item.href}
+                        onClick={() => setDrawerOpen(false)}
+                        onMouseEnter={() => handlePrefetch(item.href)}
+                      >
+                        {item.label}
+                      </NavLink>
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            )
+          })}
         </nav>
 
         <div className="sidebar-footer">
