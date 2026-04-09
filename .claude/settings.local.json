@@ -127,7 +127,8 @@
       "Bash(find \"F:/Personal OS/frontend/src/styles/\" -name \"*.css\" -exec ls -la {} \\\\;)",
       "Bash(grep -v \"^$\")",
       "Bash(python -c ':*)",
-      "Bash(python manage.py makemigrations schedule --name=\"scheduled_entry\")"
+      "Bash(python manage.py makemigrations schedule --name=\"scheduled_entry\")",
+      "Bash(python manage.py runserver)"
     ]
   }
 }
