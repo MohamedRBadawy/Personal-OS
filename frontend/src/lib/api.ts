@@ -78,6 +78,9 @@ import type {
   IncomeEvent,
   JournalEntry,
   JournalEntryPayload,
+  MonthlyChartPoint,
+  CategoryBreakdownItem,
+  RecurringChecklistItem,
 } from './types'
 
 export function resolveApiBaseUrl(rawValue: string | undefined = import.meta.env.VITE_API_BASE_URL) {
@@ -202,12 +205,42 @@ export function getFinanceOverview() {
   return request<FinanceOverviewPayload>('/finance/overview/')
 }
 
-export function listFinanceEntries() {
-  return listResource<FinanceEntry>('/finance/entries/')
+export function listFinanceEntries(params?: { month?: string; type?: string; category?: string }) {
+  const q = new URLSearchParams()
+  if (params?.month) q.set('month', params.month)
+  if (params?.type) q.set('type', params.type)
+  if (params?.category) q.set('category', params.category)
+  const qs = q.toString()
+  return listResource<FinanceEntry>(`/finance/entries/${qs ? '?' + qs : ''}`)
 }
 
 export function createFinanceEntry(payload: FinanceEntryPayload) {
   return createResource<FinanceEntry, FinanceEntryPayload>('/finance/entries/', payload)
+}
+
+export function updateFinanceEntry(id: number, payload: Partial<FinanceEntryPayload>): Promise<FinanceEntry> {
+  return request<FinanceEntry>(`/finance/entries/${id}/`, { method: 'PATCH', body: JSON.stringify(payload) })
+}
+
+export function deleteFinanceEntry(id: number): Promise<void> {
+  return request<void>(`/finance/entries/${id}/`, { method: 'DELETE' })
+}
+
+export function getMonthlyChart(): Promise<MonthlyChartPoint[]> {
+  return request<MonthlyChartPoint[]>('/finance/monthly-chart/')
+}
+
+export function getCategoryBreakdown(month?: string): Promise<CategoryBreakdownItem[]> {
+  return request<CategoryBreakdownItem[]>(`/finance/category-breakdown/${month ? '?month=' + month : ''}`)
+}
+
+export function getRecurringChecklist(): Promise<RecurringChecklistItem[]> {
+  return request<RecurringChecklistItem[]>('/finance/recurring-checklist/')
+}
+
+export function exportFinanceCSV(month?: string): string {
+  const base = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api').replace(/\/$/, '')
+  return `${base}/finance/export/${month ? '?month=' + month : ''}`
 }
 
 export function listIncomeSources() {

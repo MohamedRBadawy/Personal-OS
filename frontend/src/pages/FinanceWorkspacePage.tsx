@@ -5,8 +5,9 @@ import {
   getFinanceSummaryV2, updateFinanceSummaryV2,
   listIncomeEvents, createIncomeEvent, deleteIncomeEvent,
   getExchangeRates, updateExchangeRates,
+  createFinanceEntry, getRecurringChecklist,
 } from '../lib/api'
-import type { ExchangeRates, FinanceSummaryV2, IncomeEvent } from '../lib/types'
+import type { ExchangeRates, FinanceSummaryV2, IncomeEvent, RecurringChecklistItem } from '../lib/types'
 
 type Debt = { name: string; amount_egp: number }
 
@@ -17,6 +18,12 @@ function fmtEur(n: number | string): string {
 function formatK(n: number): string {
   if (Math.abs(n) >= 1000) return `${Math.round(n / 1000)}k`
   return String(Math.round(n))
+}
+
+function daysUntil(dateStr: string): number {
+  const target = new Date(dateStr + '-01') // first of that month
+  const today = new Date()
+  return Math.max(0, Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)))
 }
 
 // ── Monthly Budget Bar ─────────────────────────────────────────────────────
@@ -249,8 +256,11 @@ function DebtPayoffPlan({ debts, surplusEgp }: { debts: Debt[]; surplusEgp: numb
     const date = new Date()
     date.setMonth(date.getMonth() + months)
     const label = date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
-    return { ...debt, months, label }
+    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+    return { ...debt, months, label, dateStr }
   })
+
+  const finalRow = rows[rows.length - 1]
 
   return (
     <table className="finance-debt-table payoff-plan-table">
@@ -272,9 +282,14 @@ function DebtPayoffPlan({ debts, surplusEgp }: { debts: Debt[]; surplusEgp: numb
       </tbody>
       <tfoot>
         <tr className="debt-total-row">
-          <td className="debt-name">🎉 Debt-free by</td>
+          <td className="debt-name">Debt-free by</td>
           <td />
-          <td className="debt-amount payoff-month">{rows[rows.length - 1].label}</td>
+          <td className="debt-amount payoff-month">{finalRow.label}</td>
+        </tr>
+        <tr>
+          <td colSpan={3} style={{ paddingTop: 4, fontSize: 12, color: 'var(--text-muted)' }}>
+            {daysUntil(finalRow.dateStr)} days away
+          </td>
         </tr>
       </tfoot>
     </table>
@@ -470,7 +485,10 @@ function IncomeHistory() {
                 <td style={{ textAlign: 'right' }}>
                   <button
                     className="sp-attachment-delete"
-                    onClick={() => deleteMut.mutate(ev.id)}
+                    onClick={() => {
+                      if (!window.confirm('Delete this income event?')) return
+                      deleteMut.mutate(ev.id)
+                    }}
                     title="Remove"
                   >✕</button>
                 </td>
@@ -479,6 +497,474 @@ function IncomeHistory() {
           </tbody>
         </table>
       )}
+    </div>
+  )
+}
+
+// ── Recurring Checklist ────────────────────────────────────────────────────
+
+function RecurringChecklist() {
+  const { data: items = [], isLoading } = useQuery<RecurringChecklistItem[]>({
+    queryKey: ['recurring-checklist'],
+    queryFn: getRecurringChecklist,
+  })
+
+  if (isLoading) return null
+
+  return (
+    <div className="home-section">
+      <div className="section-header">
+        <h2 className="section-title">This Month's Recurring Items</h2>
+      </div>
+      {items.length === 0 ? (
+        <p className="empty-hint">No recurring items found.</p>
+      ) : (
+        <div className="recurring-list">
+          {items.map((item, i) => (
+            <div key={i} className="recurring-item">
+              <div className={`recurring-check ${item.logged_this_month ? 'done' : 'pending'}`}>
+                {item.logged_this_month ? '✓' : ''}
+              </div>
+              <span className="recurring-item-source">{item.source}</span>
+              <span className="recurring-item-amount">
+                {Math.round(item.amount_egp).toLocaleString()} EGP
+              </span>
+              <span className={`recurring-item-type ${item.type}`}>{item.type}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Income Streams ────────────────────────────────────────────────────────
+
+type IncomeSourceItem = {
+  id: string
+  name: string
+  category: string
+  monthly_target_eur: string
+  baseline_amount_eur: string | null
+  active: boolean
+  notes: string
+}
+
+function IncomeStreams({ independentMonthly }: { independentMonthly: number }) {
+  const TARGET = 1000 // €1,000/mo
+
+  const { data, isLoading } = useQuery<{ results: IncomeSourceItem[] }>({
+    queryKey: ['income-sources'],
+    queryFn: () => import('../lib/api').then(api => api.listIncomeSources()),
+  })
+
+  const sources = data?.results ?? []
+  const activeSources = sources.filter(s => s.active)
+
+  if (isLoading) return null
+
+  return (
+    <div className="home-section">
+      <div className="section-header">
+        <h2 className="section-title">Income Streams → €1,000/mo</h2>
+        <span className="finance-summary-key" style={{ marginLeft: 'auto' }}>
+          €{fmtEur(independentMonthly)} / €{TARGET}
+        </span>
+      </div>
+      {activeSources.length === 0 ? (
+        <p className="empty-hint">
+          No income streams added yet — add one to track your path to €1,000/mo
+        </p>
+      ) : (
+        <div className="income-stream-list">
+          {activeSources.map(src => {
+            const target = parseFloat(src.monthly_target_eur) || 0
+            const pct = target > 0 ? Math.min(100, Math.round((parseFloat(src.baseline_amount_eur ?? '0') / target) * 100)) : 0
+            const ofTarget = target > 0 ? Math.round((target / TARGET) * 100) : 0
+            return (
+              <div key={src.id} className="income-stream-item">
+                <div className="income-stream-header">
+                  <span className="income-stream-name">{src.name}</span>
+                  <span className="income-stream-target">€{fmtEur(target)}/mo target · {ofTarget}% of €1000</span>
+                </div>
+                <div className="income-stream-bar-track">
+                  <div className="income-stream-bar-fill" style={{ width: `${pct}%` }} />
+                </div>
+                <span className="income-stream-pct">{pct}% of target</span>
+              </div>
+            )
+          })}
+        </div>
+      )}
+      <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+        <span>Total independent</span>
+        <span style={{ fontWeight: 600, color: independentMonthly >= TARGET ? '#22c55e' : 'var(--text)' }}>
+          €{fmtEur(independentMonthly)} / €{TARGET}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+// ── Debt Payment Logging ──────────────────────────────────────────────────
+
+function DebtSection({
+  data,
+  editingDebts,
+  setEditingDebts,
+  onRefresh,
+}: {
+  data: FinanceSummaryV2
+  editingDebts: boolean
+  setEditingDebts: (v: boolean) => void
+  onRefresh: () => void
+}) {
+  const qc = useQueryClient()
+  const [payingDebtIdx, setPayingDebtIdx] = useState<number | null>(null)
+  const [payAmount, setPayAmount] = useState('')
+  const [payNotes, setPayNotes] = useState('')
+
+  const totalDebt = (data.debts || []).reduce((s, d) => s + (d.amount_egp || 0), 0)
+
+  const logPaymentMut = useMutation({
+    mutationFn: async ({ debt, amount, notes }: { debt: Debt; amount: number; notes: string }) => {
+      const today = new Date().toISOString().slice(0, 10)
+      await createFinanceEntry({
+        type: 'expense',
+        source: debt.name,
+        category: 'debt_payment',
+        amount: String(amount),
+        currency: 'EGP',
+        date: today,
+        is_independent: false,
+        is_recurring: false,
+        notes,
+      })
+      const updatedDebts = data.debts.map(d =>
+        d.name === debt.name ? { ...d, amount_egp: Math.max(0, d.amount_egp - amount) } : d
+      )
+      await updateFinanceSummaryV2({ debts: updatedDebts })
+    },
+    onSuccess: () => {
+      setPayingDebtIdx(null)
+      setPayAmount('')
+      setPayNotes('')
+      qc.invalidateQueries({ queryKey: ['finance-summary-v2'] })
+      qc.invalidateQueries({ queryKey: ['finance-entries'] })
+      onRefresh()
+    },
+  })
+
+  if (editingDebts) {
+    return (
+      <div className="home-section">
+        <div className="section-header">
+          <h2 className="section-title">Debts — {formatK(totalDebt)} EGP total</h2>
+        </div>
+        <DebtEditForm
+          debts={data.debts || []}
+          onSaved={() => { onRefresh(); setEditingDebts(false) }}
+          onCancel={() => setEditingDebts(false)}
+        />
+      </div>
+    )
+  }
+
+  return (
+    <div className="home-section">
+      <div className="section-header">
+        <h2 className="section-title">Debts — {formatK(totalDebt)} EGP total</h2>
+        <button className="btn-ghost-sm" onClick={() => setEditingDebts(true)}>Edit debts</button>
+      </div>
+      <table className="finance-debt-table">
+        <tbody>
+          {(data.debts || []).map((debt, i) => (
+            <>
+              <tr key={i}>
+                <td className="debt-name">{debt.name}</td>
+                <td className="debt-amount">{debt.amount_egp.toLocaleString()} EGP</td>
+                <td style={{ textAlign: 'right' }}>
+                  <button
+                    className="btn-ghost-sm"
+                    style={{ fontSize: 12 }}
+                    onClick={() => setPayingDebtIdx(payingDebtIdx === i ? null : i)}
+                  >
+                    Log payment
+                  </button>
+                </td>
+              </tr>
+              {payingDebtIdx === i && (
+                <tr key={`pay-${i}`}>
+                  <td colSpan={3}>
+                    <div className="debt-payment-form">
+                      <input
+                        type="number"
+                        className="form-input"
+                        placeholder="Amount (EGP)"
+                        value={payAmount}
+                        min="0"
+                        onChange={e => setPayAmount(e.target.value)}
+                        style={{ width: 130 }}
+                      />
+                      <input
+                        className="form-input"
+                        placeholder="Notes (optional)"
+                        value={payNotes}
+                        onChange={e => setPayNotes(e.target.value)}
+                        style={{ flex: 1 }}
+                      />
+                      <button
+                        className="btn-primary"
+                        style={{ padding: '6px 12px', fontSize: 13 }}
+                        disabled={!payAmount || logPaymentMut.isPending}
+                        onClick={() => logPaymentMut.mutate({
+                          debt,
+                          amount: parseFloat(payAmount) || 0,
+                          notes: payNotes,
+                        })}
+                      >
+                        {logPaymentMut.isPending ? '…' : 'Log'}
+                      </button>
+                      <button
+                        className="btn-ghost"
+                        style={{ padding: '6px 10px', fontSize: 13 }}
+                        onClick={() => setPayingDebtIdx(null)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </>
+          ))}
+          <tr className="debt-total-row">
+            <td className="debt-name">Total</td>
+            <td className="debt-amount">{totalDebt.toLocaleString()} EGP</td>
+            <td />
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+// ── What If Forecast ──────────────────────────────────────────────────────
+
+function ForecastWidget({ data, egpRate }: { data: FinanceSummaryV2; egpRate: number }) {
+  const [scenarioIncome, setScenarioIncome] = useState(0)
+  const TARGET_EUR = data.target_independent || 1000
+
+  const scenarioSurplusEgp = data.surplus_egp + (scenarioIncome * egpRate)
+  const kyrgyzstonReached = scenarioIncome >= TARGET_EUR
+
+  const totalDebt = (data.debts || []).reduce((s, d) => s + (d.amount_egp || 0), 0)
+  const monthsToDebtFree = scenarioSurplusEgp > 0 ? Math.ceil(totalDebt / scenarioSurplusEgp) : null
+  const debtFreeDate = monthsToDebtFree
+    ? (() => {
+        const d = new Date()
+        d.setMonth(d.getMonth() + monthsToDebtFree)
+        return d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
+      })()
+    : '—'
+
+  return (
+    <div className="home-section">
+      <div className="section-header">
+        <h2 className="section-title">What If?</h2>
+      </div>
+      <div className="forecast-widget">
+        <div className="forecast-input-row">
+          <span className="forecast-label">If my independent income reaches €</span>
+          <input
+            type="number"
+            className="form-input"
+            min={0}
+            max={2000}
+            step={50}
+            value={scenarioIncome}
+            onChange={e => setScenarioIncome(parseFloat(e.target.value) || 0)}
+            style={{ width: 100 }}
+          />
+          <span className="forecast-label">/mo</span>
+        </div>
+        <div className="forecast-results">
+          <div className="forecast-result-item">
+            <div className="forecast-result-label">Monthly surplus</div>
+            <div className="forecast-result-value" style={{ color: scenarioSurplusEgp >= 0 ? '#22c55e' : '#ef4444' }}>
+              {Math.round(scenarioSurplusEgp).toLocaleString()} EGP
+            </div>
+          </div>
+          <div className="forecast-result-item">
+            <div className="forecast-result-label">Kyrgyzstan trigger</div>
+            <div className="forecast-result-value" style={{ color: kyrgyzstonReached ? '#22c55e' : 'var(--muted)' }}>
+              {kyrgyzstonReached ? 'Reached' : 'Not yet'}
+            </div>
+          </div>
+          <div className="forecast-result-item">
+            <div className="forecast-result-label">Debt-free by</div>
+            <div className="forecast-result-value">{debtFreeDate}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Category Budgets ──────────────────────────────────────────────────────
+
+const ALL_EXPENSE_CATEGORIES = [
+  { value: 'food', label: 'Food' },
+  { value: 'housing', label: 'Housing' },
+  { value: 'transport', label: 'Transport' },
+  { value: 'utilities', label: 'Utilities' },
+  { value: 'education', label: 'Education' },
+  { value: 'children', label: 'Children' },
+  { value: 'health', label: 'Health' },
+  { value: 'debt_payment', label: 'Debt Payment' },
+  { value: 'business', label: 'Business' },
+  { value: 'savings', label: 'Savings' },
+  { value: 'other', label: 'Other' },
+]
+
+function CategoryBudgets({ data, onRefresh }: { data: FinanceSummaryV2; onRefresh: () => void }) {
+  const [editing, setEditing] = useState(false)
+  const [budgets, setBudgets] = useState<Record<string, number>>(data.category_budgets || {})
+  const [newCat, setNewCat] = useState('')
+  const [newAmt, setNewAmt] = useState('')
+
+  const mut = useMutation({
+    mutationFn: (payload: Record<string, number>) =>
+      updateFinanceSummaryV2({ category_budgets: payload }),
+    onSuccess: () => {
+      setEditing(false)
+      onRefresh()
+    },
+  })
+
+  const existingKeys = Object.keys(budgets)
+
+  if (!editing) {
+    return (
+      <div className="home-section">
+        <div className="section-header">
+          <h2 className="section-title">Monthly Category Budgets</h2>
+          <button className="btn-ghost-sm" onClick={() => {
+            setBudgets(data.category_budgets || {})
+            setEditing(true)
+          }}>Edit</button>
+        </div>
+        {existingKeys.length === 0 ? (
+          <p className="empty-hint">No category budgets set. Click Edit to add budgets per expense category.</p>
+        ) : (
+          <div className="cat-budget-list">
+            {existingKeys.map(key => {
+              const label = ALL_EXPENSE_CATEGORIES.find(c => c.value === key)?.label ?? key
+              return (
+                <div key={key} className="cat-budget-row">
+                  <span className="cat-budget-label">{label}</span>
+                  <span className="cat-budget-amount">{(budgets[key] || 0).toLocaleString()} EGP/mo</span>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="home-section">
+      <div className="section-header">
+        <h2 className="section-title">Monthly Category Budgets</h2>
+      </div>
+      <div className="cat-budget-list">
+        {existingKeys.map(key => {
+          const label = ALL_EXPENSE_CATEGORIES.find(c => c.value === key)?.label ?? key
+          return (
+            <div key={key} className="cat-budget-row">
+              <span className="cat-budget-label">{label}</span>
+              <input
+                type="number"
+                className="form-input"
+                style={{ width: 120 }}
+                value={budgets[key] || ''}
+                onChange={e => setBudgets(prev => ({ ...prev, [key]: parseFloat(e.target.value) || 0 }))}
+              />
+              <button className="btn-ghost" style={{ fontSize: 12 }}
+                onClick={() => setBudgets(prev => {
+                  const next = { ...prev }
+                  delete next[key]
+                  return next
+                })}>
+                Remove
+              </button>
+            </div>
+          )
+        })}
+      </div>
+      <div className="cat-budget-add-row" style={{ marginTop: 12 }}>
+        <select
+          className="form-input"
+          value={newCat}
+          onChange={e => setNewCat(e.target.value)}
+        >
+          <option value="">— Add category —</option>
+          {ALL_EXPENSE_CATEGORIES.filter(c => !budgets[c.value]).map(c => (
+            <option key={c.value} value={c.value}>{c.label}</option>
+          ))}
+        </select>
+        <input
+          type="number"
+          className="form-input"
+          placeholder="EGP/mo"
+          value={newAmt}
+          onChange={e => setNewAmt(e.target.value)}
+        />
+        <button
+          className="btn-ghost-sm"
+          disabled={!newCat || !newAmt}
+          onClick={() => {
+            if (!newCat || !newAmt) return
+            setBudgets(prev => ({ ...prev, [newCat]: parseFloat(newAmt) || 0 }))
+            setNewCat('')
+            setNewAmt('')
+          }}
+        >
+          Add
+        </button>
+      </div>
+      <div className="modal-actions" style={{ marginTop: 12 }}>
+        <button className="btn-ghost" onClick={() => setEditing(false)}>Cancel</button>
+        <button className="btn-primary" disabled={mut.isPending} onClick={() => mut.mutate(budgets)}>
+          {mut.isPending ? 'Saving…' : 'Save'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── Net Worth Card ────────────────────────────────────────────────────────
+
+function NetWorthCard({ data }: { data: FinanceSummaryV2 }) {
+  const totalDebt = (data.debts || []).reduce((s, d) => s + (d.amount_egp || 0), 0)
+  const netWorth = (data.savings_current_egp || 0) - totalDebt
+  const isPositive = netWorth >= 0
+  const display = isPositive
+    ? `+${Math.round(netWorth).toLocaleString()} EGP`
+    : `${Math.round(netWorth).toLocaleString()} EGP`
+
+  return (
+    <div className="net-worth-card" style={{ margin: '12px 0' }}>
+      <div>
+        <div className="net-worth-label">Net Worth</div>
+        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+          Savings − Debt
+        </div>
+      </div>
+      <div className={`net-worth-value ${isPositive ? 'positive' : 'negative'}`}>
+        {display}
+      </div>
     </div>
   )
 }
@@ -495,6 +981,8 @@ export function FinanceWorkspacePage() {
     queryFn: getFinanceSummaryV2,
   })
 
+  const ratesQuery = useQuery({ queryKey: ['exchange-rates'], queryFn: getExchangeRates })
+
   if (isLoading) return <PageSkeleton />
   if (error || !data) return <div className="page-error">Could not load finance data.</div>
 
@@ -507,6 +995,8 @@ export function FinanceWorkspacePage() {
   const savingsPct = (data.savings_target_egp ?? 0) > 0
     ? Math.min(100, Math.round(((data.savings_current_egp ?? 0) / data.savings_target_egp) * 100))
     : 0
+
+  const egpRate = ratesQuery.data?.eur_to_egp ?? data.exchange_rate ?? 60
 
   function refresh() {
     qc.invalidateQueries({ queryKey: ['finance-summary-v2'] })
@@ -557,6 +1047,9 @@ export function FinanceWorkspacePage() {
           <span className="stat-label">Independent income</span>
         </div>
       </div>
+
+      {/* Net Worth card */}
+      <NetWorthCard data={data} />
 
       {/* Section 2b: Monthly budget bar */}
       <MonthlyBudgetBar budget={data.monthly_budget_egp} expenses={Number(data.monthly_expenses_egp)} />
@@ -640,37 +1133,13 @@ export function FinanceWorkspacePage() {
         </div>
       )}
 
-      {/* Section 4: Debts */}
-      <div className="home-section">
-        <div className="section-header">
-          <h2 className="section-title">Debts — {formatK(totalDebt)} EGP total</h2>
-          {!editingDebts && (
-            <button className="btn-ghost-sm" onClick={() => setEditingDebts(true)}>Edit debts</button>
-          )}
-        </div>
-        {editingDebts ? (
-          <DebtEditForm
-            debts={data.debts || []}
-            onSaved={() => { refresh(); setEditingDebts(false) }}
-            onCancel={() => setEditingDebts(false)}
-          />
-        ) : (
-          <table className="finance-debt-table">
-            <tbody>
-              {(data.debts || []).map((debt, i) => (
-                <tr key={i}>
-                  <td className="debt-name">{debt.name}</td>
-                  <td className="debt-amount">{debt.amount_egp.toLocaleString()} EGP</td>
-                </tr>
-              ))}
-              <tr className="debt-total-row">
-                <td className="debt-name">Total</td>
-                <td className="debt-amount">{totalDebt.toLocaleString()} EGP</td>
-              </tr>
-            </tbody>
-          </table>
-        )}
-      </div>
+      {/* Section 4: Debts with payment logging */}
+      <DebtSection
+        data={data}
+        editingDebts={editingDebts}
+        setEditingDebts={setEditingDebts}
+        onRefresh={refresh}
+      />
 
       {/* Section 5: Debt Payoff Plan */}
       {!editingDebts && (data.debts || []).length > 0 && (
@@ -686,7 +1155,19 @@ export function FinanceWorkspacePage() {
         </div>
       )}
 
-      {/* Section 6: Income History */}
+      {/* Section 6: Income Streams */}
+      <IncomeStreams independentMonthly={data.independent_monthly} />
+
+      {/* Section 7: Category Budgets */}
+      <CategoryBudgets data={data} onRefresh={refresh} />
+
+      {/* Section 8: Recurring checklist */}
+      <RecurringChecklist />
+
+      {/* Section 9: What If? Forecast */}
+      <ForecastWidget data={data} egpRate={egpRate} />
+
+      {/* Section 10: Income History */}
       <IncomeHistory />
     </div>
   )

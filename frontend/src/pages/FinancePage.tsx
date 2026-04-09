@@ -1,105 +1,476 @@
+import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { FinanceEntryForm } from '../components/FinanceEntryForm'
 import { MetricCard } from '../components/MetricCard'
 import { Panel } from '../components/Panel'
-import { StatusPill } from '../components/StatusPill'
-import { createFinanceEntry, getFinanceSummary, listFinanceEntries } from '../lib/api'
-import { formatCurrency, formatPercent } from '../lib/formatters'
-import type { FinanceEntryPayload } from '../lib/types'
+import {
+  createFinanceEntry,
+  deleteFinanceEntry,
+  exportFinanceCSV,
+  getCategoryBreakdown,
+  getFinanceSummary,
+  getMonthlyChart,
+  listFinanceEntries,
+  updateFinanceEntry,
+} from '../lib/api'
+import { formatCurrency } from '../lib/formatters'
+import type { FinanceEntry, FinanceEntryPayload } from '../lib/types'
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function currentYearMonth(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+function addMonths(ym: string, delta: number): string {
+  const [y, m] = ym.split('-').map(Number)
+  const d = new Date(y, m - 1 + delta, 1)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+function fmtMonth(ym: string): string {
+  const [y, m] = ym.split('-').map(Number)
+  return new Date(y, m - 1, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+}
+
+const CATEGORY_LABELS: Record<string, string> = {
+  food: 'Food',
+  housing: 'Housing',
+  transport: 'Transport',
+  utilities: 'Utilities',
+  education: 'Education',
+  children: 'Children',
+  health: 'Health',
+  debt_payment: 'Debt Payment',
+  business: 'Business',
+  savings: 'Savings',
+  other: 'Other',
+  income_employment: 'Employment',
+  income_independent: 'Independent',
+  income_other: 'Other Income',
+}
+
+// ── Monthly Bar Chart ─────────────────────────────────────────────────────────
+
+function MonthlyBarChart() {
+  const { data = [] } = useQuery({
+    queryKey: ['finance-monthly-chart'],
+    queryFn: getMonthlyChart,
+  })
+
+  if (!data.length) return null
+
+  const maxVal = Math.max(...data.flatMap((p) => [p.income_eur, p.expense_eur, 1]))
+
+  return (
+    <div className="monthly-chart-section">
+      <h3 style={{ marginBottom: 12, fontSize: 15, fontWeight: 600 }}>6-Month Overview</h3>
+      <div className="monthly-chart-bars">
+        {data.map((point) => {
+          const incH = Math.round((point.income_eur / maxVal) * 120)
+          const expH = Math.round((point.expense_eur / maxVal) * 120)
+          const indH = Math.round((point.independent_eur / maxVal) * 120)
+          return (
+            <div key={point.month} className="monthly-chart-group">
+              <div className="monthly-chart-bars-row">
+                <div
+                  className="monthly-chart-bar income"
+                  style={{ height: `${Math.max(2, incH)}px` }}
+                  title={`Income: €${Math.round(point.income_eur)}`}
+                />
+                <div
+                  className="monthly-chart-bar expense"
+                  style={{ height: `${Math.max(2, expH)}px` }}
+                  title={`Expenses: €${Math.round(point.expense_eur)}`}
+                />
+                <div
+                  className="monthly-chart-bar independent"
+                  style={{ height: `${Math.max(2, indH)}px` }}
+                  title={`Independent: €${Math.round(point.independent_eur)}`}
+                />
+              </div>
+              <span className="monthly-chart-label">{point.label}</span>
+            </div>
+          )
+        })}
+      </div>
+      <div className="monthly-chart-legend">
+        <div className="monthly-chart-legend-item">
+          <div className="monthly-chart-legend-dot" style={{ background: '#22c55e' }} />
+          Income
+        </div>
+        <div className="monthly-chart-legend-item">
+          <div className="monthly-chart-legend-dot" style={{ background: '#ef4444' }} />
+          Expenses
+        </div>
+        <div className="monthly-chart-legend-item">
+          <div className="monthly-chart-legend-dot" style={{ background: '#3b82f6' }} />
+          Independent
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Category Breakdown ────────────────────────────────────────────────────────
+
+function CategoryBreakdown({ month }: { month: string }) {
+  const { data = [] } = useQuery({
+    queryKey: ['finance-category-breakdown', month],
+    queryFn: () => getCategoryBreakdown(month),
+  })
+
+  const expenses = data.filter((d) => !d.category.startsWith('income_'))
+  if (!expenses.length) return null
+
+  const maxEgp = Math.max(...expenses.map((d) => d.total_egp), 1)
+
+  return (
+    <div style={{ marginTop: 32 }}>
+      <h3 style={{ marginBottom: 12, fontSize: 15, fontWeight: 600 }}>
+        Expenses by Category — {fmtMonth(month)}
+      </h3>
+      <div className="cat-breakdown-list">
+        {expenses.map((item) => {
+          const pct = Math.round((item.total_egp / maxEgp) * 100)
+          return (
+            <div key={item.category} className="cat-breakdown-item">
+              <div className="cat-breakdown-header">
+                <span>{item.label || CATEGORY_LABELS[item.category] || item.category}</span>
+                <span style={{ color: 'var(--muted)' }}>
+                  {Math.round(item.total_egp).toLocaleString()} EGP
+                  {item.total_eur > 0 && ` / €${Math.round(item.total_eur)}`}
+                </span>
+              </div>
+              <div className="cat-breakdown-bar-track">
+                <div className="cat-breakdown-bar-fill" style={{ width: `${pct}%` }} />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ── Entry Row (view + inline edit) ───────────────────────────────────────────
+
+function EntryRow({
+  entry,
+  editingId,
+  editForm,
+  onStartEdit,
+  onCancelEdit,
+  onSaveEdit,
+  onDelete,
+  onEditFormChange,
+}: {
+  entry: FinanceEntry
+  editingId: number | null
+  editForm: Partial<FinanceEntryPayload>
+  onStartEdit: (entry: FinanceEntry) => void
+  onCancelEdit: () => void
+  onSaveEdit: () => void
+  onDelete: (id: number) => void
+  onEditFormChange: (patch: Partial<FinanceEntryPayload>) => void
+}) {
+  const id = Number(entry.id)
+  if (editingId === id) {
+    return (
+      <tr className="entry-edit-row">
+        <td colSpan={7}>
+          <div className="entry-edit-inputs">
+            <input
+              type="date"
+              value={editForm.date ?? entry.date}
+              onChange={(e) => onEditFormChange({ date: e.target.value })}
+            />
+            <input
+              placeholder="Source"
+              value={editForm.source ?? entry.source}
+              onChange={(e) => onEditFormChange({ source: e.target.value })}
+            />
+            <select
+              value={editForm.type ?? entry.type}
+              onChange={(e) => onEditFormChange({ type: e.target.value as 'income' | 'expense' })}
+            >
+              <option value="income">Income</option>
+              <option value="expense">Expense</option>
+            </select>
+            <select
+              value={editForm.currency ?? entry.currency}
+              onChange={(e) => onEditFormChange({ currency: e.target.value as 'EUR' | 'USD' | 'EGP' })}
+            >
+              <option value="EUR">EUR</option>
+              <option value="USD">USD</option>
+              <option value="EGP">EGP</option>
+            </select>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="Amount"
+              value={editForm.amount ?? entry.amount}
+              onChange={(e) => onEditFormChange({ amount: e.target.value })}
+            />
+            <button className="btn-primary" style={{ padding: '4px 12px', fontSize: 13 }} onClick={onSaveEdit}>
+              Save
+            </button>
+            <button className="btn-ghost" style={{ padding: '4px 10px', fontSize: 13 }} onClick={onCancelEdit}>
+              Cancel
+            </button>
+          </div>
+        </td>
+      </tr>
+    )
+  }
+
+  return (
+    <tr>
+      <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>{entry.date}</td>
+      <td>{entry.source}</td>
+      <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+        {CATEGORY_LABELS[entry.category] || entry.category || '—'}
+      </td>
+      <td>
+        <span
+          style={{
+            fontSize: 11,
+            padding: '2px 6px',
+            borderRadius: 4,
+            background: entry.type === 'income' ? '#dcfce7' : '#fee2e2',
+            color: entry.type === 'income' ? '#16a34a' : '#dc2626',
+          }}
+        >
+          {entry.type}
+        </span>
+      </td>
+      <td style={{ fontSize: 12 }}>{entry.currency}</td>
+      <td style={{ fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(entry.amount_eur)}</td>
+      <td style={{ fontVariantNumeric: 'tabular-nums', fontSize: 12, color: 'var(--text-muted)' }}>
+        {entry.amount_egp.toLocaleString()} EGP
+      </td>
+      <td style={{ whiteSpace: 'nowrap' }}>
+        <button
+          className="table-action-btn"
+          title="Edit"
+          onClick={() => onStartEdit(entry)}
+        >
+          ✏️
+        </button>
+        <button
+          className="table-action-btn danger"
+          title="Delete"
+          onClick={() => onDelete(id)}
+        >
+          🗑️
+        </button>
+      </td>
+    </tr>
+  )
+}
+
+// ── Main Page ─────────────────────────────────────────────────────────────────
 
 export function FinancePage() {
   const queryClient = useQueryClient()
+  const [selectedMonth, setSelectedMonth] = useState(currentYearMonth)
+  const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all')
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editForm, setEditForm] = useState<Partial<FinanceEntryPayload>>({})
+
   const summaryQuery = useQuery({
     queryKey: ['finance-summary'],
     queryFn: getFinanceSummary,
   })
+
   const entriesQuery = useQuery({
-    queryKey: ['finance-entries'],
-    queryFn: listFinanceEntries,
+    queryKey: ['finance-entries', selectedMonth, typeFilter],
+    queryFn: () =>
+      listFinanceEntries({
+        month: selectedMonth,
+        type: typeFilter === 'all' ? undefined : typeFilter,
+      }),
   })
+
+  function invalidate() {
+    queryClient.invalidateQueries({ queryKey: ['finance-entries', selectedMonth, typeFilter] })
+    queryClient.invalidateQueries({ queryKey: ['finance-summary'] })
+    queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+    queryClient.invalidateQueries({ queryKey: ['command-center'] })
+  }
 
   const createEntryMutation = useMutation({
     mutationFn: (payload: FinanceEntryPayload) => createFinanceEntry(payload),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['finance-summary'] }),
-        queryClient.invalidateQueries({ queryKey: ['finance-entries'] }),
-        queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
-        queryClient.invalidateQueries({ queryKey: ['command-center'] }),
-      ])
+    onSuccess: invalidate,
+  })
+
+  const updateEntryMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: number; payload: Partial<FinanceEntryPayload> }) =>
+      updateFinanceEntry(id, payload),
+    onSuccess: () => {
+      setEditingId(null)
+      setEditForm({})
+      invalidate()
     },
   })
 
-  if (summaryQuery.isLoading || entriesQuery.isLoading) {
-    return <section className="loading-state">Loading finance view...</section>
+  const deleteEntryMutation = useMutation({
+    mutationFn: (id: number) => deleteFinanceEntry(id),
+    onSuccess: invalidate,
+  })
+
+  function handleStartEdit(entry: FinanceEntry) {
+    setEditingId(Number(entry.id))
+    setEditForm({
+      date: entry.date,
+      source: entry.source,
+      type: entry.type,
+      currency: entry.currency,
+      amount: entry.amount,
+      category: entry.category,
+    })
   }
 
-  if (summaryQuery.isError || entriesQuery.isError || !summaryQuery.data || !entriesQuery.data) {
-    return <section className="error-state">We could not load finance data.</section>
+  function handleSaveEdit() {
+    if (editingId === null) return
+    updateEntryMutation.mutate({ id: editingId, payload: editForm })
   }
+
+  function handleDelete(id: number) {
+    if (!window.confirm('Delete this entry?')) return
+    deleteEntryMutation.mutate(id)
+  }
+
+  const isLoading = summaryQuery.isLoading || entriesQuery.isLoading
+  const isError = summaryQuery.isError || entriesQuery.isError
 
   return (
     <section className="page">
+      {/* Header */}
       <div className="page-header">
         <div>
           <p className="eyebrow">Finance</p>
           <h2>Money movement and independence progress</h2>
-          <p>Track the current month, recent entries, and the Kyrgyzstan trigger.</p>
         </div>
-        <StatusPill label={`${formatPercent(summaryQuery.data.kyrgyzstan_progress_pct)} to target`} />
-      </div>
-
-      <div className="metric-grid">
-        <MetricCard label="Income" value={formatCurrency(summaryQuery.data.total_income_eur)} />
-        <MetricCard label="Expenses" value={formatCurrency(summaryQuery.data.total_expense_eur)} />
-        <MetricCard
-          label="Independent income"
-          value={formatCurrency(summaryQuery.data.independent_income_eur)}
-          tone="success"
-        />
-        <MetricCard
-          label="Months to target"
-          value={`${summaryQuery.data.months_to_target ?? '-'}`}
-          hint="Based on the 3-month rolling average"
-          tone="warning"
-        />
-      </div>
-
-      <div className="two-column">
-        <Panel title="Add a finance entry" description="A fast way to log income or expenses.">
-          <FinanceEntryForm
-            isSubmitting={createEntryMutation.isPending}
-            onSubmit={(payload) => createEntryMutation.mutate(payload)}
-          />
-        </Panel>
-
-        <Panel title="Recent entries" description="Latest items from the finance ledger.">
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Source</th>
-                  <th>Type</th>
-                  <th>Currency</th>
-                  <th>Amount (EUR)</th>
-                  <th>In EGP</th>
-                </tr>
-              </thead>
-              <tbody>
-                {entriesQuery.data.results.map((entry) => (
-                  <tr key={entry.id}>
-                    <td>{entry.source}</td>
-                    <td>{entry.type}</td>
-                    <td>{entry.currency}</td>
-                    <td>{formatCurrency(entry.amount_eur)}</td>
-                    <td>{entry.amount_egp.toLocaleString('en-EG')} EGP</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Month navigator */}
+          <div className="month-nav">
+            <button className="month-nav-btn" onClick={() => setSelectedMonth((m) => addMonths(m, -1))}>
+              ←
+            </button>
+            <span className="month-nav-label">{fmtMonth(selectedMonth)}</span>
+            <button className="month-nav-btn" onClick={() => setSelectedMonth((m) => addMonths(m, 1))}>
+              →
+            </button>
           </div>
-        </Panel>
+          {/* Type filter tabs */}
+          <div className="finance-type-tabs">
+            {(['all', 'income', 'expense'] as const).map((tab) => (
+              <button
+                key={tab}
+                className={`finance-type-tab${typeFilter === tab ? ' active' : ''}`}
+                onClick={() => setTypeFilter(tab)}
+              >
+                {tab === 'all' ? 'All' : tab === 'income' ? 'Income' : 'Expenses'}
+              </button>
+            ))}
+          </div>
+          {/* Export CSV */}
+          <a
+            className="btn-ghost-sm"
+            href={exportFinanceCSV(selectedMonth)}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Export CSV
+          </a>
+        </div>
       </div>
+
+      {/* Summary cards */}
+      {summaryQuery.data && (
+        <div className="metric-grid">
+          <MetricCard label="Income" value={formatCurrency(summaryQuery.data.total_income_eur)} />
+          <MetricCard label="Expenses" value={formatCurrency(summaryQuery.data.total_expense_eur)} />
+          <MetricCard
+            label="Independent income"
+            value={formatCurrency(summaryQuery.data.independent_income_eur)}
+            tone="success"
+          />
+          <MetricCard
+            label="Months to target"
+            value={`${summaryQuery.data.months_to_target ?? '-'}`}
+            hint="Based on the 3-month rolling average"
+            tone="warning"
+          />
+        </div>
+      )}
+
+      {isLoading && <section className="loading-state">Loading finance view...</section>}
+      {isError && <section className="error-state">Could not load finance data.</section>}
+
+      {!isLoading && !isError && (
+        <>
+          {/* Two-column: form + entries table */}
+          <div className="two-column">
+            <Panel title="Add a finance entry" description="A fast way to log income or expenses.">
+              <FinanceEntryForm
+                isSubmitting={createEntryMutation.isPending}
+                onSubmit={(payload) => createEntryMutation.mutate(payload)}
+              />
+            </Panel>
+
+            <Panel title="Recent entries" description={`Entries for ${fmtMonth(selectedMonth)}.`}>
+              <div className="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Source</th>
+                      <th>Category</th>
+                      <th>Type</th>
+                      <th>Currency</th>
+                      <th>Amount (EUR)</th>
+                      <th>In EGP</th>
+                      <th />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(entriesQuery.data?.results ?? []).map((entry) => (
+                      <EntryRow
+                        key={entry.id}
+                        entry={entry}
+                        editingId={editingId}
+                        editForm={editForm}
+                        onStartEdit={handleStartEdit}
+                        onCancelEdit={() => { setEditingId(null); setEditForm({}) }}
+                        onSaveEdit={handleSaveEdit}
+                        onDelete={handleDelete}
+                        onEditFormChange={(patch) => setEditForm((prev) => ({ ...prev, ...patch }))}
+                      />
+                    ))}
+                    {(entriesQuery.data?.results ?? []).length === 0 && (
+                      <tr>
+                        <td colSpan={8} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}>
+                          No entries for this period.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </Panel>
+          </div>
+
+          {/* 6-month bar chart */}
+          <MonthlyBarChart />
+
+          {/* Category breakdown */}
+          <CategoryBreakdown month={selectedMonth} />
+        </>
+      )}
     </section>
   )
 }

@@ -5190,3 +5190,98 @@ th {
 [data-theme='dark'] .about-section-card--editing {
   background: var(--surface-muted);
 }
+
+/* === FINANCE ENHANCEMENTS === */
+
+/* Month navigator */
+.month-nav { display: flex; align-items: center; gap: 12px; }
+.month-nav-btn { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer; color: var(--text); font-size: 13px; }
+.month-nav-btn:hover { background: var(--surface); }
+.month-nav-label { font-size: 14px; font-weight: 600; min-width: 100px; text-align: center; }
+
+/* Type filter tabs */
+.finance-type-tabs { display: flex; gap: 4px; background: var(--bg-alt, #f0ede8); border-radius: 8px; padding: 3px; }
+.finance-type-tab { padding: 5px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; border: none; cursor: pointer; background: transparent; color: var(--muted); transition: all 0.15s; }
+.finance-type-tab.active { background: white; color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+/* 6-month bar chart */
+.monthly-chart-section { margin-top: 32px; }
+.monthly-chart-bars { display: flex; align-items: flex-end; gap: 16px; height: 140px; padding: 0 8px; }
+.monthly-chart-group { display: flex; flex-direction: column; align-items: center; flex: 1; gap: 4px; height: 100%; }
+.monthly-chart-bars-row { display: flex; align-items: flex-end; gap: 3px; height: 120px; }
+.monthly-chart-bar { width: 16px; border-radius: 3px 3px 0 0; min-height: 2px; transition: height 0.3s; }
+.monthly-chart-bar.income { background: #22c55e; }
+.monthly-chart-bar.expense { background: #ef4444; }
+.monthly-chart-bar.independent { background: #3b82f6; }
+.monthly-chart-label { font-size: 10px; color: var(--muted); text-align: center; }
+.monthly-chart-legend { display: flex; gap: 16px; margin-top: 8px; }
+.monthly-chart-legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.monthly-chart-legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+
+/* Category breakdown */
+.cat-breakdown-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.cat-breakdown-item { display: flex; flex-direction: column; gap: 4px; }
+.cat-breakdown-header { display: flex; justify-content: space-between; font-size: 13px; }
+.cat-breakdown-bar-track { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.cat-breakdown-bar-fill { height: 100%; background: var(--accent, #d97706); border-radius: 3px; transition: width 0.3s; }
+.cat-breakdown-over { background: #ef4444; }
+
+/* Net worth card */
+.net-worth-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; }
+.net-worth-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.net-worth-value { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.net-worth-value.positive { color: #22c55e; }
+.net-worth-value.negative { color: #ef4444; }
+
+/* Recurring checklist */
+.recurring-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.recurring-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); }
+.recurring-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+.recurring-check.done { background: #dcfce7; color: #16a34a; }
+.recurring-check.pending { background: var(--bg-alt, #f0ede8); color: var(--muted); border: 2px dashed var(--border); }
+.recurring-item-source { font-size: 14px; font-weight: 500; flex: 1; }
+.recurring-item-amount { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.recurring-item-type { font-size: 11px; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; }
+.recurring-item-type.income { background: #dcfce7; color: #16a34a; }
+.recurring-item-type.expense { background: #fee2e2; color: #dc2626; }
+
+/* Forecast widget */
+.forecast-widget { border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; background: var(--surface); }
+.forecast-input-row { display: flex; align-items: center; gap: 12px; margin: 12px 0; flex-wrap: wrap; }
+.forecast-label { font-size: 13px; color: var(--muted); }
+.forecast-results { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 12px; }
+.forecast-result-item { padding: 12px; background: var(--bg-alt, #f0ede8); border-radius: 8px; }
+.forecast-result-label { font-size: 11px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.forecast-result-value { font-size: 16px; font-weight: 600; }
+
+/* Income streams */
+.income-stream-list { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
+.income-stream-item { display: flex; flex-direction: column; gap: 6px; }
+.income-stream-header { display: flex; justify-content: space-between; align-items: baseline; }
+.income-stream-name { font-size: 14px; font-weight: 500; }
+.income-stream-target { font-size: 12px; color: var(--muted); }
+.income-stream-bar-track { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.income-stream-bar-fill { height: 100%; background: #3b82f6; border-radius: 3px; }
+.income-stream-pct { font-size: 11px; color: var(--muted); }
+
+/* Category budgets */
+.cat-budget-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.cat-budget-row { display: flex; align-items: center; gap: 12px; }
+.cat-budget-label { font-size: 13px; flex: 1; }
+.cat-budget-amount { font-size: 13px; font-variant-numeric: tabular-nums; color: var(--muted); }
+.cat-budget-add-row { display: grid; grid-template-columns: 1fr 120px auto; gap: 8px; margin-top: 8px; }
+
+/* Debt payment inline form */
+.debt-payment-form { display: flex; align-items: center; gap: 8px; padding: 8px 0; }
+.debt-payment-form input { flex: 1; }
+
+/* Table action buttons */
+.table-action-btn { background: none; border: none; cursor: pointer; padding: 4px 6px; border-radius: 4px; font-size: 14px; opacity: 0.6; transition: opacity 0.15s; }
+.table-action-btn:hover { opacity: 1; background: var(--surface); }
+.table-action-btn.danger:hover { color: #dc2626; }
+
+/* Edit row in table */
+.entry-edit-row { background: var(--surface); }
+.entry-edit-row td { padding: 8px; }
+.entry-edit-inputs { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.entry-edit-inputs input, .entry-edit-inputs select { padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 13px; background: var(--bg, white); color: var(--text); }

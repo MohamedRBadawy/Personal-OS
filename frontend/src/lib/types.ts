@@ -134,6 +134,7 @@ export type FinanceEntry = {
   amount_eur: number
   amount_egp: number
   currency: CurrencyCode
+  category: string
   is_independent: boolean
   is_recurring: boolean
   date: string
@@ -145,6 +146,7 @@ export type FinanceEntryPayload = {
   source: string
   amount: string
   currency: CurrencyCode
+  category?: string
   is_independent: boolean
   is_recurring: boolean
   date: string
@@ -1248,6 +1250,7 @@ export type FinanceSummaryV2 = {
   savings_target_egp: number
   savings_current_egp: number
   monthly_budget_egp: number | null
+  category_budgets: Record<string, number>
   surplus_egp: number
   income_egp: number
   exchange_rate: number
@@ -1529,4 +1532,31 @@ export type ExchangeRates = {
   eur_to_egp: number
   eur_to_usd: number
   usd_to_egp: number
+}
+
+export type MonthlyChartPoint = {
+  month: string       // "2026-04"
+  label: string       // "Apr 2026"
+  income_eur: number
+  expense_eur: number
+  independent_eur: number
+  net_eur: number
+}
+
+export type CategoryBreakdownItem = {
+  category: string
+  label: string
+  total_egp: number
+  total_eur: number
+  count: number
+}
+
+export type RecurringChecklistItem = {
+  source: string
+  type: string
+  category: string
+  amount: string
+  currency: string
+  amount_egp: number
+  logged_this_month: boolean
 }

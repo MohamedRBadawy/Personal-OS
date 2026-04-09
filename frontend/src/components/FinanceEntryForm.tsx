@@ -6,16 +6,44 @@ type FinanceEntryFormProps = {
   isSubmitting: boolean
 }
 
+const EXPENSE_CATEGORIES = [
+  { value: 'food', label: 'Food' },
+  { value: 'housing', label: 'Housing' },
+  { value: 'transport', label: 'Transport' },
+  { value: 'utilities', label: 'Utilities' },
+  { value: 'education', label: 'Education' },
+  { value: 'children', label: 'Children' },
+  { value: 'health', label: 'Health' },
+  { value: 'debt_payment', label: 'Debt Payment' },
+  { value: 'business', label: 'Business' },
+  { value: 'savings', label: 'Savings' },
+  { value: 'other', label: 'Other' },
+]
+
+const INCOME_CATEGORIES = [
+  { value: 'income_employment', label: 'Employment' },
+  { value: 'income_independent', label: 'Independent' },
+  { value: 'income_other', label: 'Other Income' },
+]
+
 export function FinanceEntryForm({ onSubmit, isSubmitting }: FinanceEntryFormProps) {
   const today = new Date().toISOString().slice(0, 10)
   const [type, setType] = useState<'income' | 'expense'>('income')
   const [source, setSource] = useState('')
   const [amount, setAmount] = useState('')
   const [currency, setCurrency] = useState<'EUR' | 'USD' | 'EGP'>('EUR')
+  const [category, setCategory] = useState('')
   const [date, setDate] = useState(today)
   const [isIndependent, setIsIndependent] = useState(true)
   const [isRecurring, setIsRecurring] = useState(false)
   const [notes, setNotes] = useState('')
+
+  const categoryOptions = type === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES
+
+  function handleTypeChange(newType: 'income' | 'expense') {
+    setType(newType)
+    setCategory('')
+  }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -24,6 +52,7 @@ export function FinanceEntryForm({ onSubmit, isSubmitting }: FinanceEntryFormPro
       source,
       amount,
       currency,
+      category: category || undefined,
       date,
       is_independent: isIndependent,
       is_recurring: isRecurring,
@@ -35,7 +64,7 @@ export function FinanceEntryForm({ onSubmit, isSubmitting }: FinanceEntryFormPro
     <form className="form-grid" onSubmit={handleSubmit}>
       <div className="field">
         <label htmlFor="entry-type">Type</label>
-        <select id="entry-type" value={type} onChange={(event) => setType(event.target.value as 'income' | 'expense')}>
+        <select id="entry-type" value={type} onChange={(event) => handleTypeChange(event.target.value as 'income' | 'expense')}>
           <option value="income">Income</option>
           <option value="expense">Expense</option>
         </select>
@@ -70,6 +99,19 @@ export function FinanceEntryForm({ onSubmit, isSubmitting }: FinanceEntryFormPro
           <option value="EUR">EUR</option>
           <option value="USD">USD</option>
           <option value="EGP">EGP</option>
+        </select>
+      </div>
+      <div className="field span-2">
+        <label htmlFor="entry-category">Category</label>
+        <select
+          id="entry-category"
+          value={category}
+          onChange={(event) => setCategory(event.target.value)}
+        >
+          <option value="">— No category —</option>
+          {categoryOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
         </select>
       </div>
       <div className="field span-2 checkbox-row">
