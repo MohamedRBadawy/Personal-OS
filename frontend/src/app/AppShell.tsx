@@ -73,6 +73,7 @@ export function AppShell({ children }: PropsWithChildren) {
   const location = useLocation()
   const queryClient = useQueryClient()
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const { theme, toggleTheme } = useTheme()
   const activeItem = allNavItems.find((item) => item.href === location.pathname)
 
@@ -90,7 +91,7 @@ export function AppShell({ children }: PropsWithChildren) {
   }, [queryClient])
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}>
       <button
         aria-expanded={drawerOpen}
         className="sidebar-toggle"
@@ -101,55 +102,68 @@ export function AppShell({ children }: PropsWithChildren) {
       </button>
 
       <aside className={drawerOpen ? 'app-sidebar open' : 'app-sidebar'}>
-        <div className="sidebar-brand">
-          <p className="eyebrow">Personal Life OS</p>
-          <h1 className="app-title">Run life from one clear operating surface.</h1>
-          <p className="app-subtitle">
-            Capture, prioritize, edit, and review from the command center without route-hopping.
-          </p>
-        </div>
+        <button
+          className="sidebar-collapse-btn"
+          type="button"
+          title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          onClick={() => setSidebarCollapsed((c) => !c)}
+        >
+          {sidebarCollapsed ? '›' : '‹'}
+        </button>
 
-        <nav aria-label="Primary" className="sidebar-nav">
-          {navGroups.map((group) => {
-            const isCollapsed = collapsed[group.label] ?? false
-            return (
-              <div key={group.label} className="nav-group">
-                <button
-                  type="button"
-                  className="nav-group-toggle"
-                  onClick={() => toggleGroup(group.label)}
-                  aria-expanded={!isCollapsed}
-                >
-                  <span className="nav-group-label">{group.label}</span>
-                  <span className={`nav-group-chevron${isCollapsed ? ' collapsed' : ''}`}>›</span>
-                </button>
-                {!isCollapsed && (
-                  <div className="nav-group-links">
-                    {group.items.map((item) => (
-                      <NavLink
-                        key={item.href}
-                        className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
-                        to={item.href}
-                        onClick={() => setDrawerOpen(false)}
-                        onMouseEnter={() => handlePrefetch(item.href)}
-                      >
-                        {item.label}
-                      </NavLink>
-                    ))}
+        {!sidebarCollapsed && (
+          <>
+            <div className="sidebar-brand">
+              <p className="eyebrow">Personal Life OS</p>
+              <h1 className="app-title">Run life from one clear operating surface.</h1>
+              <p className="app-subtitle">
+                Capture, prioritize, edit, and review from the command center without route-hopping.
+              </p>
+            </div>
+
+            <nav aria-label="Primary" className="sidebar-nav">
+              {navGroups.map((group) => {
+                const isCollapsed = collapsed[group.label] ?? false
+                return (
+                  <div key={group.label} className="nav-group">
+                    <button
+                      type="button"
+                      className="nav-group-toggle"
+                      onClick={() => toggleGroup(group.label)}
+                      aria-expanded={!isCollapsed}
+                    >
+                      <span className="nav-group-label">{group.label}</span>
+                      <span className={`nav-group-chevron${isCollapsed ? ' collapsed' : ''}`}>›</span>
+                    </button>
+                    {!isCollapsed && (
+                      <div className="nav-group-links">
+                        {group.items.map((item) => (
+                          <NavLink
+                            key={item.href}
+                            className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+                            to={item.href}
+                            onClick={() => setDrawerOpen(false)}
+                            onMouseEnter={() => handlePrefetch(item.href)}
+                          >
+                            {item.label}
+                          </NavLink>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            )
-          })}
-        </nav>
+                )
+              })}
+            </nav>
 
-        <div className="sidebar-footer">
-          <button className="theme-toggle" type="button" onClick={toggleTheme}>
-            <span>{theme === 'dark' ? '☀ Light mode' : '☾ Dark mode'}</span>
-          </button>
-          <ExportButton />
-          <p className="sidebar-shortcut-hint">⌘K — quick search</p>
-        </div>
+            <div className="sidebar-footer">
+              <button className="theme-toggle" type="button" onClick={toggleTheme}>
+                <span>{theme === 'dark' ? '☀ Light mode' : '☾ Dark mode'}</span>
+              </button>
+              <ExportButton />
+              <p className="sidebar-shortcut-hint">⌘K — quick search</p>
+            </div>
+          </>
+        )}
       </aside>
 
       <div className="app-main">
