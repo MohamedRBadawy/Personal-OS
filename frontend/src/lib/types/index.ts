@@ -1,0 +1,13 @@
+// Barrel — re-exports all domain type files
+export * from './base'
+export * from './goals'
+export * from './finance'
+export * from './health'
+export * from './pipeline'
+export * from './schedule'
+export * from './contacts'
+export * from './journal'
+export * from './learning'
+export * from './analytics'
+export * from './chat'
+export * from './dashboard'

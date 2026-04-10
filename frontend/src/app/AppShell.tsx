@@ -1,10 +1,11 @@
-import { useCallback, useState, type PropsWithChildren } from 'react'
+import { useCallback, useEffect, useState, type PropsWithChildren } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { BottomNav } from '../components/BottomNav'
 import { ChatPanel } from '../components/chat/ChatPanel'
 import { CommandPalette } from '../components/CommandPalette'
 import { ExportButton } from '../components/ExportButton'
+import { QuickCaptureModal } from '../components/QuickCaptureModal'
 import {
   getFinanceOverview,
   getHealthOverview,
@@ -27,12 +28,15 @@ const navGroups: NavGroup[] = [
     items: [
       { href: '/', label: 'Command Center' },
       { href: '/about', label: 'About Me' },
+      { href: '/life-plan', label: 'Life Plan' },
     ],
   },
   {
     label: 'Execute',
     items: [
       { href: '/goals', label: 'Goals' },
+      { href: '/pipeline', label: 'Pipeline' },
+      { href: '/marketing', label: 'Marketing' },
       { href: '/routine', label: 'Daily Routine' },
       { href: '/schedule', label: 'Day Schedule' },
     ],
@@ -42,16 +46,20 @@ const navGroups: NavGroup[] = [
     items: [
       { href: '/finance', label: 'Finance' },
       { href: '/health', label: 'Health' },
+      { href: '/habits', label: 'Habits' },
+      { href: '/mood', label: 'Mood' },
+      { href: '/spiritual', label: 'Spiritual' },
       { href: '/journal', label: 'Journal' },
       { href: '/contacts', label: 'Contacts' },
       { href: '/learning', label: 'Learning' },
+      { href: '/ideas', label: 'Ideas & Thinking' },
     ],
   },
   {
     label: 'Review',
     items: [
       { href: '/analytics', label: 'Analytics' },
-      { href: '/profile', label: 'Life Stats' },
+      { href: '/profile', label: 'Progress & Stats' },
     ],
   },
 ]
@@ -74,6 +82,7 @@ export function AppShell({ children }: PropsWithChildren) {
   const queryClient = useQueryClient()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [quickCaptureOpen, setQuickCaptureOpen] = useState(false)
   const { theme, toggleTheme } = useTheme()
   const activeItem = allNavItems.find((item) => item.href === location.pathname)
 
@@ -81,6 +90,17 @@ export function AppShell({ children }: PropsWithChildren) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
   const toggleGroup = (label: string) =>
     setCollapsed((prev) => ({ ...prev, [label]: !prev[label] }))
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+        e.preventDefault()
+        setQuickCaptureOpen(o => !o)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   const handlePrefetch = useCallback((href: string) => {
     const queryFn = prefetchMap[href]
@@ -180,6 +200,19 @@ export function AppShell({ children }: PropsWithChildren) {
       <ChatPanel />
       <BottomNav />
       <CommandPalette />
+
+      {/* Quick Idea Capture FAB */}
+      <button
+        className="quick-capture-fab"
+        title="Capture idea (Ctrl+Shift+I)"
+        onClick={() => setQuickCaptureOpen(true)}
+      >
+        💡
+      </button>
+
+      {quickCaptureOpen && (
+        <QuickCaptureModal onClose={() => setQuickCaptureOpen(false)} />
+      )}
     </div>
   )
 }

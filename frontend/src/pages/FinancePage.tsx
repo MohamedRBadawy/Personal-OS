@@ -5,16 +5,19 @@ import { MetricCard } from '../components/MetricCard'
 import { Panel } from '../components/Panel'
 import {
   createFinanceEntry,
+  createIncomeEvent,
   deleteFinanceEntry,
+  deleteIncomeEvent,
   exportFinanceCSV,
   getCategoryBreakdown,
   getFinanceSummary,
   getMonthlyChart,
   listFinanceEntries,
+  listIncomeEvents,
   updateFinanceEntry,
 } from '../lib/api'
 import { formatCurrency } from '../lib/formatters'
-import type { FinanceEntry, FinanceEntryPayload } from '../lib/types'
+import type { FinanceEntry, FinanceEntryPayload, IncomeEvent } from '../lib/types'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -271,6 +274,161 @@ function EntryRow({
   )
 }
 
+// ── Income Events ─────────────────────────────────────────────────────────────
+
+function IncomeEventsPanel() {
+  const qc = useQueryClient()
+  const today = new Date().toISOString().split('T')[0]
+  const [form, setForm] = useState({ date: today, source: '', amount_eur: '', notes: '' })
+  const [adding, setAdding] = useState(false)
+
+  const { data: events = [], isLoading } = useQuery({
+    queryKey: ['income-events'],
+    queryFn: listIncomeEvents,
+  })
+
+  const { data: summary } = useQuery({
+    queryKey: ['finance-summary'],
+    queryFn: getFinanceSummary,
+  })
+
+  const createMut = useMutation({
+    mutationFn: (e: Omit<IncomeEvent, 'id' | 'created_at'>) => createIncomeEvent(e),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['income-events'] })
+      setForm({ date: today, source: '', amount_eur: '', notes: '' })
+      setAdding(false)
+    },
+  })
+
+  const deleteMut = useMutation({
+    mutationFn: (id: number) => deleteIncomeEvent(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['income-events'] }),
+  })
+
+  const totalEur = events.reduce((sum, e) => sum + Number(e.amount_eur), 0)
+  const targetEur = summary?.target_independent ?? 1000
+
+  function handleSubmit() {
+    if (!form.source.trim() || !form.date) return
+    createMut.mutate({
+      date: form.date,
+      source: form.source.trim(),
+      amount_eur: Number(form.amount_eur) || 0,
+      notes: form.notes.trim(),
+    })
+  }
+
+  return (
+    <Panel
+      title="Income milestones"
+      description="Key income events — first clients, deals closed, salary raises."
+    >
+      {/* Progress toward target */}
+      <div className="income-events-progress">
+        <div className="income-events-progress-label">
+          <span>Total logged: <strong>{formatCurrency(totalEur)}</strong></span>
+          <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>
+            Target: {formatCurrency(targetEur)}/mo
+          </span>
+        </div>
+        <div className="income-events-bar-track">
+          <div
+            className="income-events-bar-fill"
+            style={{ width: `${Math.min(100, Math.round((totalEur / targetEur) * 100))}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Table */}
+      {isLoading ? (
+        <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading…</p>
+      ) : events.length === 0 ? (
+        <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>No income events logged yet.</p>
+      ) : (
+        <div className="table-wrap" style={{ marginBottom: 16 }}>
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Source</th>
+                <th style={{ textAlign: 'right' }}>Amount (EUR)</th>
+                <th>Notes</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {events.map((ev) => (
+                <tr key={ev.id}>
+                  <td style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{ev.date}</td>
+                  <td style={{ fontWeight: 500 }}>{ev.source}</td>
+                  <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', fontSize: 13 }}>
+                    {Number(ev.amount_eur) > 0 ? formatCurrency(Number(ev.amount_eur)) : '—'}
+                  </td>
+                  <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>{ev.notes || '—'}</td>
+                  <td>
+                    <button
+                      className="table-action-btn danger"
+                      title="Delete"
+                      onClick={() => {
+                        if (window.confirm('Delete this income event?')) deleteMut.mutate(Number(ev.id))
+                      }}
+                    >🗑️</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Add event */}
+      {adding ? (
+        <div className="income-log-form">
+          <input
+            type="date"
+            value={form.date}
+            onChange={(e) => setForm(f => ({ ...f, date: e.target.value }))}
+          />
+          <input
+            placeholder="Source (client, deal, raise…)"
+            value={form.source}
+            onChange={(e) => setForm(f => ({ ...f, source: e.target.value }))}
+          />
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            placeholder="Amount EUR (0 for non-monetary)"
+            value={form.amount_eur}
+            onChange={(e) => setForm(f => ({ ...f, amount_eur: e.target.value }))}
+          />
+          <input
+            placeholder="Notes (optional)"
+            value={form.notes}
+            onChange={(e) => setForm(f => ({ ...f, notes: e.target.value }))}
+          />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              className="btn-primary"
+              style={{ padding: '6px 16px', fontSize: 13 }}
+              disabled={createMut.isPending || !form.source.trim()}
+              onClick={handleSubmit}
+            >
+              {createMut.isPending ? 'Logging…' : 'Log event'}
+            </button>
+            <button className="btn-ghost" style={{ padding: '6px 12px', fontSize: 13 }} onClick={() => setAdding(false)}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button className="btn-ghost-sm" onClick={() => setAdding(true)}>+ Log income event</button>
+      )}
+    </Panel>
+  )
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export function FinancePage() {
@@ -454,7 +612,7 @@ export function FinancePage() {
                     {(entriesQuery.data?.results ?? []).length === 0 && (
                       <tr>
                         <td colSpan={8} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}>
-                          No entries for this period.
+                          No entries for this period. Use the form above to log income or expenses.
                         </td>
                       </tr>
                     )}
@@ -469,6 +627,9 @@ export function FinancePage() {
 
           {/* Category breakdown */}
           <CategoryBreakdown month={selectedMonth} />
+
+          {/* Income milestone events */}
+          <IncomeEventsPanel />
         </>
       )}
     </section>

@@ -3,8 +3,47 @@ import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PageSkeleton } from '../components/PageSkeleton'
-import { getDashboardV2, createNode, updateNode } from '../lib/api'
-import type { DashboardTask, DashboardV2, NodeCreatePayload, NodeStatus, NodeUpdatePayload } from '../lib/types'
+import { getDashboardV2, createNode, updateNode, getNextAction, listRoutineBlocks } from '../lib/api'
+import type { DashboardTask, DashboardV2, NodeCreatePayload, NodeStatus, NodeUpdatePayload, RoutineBlock } from '../lib/types'
+import { getCurrentBlock, blockEndTime } from '../components/routine/helpers'
+
+// ── Next Action Card ─────────────────────────────────────────────────────────
+
+function NextActionCard() {
+  const { data, isLoading, isFetching, refetch } = useQuery({
+    queryKey: ['next-action'],
+    queryFn: getNextAction,
+    staleTime: 5 * 60 * 1000,   // cache for 5 minutes
+    retry: 1,
+  })
+  return (
+    <div className="next-action-card">
+      <div className="next-action-header">
+        <span className="next-action-label">⚡ What to do right now</span>
+        <button
+          className="next-action-refresh"
+          onClick={() => refetch()}
+          disabled={isFetching}
+          title="Refresh recommendation"
+        >
+          {isFetching ? '…' : '↺'}
+        </button>
+      </div>
+      {isLoading && <p className="next-action-idle">Calculating…</p>}
+      {data && !isLoading && (
+        <div className="next-action-result">
+          <p className="next-action-action">{data.action}</p>
+          <p className="next-action-reason">{data.reason}</p>
+          {data.node_id && (
+            <Link to={`/goals?node=${data.node_id}`} className="next-action-link">
+              Open goal →
+            </Link>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
 
 // ── Status Popover ───────────────────────────────────────────────────────────
 
@@ -146,6 +185,13 @@ export function HomePage() {
     queryFn: getDashboardV2,
   })
 
+  const { data: routineBlocks = [] } = useQuery<RoutineBlock[]>({
+    queryKey: ['routine-blocks'],
+    queryFn: listRoutineBlocks,
+    staleTime: 5 * 60 * 1000,
+  })
+  const currentBlock = getCurrentBlock(routineBlocks)
+
   if (isLoading) return <PageSkeleton />
   if (error || !data) return <div className="page-error">Could not load dashboard.</div>
 
@@ -167,6 +213,9 @@ export function HomePage() {
       <p className="home-date">
         {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
       </p>
+
+      {/* ── Next Action ── */}
+      <NextActionCard />
 
       {/* ── SECTION 1: North Star ── */}
       <div className="unlock-bar">
@@ -204,6 +253,15 @@ export function HomePage() {
           </div>
           <span className="pulse-pct">{data.routine_today.pct}%</span>
         </Link>
+
+        {/* Current block indicator */}
+        {currentBlock && (
+          <Link to="/routine" className="home-current-block">
+            <span className="home-current-now">● NOW</span>
+            <strong>{currentBlock.label}</strong>
+            <span className="home-current-until">until {blockEndTime(currentBlock)}</span>
+          </Link>
+        )}
 
         {/* Journal */}
         <Link

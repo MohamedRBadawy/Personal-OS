@@ -1,0 +1,134 @@
+/* ─────────────────────────────────────────────────────────────
+   Marketing Hub
+   marketing-channel-*, marketing-campaign-*, marketing-status-*
+   ───────────────────────────────────────────────────────────── */
+
+/* ── Channel grid ──────────────────────────────────────────────────────────── */
+.marketing-channels-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.marketing-channel-card {
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.marketing-channel-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.marketing-channel-card-header > div {
+  flex: 1;
+}
+
+.marketing-channel-card-header h3 {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.marketing-channel-icon {
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* ── Status pill ───────────────────────────────────────────────────────────── */
+.marketing-status-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  text-transform: capitalize;
+  flex-shrink: 0;
+}
+
+/* ── Channel stats row ─────────────────────────────────────────────────────── */
+.marketing-channel-stats {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.marketing-stat {
+  font-size: 13px;
+}
+
+/* ── Campaign progress bar ─────────────────────────────────────────────────── */
+.marketing-campaign-progress {
+  margin-top: 8px;
+}
+
+.marketing-progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.marketing-progress-bar {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.marketing-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width .3s ease;
+}
+
+/* ── Channel multi-select checkboxes in campaign form ──────────────────────── */
+.marketing-channel-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.marketing-channel-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-alt);
+  user-select: none;
+}
+
+.marketing-channel-checkbox:has(input:checked) {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg-alt));
+}
+
+.marketing-channel-checkbox input[type="checkbox"] {
+  margin: 0;
+}
+
+/* ── Inline checkbox label in action form ──────────────────────────────────── */
+.marketing-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}

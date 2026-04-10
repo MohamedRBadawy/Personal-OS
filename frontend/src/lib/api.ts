@@ -81,6 +81,7 @@ import type {
   MonthlyChartPoint,
   CategoryBreakdownItem,
   RecurringChecklistItem,
+  NodePriorityEntry,
 } from './types'
 
 export function resolveApiBaseUrl(rawValue: string | undefined = import.meta.env.VITE_API_BASE_URL) {
@@ -161,6 +162,12 @@ export function getDashboard() {
 
 export function getCommandCenter() {
   return request<CommandCenterPayload>('/core/command-center/')
+}
+
+export function getNextAction() {
+  return request<{ action: string; reason: string; node_id: string | null }>('/core/next-action/', {
+    method: 'POST',
+  })
 }
 
 export function submitCheckIn(payload: CheckInPayload) {
@@ -434,6 +441,13 @@ export function deleteIdea(id: string) {
   return deleteResource(`/analytics/ideas/${id}/`)
 }
 
+export function convertIdeaToNode(id: string, payload: { type: string; parent?: string | null }) {
+  return request<{ node_id: string; node_title: string }>(`/analytics/ideas/${id}/convert_to_node/`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
 export function listDecisions() {
   return listResource<DecisionLog>('/analytics/decisions/')
 }
@@ -616,6 +630,10 @@ export function reorderNodes(items: { id: string; order: number }[]) {
   })
 }
 
+export function getPrioritizedNodes() {
+  return request<NodePriorityEntry[]>('/nodes/prioritize/')
+}
+
 export function getFinanceSummaryV2() {
   return request<FinanceSummaryV2>('/finance/summary/')
 }
@@ -640,6 +658,10 @@ export function saveRoutineLog(entry: { date: string; block_time: string; status
 
 export function getRoutineStreak() {
   return request<{ streak: number; total_blocks: number }>('/schedule/routine-streak/')
+}
+
+export function getBlockStreaks() {
+  return request<import('./types').BlockStreaksPayload>('/schedule/block-streaks/')
 }
 
 export function getRoutineMetrics(days = 30) {
@@ -796,6 +818,21 @@ export function deleteContact(id: number) {
   return request<void>(`/contacts/contacts/${id}/`, { method: 'DELETE' })
 }
 
+export function listInteractions(contactId: number) {
+  return request<import('./types').ContactInteraction[]>(`/contacts/interactions/?contact=${contactId}`)
+}
+
+export function logInteraction(payload: import('./types').ContactInteractionPayload) {
+  return request<import('./types').ContactInteraction>('/contacts/interactions/', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function deleteInteraction(id: number) {
+  return request<void>(`/contacts/interactions/${id}/`, { method: 'DELETE' })
+}
+
 // ── Cross-domain node connections ─────────────────────────────────────────────
 
 export function listRoutineBlocksForNode(nodeId: string) {
@@ -816,6 +853,44 @@ export function listLearningItemsForNode(nodeId: string) {
 
 export function listMarketingActionsForNode(nodeId: string) {
   return request<{ results: Array<{ id: number; action: string; platform: string; date: string }> }>(`/pipeline/marketing/?goal=${nodeId}`)
+}
+
+// ── Marketing Hub ─────────────────────────────────────────────────────────────
+
+export function getMarketingWorkspace() {
+  return request<import('./types').MarketingWorkspacePayload>('/pipeline/marketing-workspace/')
+}
+
+export function listMarketingChannels() {
+  return listResource<import('./types').MarketingChannel>('/pipeline/channels/')
+}
+
+export function createMarketingChannel(payload: Partial<import('./types').MarketingChannel>) {
+  return createResource<import('./types').MarketingChannel, Partial<import('./types').MarketingChannel>>('/pipeline/channels/', payload)
+}
+
+export function updateMarketingChannel(id: string, payload: Partial<import('./types').MarketingChannel>) {
+  return updateResource<import('./types').MarketingChannel, Partial<import('./types').MarketingChannel>>(`/pipeline/channels/${id}/`, payload)
+}
+
+export function deleteMarketingChannel(id: string) {
+  return deleteResource(`/pipeline/channels/${id}/`)
+}
+
+export function listMarketingCampaigns() {
+  return listResource<import('./types').MarketingCampaign>('/pipeline/campaigns/')
+}
+
+export function createMarketingCampaign(payload: Partial<import('./types').MarketingCampaign>) {
+  return createResource<import('./types').MarketingCampaign, Partial<import('./types').MarketingCampaign>>('/pipeline/campaigns/', payload)
+}
+
+export function updateMarketingCampaign(id: string, payload: Partial<import('./types').MarketingCampaign>) {
+  return updateResource<import('./types').MarketingCampaign, Partial<import('./types').MarketingCampaign>>(`/pipeline/campaigns/${id}/`, payload)
+}
+
+export function deleteMarketingCampaign(id: string) {
+  return deleteResource(`/pipeline/campaigns/${id}/`)
 }
 
 // ── Goals Analytics ───────────────────────────────────────────────────────────

@@ -149,7 +149,23 @@
       "Bash(python -c \"import sys,json; raw=sys.stdin.read\\(\\); print\\(raw[:300]\\)\")",
       "Bash(curl -s http://127.0.0.1:8000/api/finance/exchange-rates/)",
       "Bash(curl -s -X PATCH http://127.0.0.1:8000/api/finance/exchange-rates/ -H 'Content-Type: application/json' -d '{\"eur_to_egp\": 60.0, \"eur_to_usd\": 1.08}')",
-      "Bash(taskkill //F //PID 11864)"
+      "Bash(taskkill //F //PID 11864)",
+      "Bash(python manage.py makemigrations goals pipeline contacts)",
+      "Bash(wc -l \"F:/Personal OS/frontend/src/pages/\"*.tsx \"F:/Personal OS/frontend/src/lib/\"*.ts \"F:/Personal OS/frontend/src/styles/\"*.css)",
+      "Bash(find . -name \"*.py\" -exec wc -l {} +)",
+      "Bash(find . -name \"*.py\" -not -path \"*/venv/*\" -not -path \"*/__pycache__/*\" -not -path \"*/migrations/*\" -exec wc -l {} +)",
+      "Bash(python -c \"from core.ai import get_ai_provider, AnthropicAIProvider, DeterministicAIProvider; from core.chat_tools import TOOL_SCHEMAS, execute_tool; print\\('All imports OK'\\); print\\(f'TOOL_SCHEMAS count: {len\\(TOOL_SCHEMAS\\)}'\\)\")",
+      "Bash(python manage.py shell -c \"from core.ai import get_ai_provider, AnthropicAIProvider, DeterministicAIProvider; from core.chat_tools import TOOL_SCHEMAS, execute_tool; print\\('All imports OK'\\); print\\(f'TOOL_SCHEMAS count: {len\\(TOOL_SCHEMAS\\)}'\\)\")",
+      "Bash(python manage.py shell -c \"print\\('shell OK'\\)\")",
+      "Bash(python manage.py shell -c \"from pipeline.services import OpportunityLifecycleService; print\\('pipeline import OK'\\)\")",
+      "Bash(python manage.py shell -c \"from core.chat_tools import TOOL_SCHEMAS, execute_tool; print\\(f'OK, {len\\(TOOL_SCHEMAS\\)} schemas'\\)\")",
+      "Bash(python manage.py check --deploy)",
+      "Bash(wc -l \"F:/Personal OS/backend/core/ai_base.py\" \"F:/Personal OS/backend/core/ai_providers.py\" \"F:/Personal OS/backend/core/ai.py\" \"F:/Personal OS/backend/core/chat_tools.py\" \"F:/Personal OS/backend/core/tools/\"*.py)",
+      "Bash(wc -l \"F:\\\\Personal OS\\\\frontend\\\\src\\\\pages\\\\RoutinePage.tsx\" \"F:\\\\Personal OS\\\\frontend\\\\src\\\\components\\\\routine\"/*.tsx \"F:\\\\Personal OS\\\\frontend\\\\src\\\\components\\\\routine\"/*.ts)",
+      "Bash(wc -l \"F:/Personal OS/frontend/src/components/goals/\"*.tsx \"F:/Personal OS/frontend/src/components/goals/\"*.ts)",
+      "Bash(python manage.py makemigrations pipeline)",
+      "Bash(grep -E \"\\\\.tsx?$\")",
+      "Bash(dir \"F:\\\\Personal OS\\\\\" /b 2>&1)"
     ]
   }
 }

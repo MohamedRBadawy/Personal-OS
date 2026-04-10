@@ -63,6 +63,13 @@ class Node(BaseModel):
         MEDIUM = "medium", "Medium"
         LOW = "low", "Low"
 
+    class BusinessContext(models.TextChoices):
+        """Which business context this node belongs to."""
+        K_LINE       = "k_line",       "K Line Europe"
+        FREELANCE    = "freelance",     "Freelance client"
+        OWN_BUSINESS = "own_business",  "Own business"
+        IDEA         = "idea",          "Business idea"
+
     code = models.CharField(
         max_length=32,
         unique=True,
@@ -122,6 +129,13 @@ class Node(BaseModel):
     focus_date = models.DateField(
         null=True, blank=True,
         help_text="Date this node is scheduled for focused work. Set to today to surface it in Today's Focus.",
+    )
+    business_context = models.CharField(
+        max_length=20,
+        choices=BusinessContext.choices,
+        blank=True,
+        default="",
+        help_text="Which business context this node belongs to.",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

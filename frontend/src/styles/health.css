@@ -1,0 +1,112 @@
+/* ─────────────────────────────────────────────────────────────
+   Health
+   health-*, habit-*, spiritual-* (type badges shared with routine)
+   ───────────────────────────────────────────────────────────── */
+
+/* ── Health: alert chips ───────────────────────────────────────────────────── */
+.health-alerts-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.health-alert-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 20px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+/* ── Health: 7-day averages panel ─────────────────────────────────────────── */
+.health-avg-row {
+  display: flex;
+  gap: 24px;
+}
+.health-avg-item {
+  flex: 1;
+  min-width: 0;
+}
+.health-avg-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+.health-avg-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.health-avg-val {
+  font-size: 14px;
+  font-weight: 700;
+  font-family: var(--mono);
+  color: var(--text);
+}
+.health-avg-sub {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+/* ── Health: sparkline bars ─────────────────────────────────────────────── */
+.health-sparkline {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 48px;
+}
+.health-sparkline-bar {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  background: var(--bg-alt);
+  border-radius: 3px 3px 0 0;
+  overflow: hidden;
+}
+.health-sparkline-fill {
+  width: 100%;
+  border-radius: 3px 3px 0 0;
+  transition: height .2s;
+}
+
+/* ── Schedule/Habit cards (routine-adjacent, but listed in health) ─────────── */
+.schedule-list,
+.habit-board {
+  display: grid;
+  gap: 16px;
+}
+
+.schedule-card,
+.habit-card,
+.timeline-day {
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.schedule-time {
+  margin: 0 0 8px;
+  color: var(--accent-strong);
+  font: 600 0.88rem/1 var(--mono);
+}
+
+.schedule-reason,
+.schedule-suggestion {
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: rgba(17, 50, 62, 0.05);
+}
+
+.schedule-reason p,
+.schedule-suggestion p {
+  margin: 8px 0 0;
+}

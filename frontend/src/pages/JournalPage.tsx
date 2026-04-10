@@ -172,6 +172,12 @@ export function JournalPage() {
         title={`Today — ${todayLabel}`}
         description="Write what's on your mind. Each field saves automatically after you stop typing."
       >
+        {pastEntries[0]?.tomorrow_focus && (
+          <div className="journal-yesterday-focus">
+            <span className="jyf-label">Yesterday's focus</span>
+            <p className="jyf-text">{pastEntries[0].tomorrow_focus}</p>
+          </div>
+        )}
         <div className="journal-form">
           <JournalSection
             label="🌙 How am I feeling?"

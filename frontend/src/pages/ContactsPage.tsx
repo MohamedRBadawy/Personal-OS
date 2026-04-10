@@ -9,13 +9,23 @@ import {
   deleteContact,
   getDueFollowups,
   listContacts,
+  logInteraction,
   updateContact,
 } from '../lib/api'
-import type { Contact, ContactPayload } from '../lib/types'
+import type { Contact, ContactInteraction, ContactPayload, CRMStage } from '../lib/types'
 
 const RELATION_ICONS: Record<Contact['relation'], string> = {
   client: '💼', prospect: '🔍', mentor: '🎓',
   friend: '🤝', family: '👨‍👩‍👧', colleague: '👔', other: '👤',
+}
+
+const INTERACTION_ICONS: Record<ContactInteraction['type'], string> = {
+  email: '✉', call: '📞', meeting: '🤝', message: '💬', note: '📝',
+}
+
+const CRM_STAGE_LABELS: Record<string, string> = {
+  lead: 'Lead', prospect: 'Prospect', active_client: 'Active Client',
+  past_client: 'Past Client', partner: 'Partner', employer: 'Employer',
 }
 
 function formatDate(d: string | null): string {
@@ -40,6 +50,8 @@ function ContactForm({
 }) {
   const [name, setName] = useState(initial?.name ?? '')
   const [relation, setRelation] = useState<Contact['relation']>(initial?.relation ?? 'other')
+  const [crmStage, setCrmStage] = useState<CRMStage>(initial?.crm_stage ?? '')
+  const [source, setSource] = useState(initial?.source ?? '')
   const [company, setCompany] = useState(initial?.company ?? '')
   const [email, setEmail] = useState(initial?.email ?? '')
   const [phone, setPhone] = useState(initial?.phone ?? '')
@@ -61,6 +73,21 @@ function ContactForm({
               <option key={r} value={r}>{RELATION_ICONS[r]} {r.charAt(0).toUpperCase() + r.slice(1)}</option>
             ))}
           </select>
+        </div>
+      </div>
+      <div className="contact-form-row">
+        <div className="contact-form-field">
+          <label className="contact-label">CRM Stage</label>
+          <select className="form-input" value={crmStage} onChange={e => setCrmStage(e.target.value as CRMStage)}>
+            <option value="">— Personal / no stage —</option>
+            {Object.entries(CRM_STAGE_LABELS).map(([v, l]) => (
+              <option key={v} value={v}>{l}</option>
+            ))}
+          </select>
+        </div>
+        <div className="contact-form-field">
+          <label className="contact-label">Source</label>
+          <input className="form-input" value={source} onChange={e => setSource(e.target.value)} placeholder="Upwork, Referral, LinkedIn…" />
         </div>
       </div>
       <div className="contact-form-row">
@@ -95,13 +122,68 @@ function ContactForm({
         <button
           disabled={!name.trim() || isPending}
           onClick={() => onSave({
-            name, relation, company, email, phone,
+            name, relation,
+            crm_stage: crmStage || undefined,
+            source: source || undefined,
+            company, email, phone,
             last_contact: lastContact || null,
             next_followup: nextFollowup || null,
             notes,
           })}
         >
           {isPending ? 'Saving…' : 'Save'}
+        </button>
+        <button className="button-ghost" onClick={onCancel}>Cancel</button>
+      </div>
+    </div>
+  )
+}
+
+// ── Log Interaction inline form ───────────────────────────────────────────────
+
+function LogInteractionForm({ contactId, onSaved, onCancel }: {
+  contactId: number
+  onSaved: () => void
+  onCancel: () => void
+}) {
+  const today = new Date().toLocaleDateString('en-CA')
+  const [type, setType] = useState<ContactInteraction['type']>('note')
+  const [date, setDate] = useState(today)
+  const [summary, setSummary] = useState('')
+  const [outcome, setOutcome] = useState('')
+
+  const mut = useMutation({
+    mutationFn: () => logInteraction({ contact: contactId, date, type, summary, outcome }),
+    onSuccess: onSaved,
+  })
+
+  return (
+    <div className="interaction-form">
+      <div className="contact-form-row">
+        <div className="contact-form-field" style={{ maxWidth: 130 }}>
+          <label className="contact-label">Type</label>
+          <select className="form-input" value={type} onChange={e => setType(e.target.value as ContactInteraction['type'])}>
+            {(['email', 'call', 'meeting', 'message', 'note'] as const).map(t => (
+              <option key={t} value={t}>{INTERACTION_ICONS[t]} {t.charAt(0).toUpperCase() + t.slice(1)}</option>
+            ))}
+          </select>
+        </div>
+        <div className="contact-form-field" style={{ maxWidth: 160 }}>
+          <label className="contact-label">Date</label>
+          <input className="form-input" type="date" value={date} onChange={e => setDate(e.target.value)} />
+        </div>
+      </div>
+      <div className="contact-form-field">
+        <label className="contact-label">Summary *</label>
+        <input className="form-input" placeholder="What happened?" value={summary} onChange={e => setSummary(e.target.value)} />
+      </div>
+      <div className="contact-form-field">
+        <label className="contact-label">Outcome</label>
+        <input className="form-input" placeholder="Result or next step" value={outcome} onChange={e => setOutcome(e.target.value)} />
+      </div>
+      <div className="button-row">
+        <button disabled={!summary.trim() || mut.isPending} onClick={() => mut.mutate()}>
+          {mut.isPending ? 'Saving…' : 'Log'}
         </button>
         <button className="button-ghost" onClick={onCancel}>Cancel</button>
       </div>
@@ -116,14 +198,18 @@ function ContactCard({
   onEdit,
   onLogContact,
   onDelete,
+  onInteractionSaved,
 }: {
   contact: Contact
   onEdit: (c: Contact) => void
   onLogContact: (id: number) => void
   onDelete: (id: number) => void
+  onInteractionSaved: () => void
 }) {
   const isOverdue = contact.followup_overdue
   const daysSince = contact.days_since_contact
+  const [showInteractions, setShowInteractions] = useState(false)
+  const [showLogForm, setShowLogForm] = useState(false)
 
   return (
     <div className={`contact-card${isOverdue ? ' contact-card--overdue' : ''}`}>
@@ -136,6 +222,10 @@ function ContactCard({
           <div className="contact-card-meta">
             <span className="record-meta-chip">{contact.relation}</span>
             {contact.company && <span className="record-meta-chip">{contact.company}</span>}
+            {contact.crm_stage && (
+              <span className="record-meta-chip crm-stage-chip">{CRM_STAGE_LABELS[contact.crm_stage] ?? contact.crm_stage}</span>
+            )}
+            {contact.source && <span className="record-meta-chip source-chip">{contact.source}</span>}
           </div>
         </div>
         {isOverdue && (
@@ -171,6 +261,40 @@ function ContactCard({
         <p className="contact-card-notes">{contact.notes.slice(0, 120)}{contact.notes.length > 120 ? '…' : ''}</p>
       )}
 
+      {/* Interaction timeline */}
+      {contact.interactions.length > 0 && (
+        <div className="interaction-section">
+          <button
+            className="interaction-toggle"
+            onClick={() => setShowInteractions(v => !v)}
+          >
+            {showInteractions ? '▾' : '▸'} {contact.interactions.length} interaction{contact.interactions.length !== 1 ? 's' : ''}
+          </button>
+          {showInteractions && (
+            <div className="interaction-list">
+              {contact.interactions.map(ix => (
+                <div key={ix.id} className="interaction-row">
+                  <span className="interaction-icon">{INTERACTION_ICONS[ix.type]}</span>
+                  <div className="interaction-body">
+                    <p className="interaction-summary">{ix.summary}</p>
+                    {ix.outcome && <p className="interaction-outcome">{ix.outcome}</p>}
+                  </div>
+                  <span className="interaction-date">{formatDate(ix.date)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {showLogForm ? (
+        <LogInteractionForm
+          contactId={contact.id}
+          onSaved={() => { setShowLogForm(false); onInteractionSaved() }}
+          onCancel={() => setShowLogForm(false)}
+        />
+      ) : null}
+
       <div className="contact-card-actions">
         <button
           className="button-muted"
@@ -178,6 +302,13 @@ function ContactCard({
           onClick={() => onLogContact(contact.id)}
         >
           Log contact today
+        </button>
+        <button
+          className="button-muted"
+          style={{ fontSize: 12 }}
+          onClick={() => setShowLogForm(v => !v)}
+        >
+          + Interaction
         </button>
         <button className="button-ghost" style={{ fontSize: 12 }} onClick={() => onEdit(contact)}>Edit</button>
         <button className="button-ghost" style={{ fontSize: 12, color: '#dc2626' }} onClick={() => onDelete(contact.id)}>✕</button>
@@ -188,11 +319,13 @@ function ContactCard({
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
+type TabId = 'followups' | 'all' | 'lead' | 'prospect' | 'active_client' | 'past_client' | 'partner' | 'employer'
+
 export function ContactsPage() {
   const qc = useQueryClient()
   const [showAdd, setShowAdd] = useState(false)
   const [editing, setEditing] = useState<Contact | null>(null)
-  const [activeTab, setActiveTab] = useState<'all' | 'followups'>('followups')
+  const [activeTab, setActiveTab] = useState<TabId>('followups')
 
   const allQuery = useQuery({
     queryKey: ['contacts'],
@@ -206,6 +339,7 @@ export function ContactsPage() {
   function invalidate() {
     qc.invalidateQueries({ queryKey: ['contacts'] })
     qc.invalidateQueries({ queryKey: ['contacts-due'] })
+    qc.invalidateQueries({ queryKey: ['dashboard-v2'] })
   }
 
   const createMut = useMutation({ mutationFn: createContact, onSuccess: () => { setShowAdd(false); invalidate() } })
@@ -216,7 +350,6 @@ export function ContactsPage() {
   })
   const deleteMut = useMutation({ mutationFn: deleteContact, onSuccess: invalidate })
 
-  // Log contact today = set last_contact to today and clear next_followup
   const logContactMut = useMutation({
     mutationFn: (id: number) => updateContact(id, {
       last_contact: new Date().toLocaleDateString('en-CA'),
@@ -229,7 +362,22 @@ export function ContactsPage() {
 
   const allContacts = allQuery.data?.results ?? []
   const dueContacts = dueQuery.data?.results ?? []
-  const displayContacts = activeTab === 'followups' ? dueContacts : allContacts
+
+  const CRM_TABS: { id: TabId; label: string }[] = [
+    { id: 'followups', label: `Follow-ups due (${dueContacts.length})` },
+    { id: 'all',       label: `All (${allContacts.length})` },
+    ...(['lead', 'prospect', 'active_client', 'past_client', 'partner', 'employer'] as const)
+      .filter(stage => allContacts.some(c => c.crm_stage === stage))
+      .map(stage => ({
+        id: stage as TabId,
+        label: `${CRM_STAGE_LABELS[stage]} (${allContacts.filter(c => c.crm_stage === stage).length})`,
+      })),
+  ]
+
+  let displayContacts: Contact[]
+  if (activeTab === 'followups') displayContacts = dueContacts
+  else if (activeTab === 'all') displayContacts = allContacts
+  else displayContacts = allContacts.filter(c => c.crm_stage === activeTab)
 
   return (
     <section className="page">
@@ -259,11 +407,11 @@ export function ContactsPage() {
       )}
 
       <div className="routine-view-tabs">
-        {([['followups', `Follow-ups due (${dueContacts.length})`], ['all', `All (${allContacts.length})`]] as const).map(([tab, label]) => (
+        {CRM_TABS.map(({ id, label }) => (
           <button
-            key={tab}
-            className={`routine-view-tab${activeTab === tab ? ' active' : ''}`}
-            onClick={() => setActiveTab(tab)}
+            key={id}
+            className={`routine-view-tab${activeTab === id ? ' active' : ''}`}
+            onClick={() => setActiveTab(id)}
           >
             {label}
           </button>
@@ -287,6 +435,7 @@ export function ContactsPage() {
               onEdit={setEditing}
               onLogContact={id => logContactMut.mutate(id)}
               onDelete={id => deleteMut.mutate(id)}
+              onInteractionSaved={invalidate}
             />
           ))}
         </div>

@@ -12,15 +12,17 @@ import {
   updateOpportunity,
 } from '../lib/api'
 import { formatDate } from '../lib/formatters'
-import type { Opportunity, OpportunityPayload, PipelineWorkspaceOpportunity } from '../lib/types'
+import type { Opportunity, OpportunityPayload, OpportunityStatus, PipelineWorkspaceOpportunity } from '../lib/types'
 
 // ── Kanban column statuses ─────────────────────────────────────────────────────
-const KANBAN_COLS: { status: Opportunity['status']; label: string; color: string }[] = [
-  { status: 'new',       label: '🔍 New',       color: '#6366f1' },
-  { status: 'reviewing', label: '👁 Reviewing',  color: '#f59e0b' },
-  { status: 'applied',   label: '📤 Applied',    color: '#3b82f6' },
-  { status: 'won',       label: '🏆 Won',        color: '#16a34a' },
-  { status: 'lost',      label: '❌ Lost',       color: '#dc2626' },
+const KANBAN_COLS: { status: OpportunityStatus; label: string; color: string }[] = [
+  { status: 'new',           label: '🔍 New',           color: '#6366f1' },
+  { status: 'reviewing',     label: '👁 Reviewing',     color: '#f59e0b' },
+  { status: 'applied',       label: '📤 Applied',       color: '#3b82f6' },
+  { status: 'interview',     label: '🎙 Interview',     color: '#8b5cf6' },
+  { status: 'proposal_sent', label: '📝 Proposal Sent', color: '#0ea5e9' },
+  { status: 'won',           label: '🏆 Won',           color: '#16a34a' },
+  { status: 'lost',          label: '❌ Lost',          color: '#dc2626' },
 ]
 
 export function PipelinePage() {
@@ -54,7 +56,7 @@ export function PipelinePage() {
   })
 
   const statusMutation = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: Opportunity['status'] }) =>
+    mutationFn: ({ id, status }: { id: string; status: OpportunityStatus }) =>
       updateOpportunity(id, { status }),
     onSuccess: invalidatePipeline,
   })
@@ -198,9 +200,23 @@ export function PipelinePage() {
                         onDragEnd={() => { draggingId.current = null; setDragOverStatus(null) }}
                       >
                         <p className="kanban-card-name">{opportunity.name}</p>
+                        {opportunity.client_name && (
+                          <p className="kanban-card-client">{opportunity.client_name}</p>
+                        )}
                         <div className="list-inline" style={{ marginBottom: 6 }}>
                           <span className="record-meta-chip">{opportunity.platform}</span>
                           {opportunity.budget && <span className="record-meta-chip">{opportunity.budget}</span>}
+                          {opportunity.job_url && (
+                            <a
+                              href={opportunity.job_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="record-meta-chip kanban-card-link"
+                              onClick={e => e.stopPropagation()}
+                            >
+                              View listing →
+                            </a>
+                          )}
                         </div>
                         <p className="muted" style={{ fontSize: 12, margin: 0 }}>
                           {opportunity.fit_reasoning
@@ -220,6 +236,9 @@ export function PipelinePage() {
                                 description: opportunity.description ?? '',
                                 budget: opportunity.budget,
                                 status: opportunity.status,
+                                job_url: opportunity.job_url ?? '',
+                                client_name: opportunity.client_name ?? '',
+                                linked_contact: opportunity.linked_contact ?? null,
                                 fit_score: opportunity.fit_score,
                                 fit_reasoning: opportunity.fit_reasoning ?? '',
                                 date_found: opportunity.date_found,

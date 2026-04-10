@@ -1,13 +1,70 @@
 import { useState } from 'react'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { EmptyState } from '../components/EmptyState'
 import { PageSkeleton } from '../components/PageSkeleton'
 import { MetricCard } from '../components/MetricCard'
 import { Panel } from '../components/Panel'
 import { WorkspaceTabs } from '../components/WorkspaceTabs'
-import { getIdeasOverview, sendChatMessage } from '../lib/api'
+import { convertIdeaToNode, getIdeasOverview, sendChatMessage } from '../lib/api'
+import type { Idea } from '../lib/types'
 import { DecisionsPage, IdeasPage, LearningPage } from './SimpleWorkspacePages'
+
+// ── Convert button per idea ────────────────────────────────────────────────────
+
+const NODE_TYPES = [
+  { value: 'goal', label: 'Goal' },
+  { value: 'project', label: 'Project' },
+  { value: 'task', label: 'Task' },
+]
+
+function ConvertButton({ idea }: { idea: Idea }) {
+  const [open, setOpen] = useState(false)
+  const [type, setType] = useState('project')
+  const [converted, setConverted] = useState<{ node_id: string; node_title: string } | null>(null)
+  const qc = useQueryClient()
+
+  const mut = useMutation({
+    mutationFn: () => convertIdeaToNode(idea.id, { type }),
+    onSuccess: (res) => {
+      setConverted(res)
+      setOpen(false)
+      qc.invalidateQueries({ queryKey: ['ideas-overview'] })
+      qc.invalidateQueries({ queryKey: ['nodes-v2'] })
+    },
+  })
+
+  if (converted) {
+    return (
+      <Link to={`/goals?node=${converted.node_id}`} className="idea-converted-link">
+        ✓ View in Goals →
+      </Link>
+    )
+  }
+  if (idea.linked_goal) {
+    return <span className="idea-linked-badge">→ Linked to goal</span>
+  }
+
+  if (!open) {
+    return (
+      <button className="idea-convert-btn" onClick={() => setOpen(true)}>
+        → Convert
+      </button>
+    )
+  }
+
+  return (
+    <div className="idea-convert-form" onClick={e => e.stopPropagation()}>
+      <select className="form-input idea-convert-select" value={type} onChange={e => setType(e.target.value)}>
+        {NODE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+      </select>
+      <button className="btn-primary idea-convert-confirm" disabled={mut.isPending} onClick={() => mut.mutate()}>
+        {mut.isPending ? '…' : 'Create'}
+      </button>
+      <button className="btn-ghost idea-convert-cancel" onClick={() => setOpen(false)}>✕</button>
+    </div>
+  )
+}
 
 const tabs = [
   { id: 'overview', label: 'Overview' },
@@ -77,9 +134,14 @@ export function IdeasThinkingPage() {
               ) : (
                 <ul className="plain-list">
                   {overview.ideas.slice(0, 5).map((idea) => (
-                    <li key={idea.id} className="context-item">
-                      <strong>{idea.title}</strong>
-                      <p className="muted">{idea.status}</p>
+                    <li key={idea.id} className="context-item idea-overview-item">
+                      <div className="idea-overview-row">
+                        <div>
+                          <strong>{idea.title}</strong>
+                          <p className="muted">{idea.status}</p>
+                        </div>
+                        <ConvertButton idea={idea} />
+                      </div>
                     </li>
                   ))}
                 </ul>

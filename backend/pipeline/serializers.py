@@ -1,7 +1,7 @@
 """Serializers for pipeline records."""
 from rest_framework import serializers
 
-from pipeline.models import Client, MarketingAction, Opportunity
+from pipeline.models import Client, MarketingAction, MarketingCampaign, MarketingChannel, Opportunity
 
 
 class ClientSerializer(serializers.ModelSerializer):
@@ -18,6 +18,24 @@ class OpportunitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Opportunity
+        fields = "__all__"
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class MarketingChannelSerializer(serializers.ModelSerializer):
+    """Serializer for marketing presence channels."""
+
+    class Meta:
+        model = MarketingChannel
+        fields = "__all__"
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class MarketingCampaignSerializer(serializers.ModelSerializer):
+    """Serializer for structured marketing campaigns."""
+
+    class Meta:
+        model = MarketingCampaign
         fields = "__all__"
         read_only_fields = ["id", "created_at", "updated_at"]
 

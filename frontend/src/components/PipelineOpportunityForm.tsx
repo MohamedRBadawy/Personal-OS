@@ -1,11 +1,22 @@
 import { useState } from 'react'
-import type { Opportunity, OpportunityPayload } from '../lib/types'
+import type { Opportunity, OpportunityPayload, OpportunityStatus } from '../lib/types'
 
 type PipelineOpportunityFormProps = {
   isSubmitting: boolean
   initialValue?: Opportunity | null
   onSubmit: (payload: OpportunityPayload) => void
 }
+
+const STATUSES: { value: OpportunityStatus; label: string }[] = [
+  { value: 'new',           label: 'New' },
+  { value: 'reviewing',     label: 'Reviewing' },
+  { value: 'applied',       label: 'Applied' },
+  { value: 'interview',     label: 'Interview' },
+  { value: 'proposal_sent', label: 'Proposal Sent' },
+  { value: 'won',           label: 'Won' },
+  { value: 'lost',          label: 'Lost' },
+  { value: 'rejected',      label: 'Rejected' },
+]
 
 export function PipelineOpportunityForm({
   isSubmitting,
@@ -17,7 +28,9 @@ export function PipelineOpportunityForm({
   const [platform, setPlatform] = useState(initialValue?.platform ?? 'Upwork')
   const [description, setDescription] = useState(initialValue?.description ?? '')
   const [budget, setBudget] = useState(initialValue?.budget ?? '')
-  const [status, setStatus] = useState<Opportunity['status']>(initialValue?.status ?? 'new')
+  const [status, setStatus] = useState<OpportunityStatus>(initialValue?.status ?? 'new')
+  const [jobUrl, setJobUrl] = useState(initialValue?.job_url ?? '')
+  const [clientName, setClientName] = useState(initialValue?.client_name ?? '')
   const [dateFound, setDateFound] = useState(initialValue?.date_found ?? today)
   const [dateApplied, setDateApplied] = useState(initialValue?.date_applied ?? '')
   const [outcomeNotes, setOutcomeNotes] = useState(initialValue?.outcome_notes ?? '')
@@ -30,6 +43,8 @@ export function PipelineOpportunityForm({
       description,
       budget: budget || null,
       status,
+      job_url: jobUrl || undefined,
+      client_name: clientName || undefined,
       date_found: dateFound,
       date_applied: dateApplied || null,
       outcome_notes: outcomeNotes,
@@ -48,6 +63,15 @@ export function PipelineOpportunityForm({
         />
       </div>
       <div className="field">
+        <label htmlFor="pipeline-client">Client name</label>
+        <input
+          id="pipeline-client"
+          placeholder="Who posted or who's the client"
+          value={clientName}
+          onChange={(event) => setClientName(event.target.value)}
+        />
+      </div>
+      <div className="field">
         <label htmlFor="pipeline-platform">Platform</label>
         <select
           id="pipeline-platform"
@@ -61,26 +85,38 @@ export function PipelineOpportunityForm({
           ))}
         </select>
       </div>
+      <div className="field span-2">
+        <label htmlFor="pipeline-job-url">Job listing URL</label>
+        <input
+          id="pipeline-job-url"
+          type="url"
+          placeholder="https://…"
+          value={jobUrl}
+          onChange={(event) => setJobUrl(event.target.value)}
+        />
+      </div>
       <div className="field">
         <label htmlFor="pipeline-status">Status</label>
         <select
           id="pipeline-status"
           value={status}
-          onChange={(event) => setStatus(event.target.value as Opportunity['status'])}
+          onChange={(event) => setStatus(event.target.value as OpportunityStatus)}
         >
-          {[
-            ['new', 'New'],
-            ['reviewing', 'Reviewing'],
-            ['applied', 'Applied'],
-            ['won', 'Won'],
-            ['lost', 'Lost'],
-            ['rejected', 'Rejected'],
-          ].map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
+          {STATUSES.map(({ value, label }) => (
+            <option key={value} value={value}>{label}</option>
           ))}
         </select>
+      </div>
+      <div className="field">
+        <label htmlFor="pipeline-budget">Budget (EUR)</label>
+        <input
+          id="pipeline-budget"
+          min="0"
+          step="0.01"
+          type="number"
+          value={budget}
+          onChange={(event) => setBudget(event.target.value)}
+        />
       </div>
       <div className="field">
         <label htmlFor="pipeline-date-found">Date found</label>
@@ -99,17 +135,6 @@ export function PipelineOpportunityForm({
           type="date"
           value={dateApplied}
           onChange={(event) => setDateApplied(event.target.value)}
-        />
-      </div>
-      <div className="field">
-        <label htmlFor="pipeline-budget">Budget (EUR)</label>
-        <input
-          id="pipeline-budget"
-          min="0"
-          step="0.01"
-          type="number"
-          value={budget}
-          onChange={(event) => setBudget(event.target.value)}
         />
       </div>
       <div className="field span-2">

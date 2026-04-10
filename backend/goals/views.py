@@ -41,8 +41,20 @@ class AttachmentViewSet(viewsets.ModelViewSet):
 class NodeViewSet(viewsets.ModelViewSet):
     """CRUD API plus tree, map, and context read models for nodes."""
 
-    queryset = Node.objects.select_related("parent").prefetch_related("deps", "children", "attachments", "timelogs")
     serializer_class = NodeSerializer
+
+    def get_queryset(self):
+        qs = Node.objects.select_related("parent").prefetch_related("deps", "children", "attachments", "timelogs")
+        status_filter = self.request.query_params.get("status")
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        type_filter = self.request.query_params.get("type")
+        if type_filter:
+            qs = qs.filter(type=type_filter)
+        bctx = self.request.query_params.get("business_context")
+        if bctx:
+            qs = qs.filter(business_context=bctx)
+        return qs
 
     def perform_destroy(self, instance):
         instance.delete()
@@ -115,6 +127,51 @@ class NodeViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_502_BAD_GATEWAY,
             )
         return Response({"node_id": str(node.pk), "subtasks": subtasks}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["get"])
+    def prioritize(self, request):
+        """Return all non-completed nodes ranked by leverage score.
+
+        Leverage score = dependent_count × 3 + (5 − priority_level) × 2 + active_bonus
+        """
+        EFFORT_WEIGHT = {
+            "15min": 1, "30min": 1, "1h": 1,
+            "2h": 2, "4h": 2, "1day": 3,
+            "2days": 3, "1week": 4, "ongoing": 2,
+        }
+        qs = (
+            Node.objects
+            .exclude(status__in=["done", "deferred"])
+            .prefetch_related("deps", "dependents")
+        )
+        results = []
+        for node in qs:
+            dep_count = node.dependents.count()
+            blocked_by_count = node.deps.count()
+            priority_val = node.priority or 3
+            effort_w = EFFORT_WEIGHT.get(node.effort or "", 2)
+            score = (
+                dep_count * 3
+                + (5 - priority_val) * 2
+                + (2 if node.status == "active" else 1)
+                - effort_w
+            )
+            results.append({
+                "id": str(node.id),
+                "title": node.title,
+                "type": node.type,
+                "status": node.status,
+                "priority": node.priority,
+                "effort": node.effort,
+                "category": node.category,
+                "business_context": node.business_context,
+                "progress": node.progress,
+                "dependent_count": dep_count,
+                "blocked_by_count": blocked_by_count,
+                "leverage_score": score,
+            })
+        results.sort(key=lambda x: x["leverage_score"], reverse=True)
+        return Response(results)
 
     @action(detail=False, methods=["get"])
     def analytics_summary(self, request):

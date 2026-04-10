@@ -1,9 +1,11 @@
+import { createPortal } from 'react-dom'
 import { useEffect, useState } from 'react'
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { EmptyState } from '../components/EmptyState'
 import { MetricCard } from '../components/MetricCard'
 import { Panel } from '../components/Panel'
 import { ReviewNotesForm } from '../components/ReviewNotesForm'
+import { WeeklyReviewModal } from '../components/WeeklyReviewModal'
 import {
   actSuggestion,
   dismissSuggestion,
@@ -13,6 +15,7 @@ import {
   getFinanceSummaryV2,
   getGoalsAnalyticsSummary,
   getRoutineLogs,
+  getRoutineStreak,
   getWeeklyReviewPreview,
   listSuggestions,
   listWeeklyReviews,
@@ -41,6 +44,7 @@ type AnalyticsPageProps = {
 export function AnalyticsPage({ initialTab = 'overview', hideTabs = false }: AnalyticsPageProps) {
   const queryClient = useQueryClient()
   const [tab, setTab] = useState<'overview' | 'history' | 'patterns' | 'review'>(initialTab)
+  const [showReviewModal, setShowReviewModal] = useState(false)
   const overviewQuery = useQuery({
     queryKey: ['analytics-overview'],
     queryFn: getAnalyticsOverview,
@@ -97,6 +101,7 @@ export function AnalyticsPage({ initialTab = 'overview', hideTabs = false }: Ana
   // ── Supplementary data for new Overview panels ────────────────────────────
   const dashQuery = useQuery({ queryKey: ['dashboard-v2'], queryFn: getDashboardV2 })
   const financeQuery = useQuery({ queryKey: ['finance-summary-v2'], queryFn: getFinanceSummaryV2 })
+  const routineStreakQuery = useQuery({ queryKey: ['routine-streak'], queryFn: getRoutineStreak, staleTime: 5 * 60 * 1000 })
 
   const weekDates = Array.from({ length: 7 }, (_, i) => {
     const d = new Date()
@@ -197,6 +202,27 @@ export function AnalyticsPage({ initialTab = 'overview', hideTabs = false }: Ana
 
       {tab === 'overview' ? (
         <div className="stack">
+          {/* ── Streak summary row ── */}
+          {(routineStreakQuery.data || dashQuery.data) && (
+            <div className="analytics-streak-row">
+              <div className="analytics-streak-chip">
+                <span className="analytics-streak-icon">🔥</span>
+                <span className="analytics-streak-value">{routineStreakQuery.data?.streak ?? 0}</span>
+                <span className="analytics-streak-label">day routine streak</span>
+              </div>
+              <div className="analytics-streak-chip">
+                <span className="analytics-streak-icon">🕌</span>
+                <span className="analytics-streak-value">{formatPercent(overview.health.prayer_completion_rate_7d ?? 0)}</span>
+                <span className="analytics-streak-label">prayer rate (7d)</span>
+              </div>
+              <div className="analytics-streak-chip">
+                <span className="analytics-streak-icon">💪</span>
+                <span className="analytics-streak-value">{dashQuery.data?.health_pulse.exercise_streak ?? 0}</span>
+                <span className="analytics-streak-label">day exercise streak</span>
+              </div>
+            </div>
+          )}
+
           {/* ── 4 metric cards (real data) ── */}
           <div className="metric-grid">
             <MetricCard
@@ -443,13 +469,22 @@ export function AnalyticsPage({ initialTab = 'overview', hideTabs = false }: Ana
               title="Current weekly preview"
               description={`Week ${formatDate(preview.week_start)} to ${formatDate(preview.week_end)}`}
               aside={
-                <button
-                  disabled={generateReviewMutation.isPending}
-                  type="button"
-                  onClick={() => generateReviewMutation.mutate()}
-                >
-                  {generateReviewMutation.isPending ? 'Generating...' : 'Generate weekly review'}
-                </button>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={() => setShowReviewModal(true)}
+                  >
+                    Start weekly review
+                  </button>
+                  <button
+                    disabled={generateReviewMutation.isPending}
+                    type="button"
+                    onClick={() => generateReviewMutation.mutate()}
+                  >
+                    {generateReviewMutation.isPending ? 'Generating...' : 'Quick generate'}
+                  </button>
+                </div>
               }
             >
               <div className="callout">
@@ -579,6 +614,14 @@ export function AnalyticsPage({ initialTab = 'overview', hideTabs = false }: Ana
           </div>
         </div>
       ) : null}
+
+      {showReviewModal && createPortal(
+        <WeeklyReviewModal
+          onClose={() => setShowReviewModal(false)}
+          onDone={invalidateReviewLoop}
+        />,
+        document.body,
+      )}
     </section>
   )
 }

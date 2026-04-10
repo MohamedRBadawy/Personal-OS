@@ -128,31 +128,46 @@ Local dev:
 
 ## What has been built (as of April 2026)
 
-- Goals/Nodes system with hierarchy (goal, project, task, etc.) and list/tree view
-- Daily Routine with routine blocks, time tracking
+**Core System**
+- Goals/Nodes hierarchy (Vision → Goal → Project → Task) with list, tree, and kanban views
+- Node dependencies: "blocked by" + "enables/unlocks" visible in side panel
+- Strategic Prioritization tab — leverage scores rank all active nodes
+- AI Next Action — auto-fetched on Home page load; reads profile + goals + routine context
+- Quick Capture FAB (💡) on every page — Ctrl+Shift+I shortcut; idea → goal conversion flow
+
+**Daily Operations**
+- Daily Routine with current block indicator (● NOW), auto-scroll, auto-expand, streak dots
 - Day Schedule with timeline, routine blocks overlay, available slot detection, day/week views
-- Finance module
-- Health module
-- Pipeline / Work overview
-- Journal
-- Contacts
-- Analytics
-- Reports (Financial, Progress, Personal Review)
-- Command Center (dashboard with key metrics)
-- AI check-in (daily)
+- Journal with auto-save, yesterday's focus callout, past entries
+- Health module (mood, habits, spiritual sub-pages all routed)
+- Weekly Review guided modal (4-step flow: wins → challenges → focus → generate)
+
+**Finance & Business**
+- Finance Workspace: income/expense tracking, income events log, €1,000/mo progress bar
+- Pipeline: opportunities, status board, client tracking
+- Marketing Hub: channels, campaigns, action log with follow-up tracker
+- Contacts with follow-up due dates
+
+**Intelligence Layer**
+- About Me / Profile: 20+ fields (personality, physical, financial), ProfileSections, singleton model
+- Profile context injected into AI Next Action recommendations
+- Analytics Overview with streak summary (routine streak, prayer rate, exercise streak)
+- Telegram bot: /brief, /next, /capture, /status — fully functional webhook
+
+**Connectivity**
+- Node dependency count badge on goal rows (↗N)
+- Ideas → Goals conversion (validate + link)
+- GoalsLifePlanPage (life map, family goals) and IdeasThinkingPage both routed and in nav
+- All nav items routed and functional (16+ pages)
 
 ---
 
-## What is NOT built yet (high priority gaps)
+## What is NOT built yet
 
-1. **"About Me" / Self profile** — facts about Mohamed that AI reads as context (INTP, family, situation, values, constraints, strengths)
-2. **Idea capture** — fast way to dump a thought/idea before it's lost, link it to goals later
-3. **Connections between nodes** — a node should be able to say "this helps / depends on / is blocked by" another node
-4. **AI-powered next action** — given full context, what should he do right now?
-5. **Strategic prioritization view** — ranked list of what to do next and why (leverage score)
-6. **Weekly review flow** — guided process, not just reports
-7. **Habit streaks** — routine completion over time
-8. **Automation layer** — recurring tasks, reminders, auto-categorization
+1. **Scheduled Telegram automations** — management commands exist (`send_morning_brief`, `send_eod_summary`) but aren't scheduled; need Render cron jobs at 05:20 and 20:30 Cairo time
+2. **Gmail integration in Contacts** — Gmail MCP is connected but not surfaced in the UI; could show recent email threads per contact
+3. **Google Calendar → Day Schedule** — GCal MCP connected but not used; today's meetings could overlay the schedule timeline
+4. **n8n automation layer** — recurring task creation, reminders, auto-categorization; not started
 
 ---
 

@@ -20,6 +20,14 @@ class Contact(models.Model):
         COLLEAGUE = "colleague", "Colleague"
         OTHER = "other", "Other"
 
+    class CRMStage(models.TextChoices):
+        LEAD          = "lead",          "Lead"
+        PROSPECT      = "prospect",      "Prospect"
+        ACTIVE_CLIENT = "active_client", "Active Client"
+        PAST_CLIENT   = "past_client",   "Past Client"
+        PARTNER       = "partner",       "Partner"
+        EMPLOYER      = "employer",      "Employer"
+
     name = models.CharField(max_length=200)
     relation = models.CharField(
         max_length=20, choices=Relation.choices, default=Relation.OTHER,
@@ -43,6 +51,23 @@ class Contact(models.Model):
         related_name="contacts",
         help_text="Optional link to a goal or project node.",
     )
+    crm_stage = models.CharField(
+        max_length=20,
+        choices=CRMStage.choices,
+        blank=True,
+        default="",
+        help_text="Business CRM stage for this contact.",
+    )
+    source = models.CharField(
+        max_length=100, blank=True,
+        help_text="How you met: Upwork, Referral, LinkedIn, etc.",
+    )
+    linked_opportunity = models.ForeignKey(
+        "pipeline.Opportunity",
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name="crm_contacts",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -64,3 +89,27 @@ class Contact(models.Model):
         if not self.last_contact:
             return None
         return (datetime.date.today() - self.last_contact).days
+
+
+class ContactInteraction(models.Model):
+    """A logged interaction with a contact — email, call, meeting, message, note."""
+
+    class InteractionType(models.TextChoices):
+        EMAIL   = "email",   "Email"
+        CALL    = "call",    "Call"
+        MEETING = "meeting", "Meeting"
+        MESSAGE = "message", "Message"
+        NOTE    = "note",    "Note"
+
+    contact    = models.ForeignKey(Contact, on_delete=models.CASCADE, related_name="interactions")
+    date       = models.DateField()
+    type       = models.CharField(max_length=20, choices=InteractionType.choices)
+    summary    = models.TextField()
+    outcome    = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-date"]
+
+    def __str__(self):
+        return f"{self.get_type_display()} with {self.contact.name} on {self.date}"

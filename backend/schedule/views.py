@@ -182,6 +182,79 @@ class RoutineStreakView(APIView):
         return Response({"streak": streak, "total_blocks": total})
 
 
+class BlockStreakView(APIView):
+    """Per-block streak counts and last-7-days status chain.
+
+    Response:
+      overall_streak  — consecutive days with >= 80% total completion
+      blocks          — [{block_id, label, type, time_str, streak, last_7}, …]
+        streak   — consecutive days (going back from yesterday) block was done/partial
+        last_7   — list of 7 statuses, index 0 = 6 days ago, index 6 = today
+                   values: "done" | "partial" | "late" | "skipped" | null
+    """
+
+    def get(self, request):
+        from datetime import timedelta
+        from django.utils import timezone
+
+        today = timezone.localdate()
+        total_blocks = RoutineBlock.objects.filter(active=True).count() or 20
+
+        # Overall streak (same logic as RoutineStreakView)
+        today_done = RoutineLog.objects.filter(date=today, status__in=["done", "partial"]).count()
+        today_complete = total_blocks and (today_done / total_blocks) >= 0.8
+        overall_streak = 0
+        start_offset = 0 if today_complete else 1
+        for i in range(start_offset, 60):
+            d = today - timedelta(days=i)
+            done = RoutineLog.objects.filter(date=d, status__in=["done", "partial"]).count()
+            if total_blocks and (done / total_blocks) >= 0.8:
+                overall_streak += 1
+            else:
+                break
+
+        # Load last 7 days of logs in one query
+        days_back = 7
+        date_range = [today - timedelta(days=i) for i in range(days_back - 1, -1, -1)]  # oldest→newest
+        logs_qs = RoutineLog.objects.filter(date__in=date_range)
+        # Index: (date, block_time[:5]) → status
+        log_index = {
+            (log.date, str(log.block_time)[:5]): log.status
+            for log in logs_qs
+        }
+
+        blocks_data = []
+        for block in RoutineBlock.objects.filter(active=True).order_by("order", "time"):
+            time_key = str(block.time)[:5]
+
+            # last_7: one entry per day, oldest first
+            last_7 = [log_index.get((d, time_key)) for d in date_range]
+
+            # streak: consecutive days going back from yesterday where done/partial
+            streak = 0
+            for i in range(1, 60):
+                d = today - timedelta(days=i)
+                st = log_index.get((d, time_key))
+                if st in ("done", "partial"):
+                    streak += 1
+                else:
+                    break
+
+            blocks_data.append({
+                "block_id": block.id,
+                "label": block.label,
+                "type": block.type,
+                "time_str": time_key,
+                "streak": streak,
+                "last_7": last_7,
+            })
+
+        return Response({
+            "overall_streak": overall_streak,
+            "blocks": blocks_data,
+        })
+
+
 class RoutineBriefingView(APIView):
     """POST — generate a concise routine briefing for today using Claude.
 

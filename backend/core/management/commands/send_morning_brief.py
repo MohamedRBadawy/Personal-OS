@@ -63,7 +63,7 @@ class Command(BaseCommand):
                     time_str = block.time.strftime("%H:%M") if block.time else "?"
                     logged = block.time in logged_times if block.time else False
                     icon = "✅" if logged else "⏰"
-                    lines.append(f"{icon} {time_str} — {block.title}")
+                    lines.append(f"{icon} {time_str} — {block.label}")
                 lines.append("")
         except Exception:  # noqa: BLE001
             pass
