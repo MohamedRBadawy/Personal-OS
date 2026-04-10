@@ -148,7 +148,8 @@
       "Bash(curl -s -X PATCH http://127.0.0.1:8000/api/profile/ -H 'Content-Type: application/json' -d '{\"sections\": [{\"title\": \"Test\", \"content\": \"Hello\", \"order\": 0}]}')",
       "Bash(python -c \"import sys,json; raw=sys.stdin.read\\(\\); print\\(raw[:300]\\)\")",
       "Bash(curl -s http://127.0.0.1:8000/api/finance/exchange-rates/)",
-      "Bash(curl -s -X PATCH http://127.0.0.1:8000/api/finance/exchange-rates/ -H 'Content-Type: application/json' -d '{\"eur_to_egp\": 60.0, \"eur_to_usd\": 1.08}')"
+      "Bash(curl -s -X PATCH http://127.0.0.1:8000/api/finance/exchange-rates/ -H 'Content-Type: application/json' -d '{\"eur_to_egp\": 60.0, \"eur_to_usd\": 1.08}')",
+      "Bash(taskkill //F //PID 11864)"
     ]
   }
 }
