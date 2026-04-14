@@ -369,7 +369,7 @@ export function AnalyticsPage({ initialTab = 'overview', hideTabs = false }: Ana
                     <ul className="goals-analytics-list">
                       {goalsHealthQ.data.top_time_goals.map(g => (
                         <li key={g.id} className="goals-analytics-item">
-                          <span style={{ fontVariantNumeric: 'tabular-nums', fontFamily: 'var(--mono)', fontSize: 12 }}>
+                          <span style={{ fontVariantNumeric: 'tabular-nums', fontFamily: 'var(--mono)', fontSize: 14 }}>
                             {Math.floor(g.total_mins / 60) > 0 ? `${Math.floor(g.total_mins / 60)}h ` : ''}{g.total_mins % 60}m
                           </span>
                           <span>{g.title}</span>

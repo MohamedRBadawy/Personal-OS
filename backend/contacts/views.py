@@ -1,9 +1,10 @@
 """Views for the Contacts domain.
 
 Endpoints:
-  /api/contacts/contacts/          — CRUD
-  /api/contacts/due-followups/     — contacts with next_followup <= today
-  /api/contacts/interactions/      — CRUD for ContactInteraction
+  /api/contacts/contacts/                      — CRUD
+  /api/contacts/due-followups/                 — contacts with next_followup <= today
+  /api/contacts/interactions/                  — CRUD for ContactInteraction
+  /api/contacts/contacts/<pk>/gmail-threads/   — recent Gmail threads for a contact
 """
 import datetime
 
@@ -44,6 +45,33 @@ class DueFollowupsView(APIView):
         ).order_by("next_followup")
         serializer = ContactSerializer(contacts, many=True)
         return Response({"results": serializer.data, "count": contacts.count()})
+
+
+class ContactGmailView(APIView):
+    """Return recent Gmail threads for a contact identified by pk.
+
+    GET /api/contacts/contacts/<pk>/gmail-threads/
+
+    Requires the contact to have a non-empty email field and
+    GOOGLE_REFRESH_TOKEN to include the gmail.readonly scope.
+    Returns an empty list gracefully when Gmail is not configured.
+    """
+
+    def get(self, request, pk):
+        try:
+            contact = Contact.objects.get(pk=pk)
+        except Contact.DoesNotExist:
+            return Response({"error": "Contact not found."}, status=404)
+
+        if not contact.email:
+            return Response(
+                {"threads": [], "email": "", "note": "No email address on this contact."}
+            )
+
+        from contacts.gmail_service import get_gmail_threads  # noqa: PLC0415
+
+        threads = get_gmail_threads(contact.email)
+        return Response({"threads": threads, "email": contact.email})
 
 
 class ContactInteractionViewSet(ModelViewSet):

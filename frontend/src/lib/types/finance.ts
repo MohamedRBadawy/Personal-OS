@@ -149,3 +149,17 @@ export type CheckInFinanceDelta = {
   currency: CurrencyCode
   is_independent: boolean
 }
+
+export type MonthlyBudgetPlan = {
+  month: string                           // "YYYY-MM"
+  planned_budgets: Record<string, number> // { category: egp_amount }
+  notes: string
+  created_at: string
+  updated_at: string
+}
+
+export type MonthlyBudgetPlanPayload = {
+  month: string
+  planned_budgets: Record<string, number>
+  notes?: string
+}

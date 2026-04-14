@@ -14,8 +14,8 @@
   border-radius: 50%;
   background: var(--bg-strong);
   color: #fff;
-  font: 700 13px/1 var(--mono);
-  letter-spacing: 0.04em;
+  font: var(--weight-bold) var(--text-sm)/1 var(--mono);
+  letter-spacing: var(--tracking-wide);
   border: none;
   cursor: pointer;
   box-shadow: var(--shadow);
@@ -55,11 +55,11 @@
   color: #fff;
 }
 .chat-panel__title {
-  font: 700 14px/1 var(--heading);
+  font: var(--weight-bold) var(--text-sm)/1 var(--heading);
   letter-spacing: 0.02em;
 }
 .chat-panel__hint {
-  font: 400 12px/1 var(--sans);
+  font: var(--weight-normal) var(--text-sm)/1 var(--sans);
   opacity: 0.55;
 }
 
@@ -79,8 +79,8 @@
 .chat-message--assistant { align-items: flex-start; }
 
 .chat-message__label {
-  font: 600 10px/1 var(--mono);
-  letter-spacing: 0.08em;
+  font: var(--weight-semibold) var(--text-xs)/1 var(--mono);
+  letter-spacing: var(--tracking-widest);
   color: var(--text-muted);
   text-transform: uppercase;
   padding: 0 4px;
@@ -90,7 +90,7 @@
   max-width: 90%;
   padding: 10px 14px;
   border-radius: 16px;
-  font: 400 14px/1.5 var(--sans);
+  font: var(--weight-normal) var(--text-sm)/1.5 var(--sans);
 }
 .chat-message--user .chat-message__bubble {
   background: var(--bg-strong);
@@ -117,7 +117,7 @@
   margin-top: 8px;
 }
 .chat-action-badge {
-  font: 600 11px/1 var(--mono);
+  font: var(--weight-semibold) var(--text-xs)/1 var(--mono);
   padding: 4px 9px;
   border-radius: 100px;
   background: rgba(60, 122, 85, 0.14);
@@ -142,7 +142,7 @@
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 9px 12px;
-  font: 400 14px/1.4 var(--sans);
+  font: var(--weight-normal) var(--text-sm)/1.4 var(--sans);
   background: var(--bg);
   color: var(--text);
   outline: none;
@@ -156,7 +156,7 @@
   color: #fff;
   border: none;
   cursor: pointer;
-  font-size: 18px;
+  font-size: var(--text-lg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -185,7 +185,7 @@
   }
 
   .chat-input__field {
-    font-size: 16px;
+    font-size: var(--text-base);
     min-height: 44px;
     padding: 11px 14px;
   }

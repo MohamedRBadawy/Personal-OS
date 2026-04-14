@@ -164,7 +164,7 @@ export function JournalPage() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {saved && <span className="review-autosave-badge">✓ Saved</span>}
-          {saveMutation.isPending && <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Saving…</span>}
+          {saveMutation.isPending && <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>Saving…</span>}
         </div>
       </div>
 

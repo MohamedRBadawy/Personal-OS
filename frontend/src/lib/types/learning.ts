@@ -11,11 +11,15 @@ export type LearningItem = {
   started: string | null
   finished: string | null
   notes: string
+  // Spaced repetition
+  review_at: string | null
+  reviewed_count: number
+  is_actionable: boolean
   created_at: string
   updated_at: string
 }
 
-export type LearningItemPayload = Omit<LearningItem, 'id' | 'created_at' | 'updated_at'>
+export type LearningItemPayload = Omit<LearningItem, 'id' | 'reviewed_count' | 'created_at' | 'updated_at'>
 
 // ── Learning (older model) ────────────────────────────────────────────────────
 

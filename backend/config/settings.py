@@ -128,6 +128,11 @@ def get_ai_runtime_config():
 
 
 SECRET_KEY = _env_string("SECRET_KEY", "insecure-dev-key-change-me")
+
+# Google Calendar integration (optional — features degrade gracefully if unset)
+GOOGLE_CLIENT_ID     = _env_string("GOOGLE_CLIENT_ID",     "")
+GOOGLE_CLIENT_SECRET = _env_string("GOOGLE_CLIENT_SECRET", "")
+GOOGLE_REFRESH_TOKEN = _env_string("GOOGLE_REFRESH_TOKEN", "")
 DEBUG = _env_bool("DEBUG", True)
 
 # Build ALLOWED_HOSTS from the env var, then also add the Render-injected

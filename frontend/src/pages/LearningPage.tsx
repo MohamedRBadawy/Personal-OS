@@ -5,7 +5,9 @@ import { PageSkeleton } from '../components/PageSkeleton'
 import {
   createLearningItem,
   deleteLearningItem,
+  getDueLearningReviews,
   listLearningItems,
+  markLearningReviewed,
   updateLearningItem,
 } from '../lib/api'
 import type { LearningItem, LearningItemPayload } from '../lib/types'
@@ -87,7 +89,7 @@ function LearningForm({
       <div className="button-row">
         <button
           disabled={!title.trim() || isPending}
-          onClick={() => onSave({ title, author, type, status, progress_pct: progress, notes, linked_node: null, started: null, finished: null })}
+          onClick={() => onSave({ title, author, type, status, progress_pct: progress, notes, linked_node: null, started: null, finished: null, review_at: null, is_actionable: false })}
         >
           {isPending ? 'Saving…' : 'Save'}
         </button>
@@ -135,12 +137,66 @@ function LearningCard({
       {item.notes && <p className="learn-card-notes">{item.notes.slice(0, 100)}{item.notes.length > 100 ? '…' : ''}</p>}
       <div className="learn-card-actions">
         {next && (
-          <button className="button-muted" style={{ fontSize: 11, padding: '2px 8px' }} onClick={() => onMove(item.id, next)}>
+          <button className="button-muted" style={{ fontSize: 13, padding: '2px 8px' }} onClick={() => onMove(item.id, next)}>
             → {next === 'in_progress' ? 'Start' : 'Done'}
           </button>
         )}
-        <button className="button-ghost" style={{ fontSize: 11, padding: '2px 8px' }} onClick={() => onEdit(item)}>Edit</button>
-        <button className="button-ghost" style={{ fontSize: 11, padding: '2px 8px', color: '#dc2626' }} onClick={() => onDelete(item.id)}>✕</button>
+        <button className="button-ghost" style={{ fontSize: 13, padding: '2px 8px' }} onClick={() => onEdit(item)}>Edit</button>
+        <button className="button-ghost" style={{ fontSize: 13, padding: '2px 8px', color: '#dc2626' }} onClick={() => onDelete(item.id)}>✕</button>
+      </div>
+    </div>
+  )
+}
+
+// ── Due for Review panel ──────────────────────────────────────────────────────
+
+function DueReviewPanel({ onReviewed }: { onReviewed: () => void }) {
+  const { data: dueItems, isLoading } = useQuery({
+    queryKey: ['learning-due-review'],
+    queryFn: getDueLearningReviews,
+  })
+  const qc = useQueryClient()
+
+  const reviewMut = useMutation({
+    mutationFn: markLearningReviewed,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['learning-due-review'] })
+      qc.invalidateQueries({ queryKey: ['learning-items'] })
+      onReviewed()
+    },
+  })
+
+  if (isLoading || !dueItems || dueItems.length === 0) return null
+
+  return (
+    <div className="learn-review-panel">
+      <div className="learn-review-header">
+        <span className="learn-review-badge">{dueItems.length}</span>
+        <strong>Due for review</strong>
+        <span className="muted" style={{ fontSize: 13 }}>Spaced repetition — mark each as reviewed to reschedule</span>
+      </div>
+      <div className="learn-review-list">
+        {dueItems.map(item => (
+          <div key={item.id} className="learn-review-item">
+            <span className="learn-card-icon">{TYPE_ICONS[item.type] ?? '📌'}</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p className="learn-card-title" style={{ margin: 0 }}>{item.title}</p>
+              {item.review_at && (
+                <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)' }}>
+                  Due: {item.review_at} · Reviewed {item.reviewed_count}× before
+                </p>
+              )}
+            </div>
+            <button
+              className="button-muted"
+              style={{ fontSize: 13, padding: '3px 10px', flexShrink: 0 }}
+              disabled={reviewMut.isPending && reviewMut.variables === item.id}
+              onClick={() => reviewMut.mutate(item.id)}
+            >
+              {reviewMut.isPending && reviewMut.variables === item.id ? '…' : '✓ Reviewed'}
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -161,6 +217,7 @@ export function LearningPage() {
 
   function invalidate() {
     qc.invalidateQueries({ queryKey: ['learning-items'] })
+    qc.invalidateQueries({ queryKey: ['learning-due-review'] })
   }
 
   const createMut = useMutation({ mutationFn: createLearningItem, onSuccess: () => { setShowAdd(false); invalidate() } })
@@ -187,6 +244,9 @@ export function LearningPage() {
         </div>
         <button onClick={() => { setShowAdd(true); setEditing(null) }}>+ Add item</button>
       </div>
+
+      {/* Due for review section */}
+      <DueReviewPanel onReviewed={invalidate} />
 
       {(showAdd || editing) && (
         <div className="panel" style={{ marginBottom: 0 }}>

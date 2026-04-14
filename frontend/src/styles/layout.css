@@ -35,7 +35,7 @@ body {
   border: 1px solid var(--border);
   background: var(--bg);
   color: var(--text-muted);
-  font-size: 13px;
+  font-size: var(--text-sm);
   line-height: 1;
   cursor: pointer;
   display: flex;
@@ -92,7 +92,8 @@ h3 {
   margin: 0;
   max-width: 26ch;
   color: var(--text-muted);
-  font-size: 0.98rem;
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
 }
 
 .sidebar-nav {
@@ -125,8 +126,8 @@ h3 {
 .eyebrow {
   margin: 0;
   color: var(--accent-strong);
-  font: 600 0.8rem/1 var(--mono);
-  letter-spacing: 0.08em;
+  font: var(--weight-semibold) var(--text-xs)/1 var(--mono);
+  letter-spacing: var(--tracking-widest);
   text-transform: uppercase;
 }
 
@@ -218,10 +219,10 @@ h3 {
 }
 
 .bottom-nav__label {
-  font-size: 0.65rem;
-  font-weight: 600;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
   font-family: var(--mono);
-  letter-spacing: 0.04em;
+  letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
 }
 
@@ -242,14 +243,16 @@ h3 {
 .query-error-boundary__title {
   margin: 0;
   font-family: var(--heading);
-  font-size: 1.1rem;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
 }
 
 .query-error-boundary__message {
   margin: 0;
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   font-family: var(--mono);
+  line-height: var(--leading-relaxed);
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -267,7 +270,7 @@ h3 {
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-muted);
-  font-size: 0.88rem;
+  font-size: var(--text-sm);
   font-family: var(--sans);
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
@@ -320,7 +323,7 @@ h3 {
 
   /* Sidebar toggle — compact icon-style pill */
   .sidebar-toggle {
-    font-size: 13px;
+    font-size: var(--text-sm);
     padding: 10px 16px;
     border-radius: 0;
     border-bottom: 1px solid var(--border);
@@ -503,13 +506,15 @@ h3 {
 
 .header-title {
   font-size: clamp(1.8rem, 3vw, 2.6rem);
-  line-height: 1;
+  line-height: var(--leading-tight);
 }
 
 .header-summary {
   margin: 0;
   max-width: 28ch;
   color: var(--text-muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
 }
 
 .page-grid {
@@ -647,9 +652,9 @@ h3 {
 .chart-label {
   margin: 0 0 10px;
   color: var(--text-muted);
-  font: 600 0.78rem/1 var(--mono);
+  font: var(--weight-semibold) var(--text-xs)/1 var(--mono);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--tracking-wider);
 }
 
 .chart-empty {
@@ -663,7 +668,7 @@ h3 {
 .chart-empty p {
   margin: 0;
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -687,12 +692,13 @@ h3 {
 
 .radial-progress__value {
   font-family: var(--heading);
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
   line-height: 1;
 }
 
 .radial-progress__sub {
-  font-size: 0.62rem;
+  font-size: var(--text-xs);
   color: var(--text-muted);
   font-family: var(--mono);
   text-align: center;
@@ -718,17 +724,17 @@ h3 {
   border-radius: 50%;
   background: color-mix(in srgb, var(--score-color) 14%, transparent);
   color: var(--score-color);
-  font: 700 0.82rem/1 var(--mono);
+  font: var(--weight-bold) var(--text-xs)/1 var(--mono);
   border: 1.5px solid color-mix(in srgb, var(--score-color) 30%, transparent);
 }
 
 .day-score-badge__label {
-  font-size: 0.65rem;
+  font-size: var(--text-xs);
   color: var(--score-color);
   font-family: var(--mono);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--tracking-wider);
 }
 
 /* Hero Kyrgyzstan body */

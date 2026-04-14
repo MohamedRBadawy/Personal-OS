@@ -1,0 +1,67 @@
+Defaulting to user installation because normal site-packages is not writeable
+Collecting google-api-python-client
+  Downloading google_api_python_client-2.194.0-py3-none-any.whl.metadata (7.0 kB)
+Collecting google-auth
+  Downloading google_auth-2.49.2-py3-none-any.whl.metadata (6.2 kB)
+Collecting google-auth-httplib2
+  Using cached google_auth_httplib2-0.3.1-py3-none-any.whl.metadata (3.0 kB)
+Collecting httplib2<1.0.0,>=0.19.0 (from google-api-python-client)
+  Using cached httplib2-0.31.2-py3-none-any.whl.metadata (2.2 kB)
+Collecting google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0,>=1.31.5 (from google-api-python-client)
+  Downloading google_api_core-2.30.3-py3-none-any.whl.metadata (3.1 kB)
+Collecting uritemplate<5,>=3.0.1 (from google-api-python-client)
+  Using cached uritemplate-4.2.0-py3-none-any.whl.metadata (2.6 kB)
+Collecting pyasn1-modules>=0.2.1 (from google-auth)
+  Using cached pyasn1_modules-0.4.2-py3-none-any.whl.metadata (3.5 kB)
+Collecting cryptography>=38.0.3 (from google-auth)
+  Downloading cryptography-46.0.7-cp311-abi3-win_amd64.whl.metadata (5.7 kB)
+Collecting googleapis-common-protos<2.0.0,>=1.63.2 (from google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0,>=1.31.5->google-api-python-client)
+  Using cached googleapis_common_protos-1.74.0-py3-none-any.whl.metadata (9.2 kB)
+Collecting protobuf<8.0.0,>=4.25.8 (from google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0,>=1.31.5->google-api-python-client)
+  Using cached protobuf-7.34.1-cp310-abi3-win_amd64.whl.metadata (595 bytes)
+Collecting proto-plus<2.0.0,>=1.22.3 (from google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0,>=1.31.5->google-api-python-client)
+  Using cached proto_plus-1.27.2-py3-none-any.whl.metadata (2.2 kB)
+Collecting requests<3.0.0,>=2.20.0 (from google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0,>=1.31.5->google-api-python-client)
+  Using cached requests-2.33.1-py3-none-any.whl.metadata (4.8 kB)
+Collecting pyparsing<4,>=3.1 (from httplib2<1.0.0,>=0.19.0->google-api-python-client)
+  Using cached pyparsing-3.3.2-py3-none-any.whl.metadata (5.8 kB)
+Collecting charset_normalizer<4,>=2 (from requests<3.0.0,>=2.20.0->google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0,>=1.31.5->google-api-python-client)
+  Using cached charset_normalizer-3.4.7-cp313-cp313-win_amd64.whl.metadata (41 kB)
+Requirement already satisfied: idna<4,>=2.5 in c:\users\bdawy\appdata\local\packages\pythonsoftwarefoundation.python.3.13_qbz5n2kfra8p0\localcache\local-packages\python313\site-packages (from requests<3.0.0,>=2.20.0->google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0,>=1.31.5->google-api-python-client) (3.11)
+Collecting urllib3<3,>=1.26 (from requests<3.0.0,>=2.20.0->google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0,>=1.31.5->google-api-python-client)
+  Using cached urllib3-2.6.3-py3-none-any.whl.metadata (6.9 kB)
+Requirement already satisfied: certifi>=2023.5.7 in c:\users\bdawy\appdata\local\packages\pythonsoftwarefoundation.python.3.13_qbz5n2kfra8p0\localcache\local-packages\python313\site-packages (from requests<3.0.0,>=2.20.0->google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0,>=1.31.5->google-api-python-client) (2026.2.25)
+Collecting cffi>=2.0.0 (from cryptography>=38.0.3->google-auth)
+  Using cached cffi-2.0.0-cp313-cp313-win_amd64.whl.metadata (2.6 kB)
+Collecting pycparser (from cffi>=2.0.0->cryptography>=38.0.3->google-auth)
+  Using cached pycparser-3.0-py3-none-any.whl.metadata (8.2 kB)
+Collecting pyasn1<0.7.0,>=0.6.1 (from pyasn1-modules>=0.2.1->google-auth)
+  Using cached pyasn1-0.6.3-py3-none-any.whl.metadata (8.4 kB)
+Downloading google_api_python_client-2.194.0-py3-none-any.whl (15.0 MB)
+   ---------------------------------------- 15.0/15.0 MB 3.4 MB/s  0:00:04
+Downloading google_auth-2.49.2-py3-none-any.whl (240 kB)
+Using cached google_auth_httplib2-0.3.1-py3-none-any.whl (9.5 kB)
+Downloading google_api_core-2.30.3-py3-none-any.whl (173 kB)
+Using cached googleapis_common_protos-1.74.0-py3-none-any.whl (300 kB)
+Using cached httplib2-0.31.2-py3-none-any.whl (91 kB)
+Using cached proto_plus-1.27.2-py3-none-any.whl (50 kB)
+Downloading protobuf-7.34.1-cp310-abi3-win_amd64.whl (437 kB)
+Using cached pyparsing-3.3.2-py3-none-any.whl (122 kB)
+Using cached requests-2.33.1-py3-none-any.whl (64 kB)
+Using cached charset_normalizer-3.4.7-cp313-cp313-win_amd64.whl (158 kB)
+Using cached uritemplate-4.2.0-py3-none-any.whl (11 kB)
+Using cached urllib3-2.6.3-py3-none-any.whl (131 kB)
+Downloading cryptography-46.0.7-cp311-abi3-win_amd64.whl (3.5 MB)
+   ---------------------------------------- 3.5/3.5 MB 3.6 MB/s  0:00:00
+Using cached cffi-2.0.0-cp313-cp313-win_amd64.whl (183 kB)
+Using cached pyasn1_modules-0.4.2-py3-none-any.whl (181 kB)
+Using cached pyasn1-0.6.3-py3-none-any.whl (83 kB)
+Using cached pycparser-3.0-py3-none-any.whl (48 kB)
+Installing collected packages: urllib3, uritemplate, pyparsing, pycparser, pyasn1, protobuf, charset_normalizer, requests, pyasn1-modules, proto-plus, httplib2, googleapis-common-protos, cffi, cryptography, google-auth, google-auth-httplib2, google-api-core, google-api-python-client
+  WARNING: The script normalizer.exe is installed in 'C:\Users\Bdawy\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\Scripts' which is not on PATH.
+  Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+
+Successfully installed cffi-2.0.0 charset_normalizer-3.4.7 cryptography-46.0.7 google-api-core-2.30.3 google-api-python-client-2.194.0 google-auth-2.49.2 google-auth-httplib2-0.3.1 googleapis-common-protos-1.74.0 httplib2-0.31.2 proto-plus-1.27.2 protobuf-7.34.1 pyasn1-0.6.3 pyasn1-modules-0.4.2 pycparser-3.0 pyparsing-3.3.2 requests-2.33.1 uritemplate-4.2.0 urllib3-2.6.3
+
+[notice] A new release of pip is available: 25.3 -> 26.0.1
+[notice] To update, run: C:\Users\Bdawy\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\python.exe -m pip install --upgrade pip

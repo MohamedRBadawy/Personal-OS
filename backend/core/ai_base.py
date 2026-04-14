@@ -44,6 +44,17 @@ class AIProvider(ABC):
         Returns dict: {action: str, reason: str, node_id: str|None}
         """
 
+    @abstractmethod
+    def suggest_schedule_blocks(self, *, free_slots, top_nodes, date):
+        """Suggest 2-3 time block assignments for free slots on a given date.
+
+        free_slots: list of {start_time, end_time, duration_minutes}
+        top_nodes:  list of {id, title, due_date, leverage_score}
+        date:       ISO date string
+
+        Returns list of {node_id, node_title, start_time, duration_minutes, reason}
+        """
+
 
 class DeterministicAIProvider(AIProvider):
     """Rule-driven fallback that keeps API contracts stable before live AI succeeds."""
@@ -353,6 +364,31 @@ class DeterministicAIProvider(AIProvider):
             }
             for day in days
         ]
+
+    def suggest_schedule_blocks(self, *, free_slots, top_nodes, date):
+        """Rule-based fallback: assign top nodes to the largest available free slots."""
+        if not free_slots or not top_nodes:
+            return []
+
+        # Sort slots by duration descending — biggest slot first
+        sorted_slots = sorted(free_slots, key=lambda s: s["duration_minutes"], reverse=True)
+        suggestions = []
+        for i, node in enumerate(top_nodes[:3]):
+            if i >= len(sorted_slots):
+                break
+            slot = sorted_slots[i]
+            # Use at most 90 min per block, or the full slot if smaller
+            duration = min(slot["duration_minutes"], 90)
+            suggestions.append(
+                {
+                    "node_id": node["id"],
+                    "node_title": node["title"],
+                    "start_time": slot["start_time"],
+                    "duration_minutes": duration,
+                    "reason": f"Highest-leverage available task assigned to your next free slot on {date}.",
+                }
+            )
+        return suggestions
 
     def suggest_next_action(self, *, top_nodes, routine_pct, due_follow_ups_count, profile_context: str = ""):
         """Rule-based next action fallback."""

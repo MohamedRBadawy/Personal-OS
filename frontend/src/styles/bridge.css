@@ -1,0 +1,364 @@
+/* ── AI Data Bridge page ─────────────────────────────────────────────────── */
+
+.bridge-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0;
+}
+
+.bridge-tab {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  margin-bottom: -1px;
+}
+
+.bridge-tab:hover {
+  color: var(--text);
+}
+
+.bridge-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* ── Panel ─────────────────────────────────────────────────────────────────── */
+
+.bridge-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 820px;
+}
+
+.bridge-panel-header h3 {
+  margin: 0 0 4px;
+  font-size: 17px;
+}
+
+/* ── Domain grid ───────────────────────────────────────────────────────────── */
+
+.bridge-domain-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bridge-import-domain-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bridge-domain-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.bridge-domain-btn:hover {
+  border-color: var(--accent);
+}
+
+.bridge-domain-btn.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.bridge-domain-icon {
+  font-size: 16px;
+}
+
+.bridge-domain-label {
+  font-size: 13px;
+}
+
+.bridge-domain-hint {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ── Format toggle ─────────────────────────────────────────────────────────── */
+
+.bridge-format-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bridge-format-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.bridge-format-btns {
+  display: flex;
+  gap: 8px;
+}
+
+.bridge-format-btn {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.bridge-format-btn:hover {
+  border-color: var(--accent);
+}
+
+.bridge-format-btn.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ── Export actions + result ───────────────────────────────────────────────── */
+
+.bridge-export-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.bridge-result {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.bridge-result-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--surface-2, var(--surface));
+  border-bottom: 1px solid var(--border);
+}
+
+.bridge-result-text {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px;
+  font-family: 'Menlo', 'Monaco', 'Consolas', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  background: var(--bg, #0d0d0d);
+  color: var(--text);
+  border: none;
+  resize: vertical;
+  outline: none;
+}
+
+/* ── Import panel ──────────────────────────────────────────────────────────── */
+
+.bridge-example-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.bridge-example-code {
+  background: var(--surface-2, var(--surface));
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 12px;
+  font-family: 'Menlo', 'Monaco', 'Consolas', monospace;
+  white-space: pre-wrap;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.bridge-import-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bridge-import-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.bridge-import-text {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  font-family: 'Menlo', 'Monaco', 'Consolas', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  background: var(--bg, #0d0d0d);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.bridge-import-text:focus {
+  border-color: var(--accent);
+}
+
+/* ── Preview table ─────────────────────────────────────────────────────────── */
+
+.bridge-preview {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.bridge-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background: var(--surface-2, var(--surface));
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.bridge-preview-counts {
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.bridge-count-create { color: #16a34a; font-weight: 600; }
+.bridge-count-update { color: #0d9488; font-weight: 600; }
+.bridge-count-skip   { color: var(--text-muted); }
+.bridge-count-error  { color: #dc2626; font-weight: 600; }
+
+.bridge-preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.bridge-preview-table th {
+  text-align: left;
+  padding: 8px 16px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.bridge-preview-table td {
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.bridge-preview-table tr:last-child td {
+  border-bottom: none;
+}
+
+.bridge-row-create td { background: color-mix(in srgb, #16a34a 5%, transparent); }
+.bridge-row-skip td   { opacity: 0.55; }
+
+.bridge-badge-create {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: color-mix(in srgb, #16a34a 15%, transparent);
+  color: #16a34a;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.bridge-badge-skip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.bridge-badge-update {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: color-mix(in srgb, #0d9488 12%, var(--surface));
+  color: #0d9488;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ── Confirm row ───────────────────────────────────────────────────────────── */
+
+.bridge-confirm-row {
+  padding: 14px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-2, var(--surface));
+}
+
+.bridge-confirm-btn {
+  background: #16a34a;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 22px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.bridge-confirm-btn:hover { opacity: 0.88; }
+.bridge-confirm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Errors + success ──────────────────────────────────────────────────────── */
+
+.bridge-errors-list {
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.bridge-error {
+  font-size: 13px;
+  color: #dc2626;
+  margin: 0;
+}
+
+.bridge-success {
+  padding: 14px 18px;
+  border-radius: 10px;
+  background: color-mix(in srgb, #16a34a 12%, transparent);
+  border: 1px solid #16a34a;
+  color: #16a34a;
+  font-size: 14px;
+  font-weight: 600;
+}

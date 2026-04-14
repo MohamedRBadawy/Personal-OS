@@ -141,6 +141,29 @@ class FinanceSummary(BaseModel):
         return obj
 
 
+class DebtEntry(BaseModel):
+    """A single debt being tracked and paid off."""
+
+    creditor         = models.CharField(max_length=200, help_text="Who is owed the money.")
+    original_amount  = models.DecimalField(max_digits=12, decimal_places=2,
+                                           help_text="Original debt amount in EGP.")
+    remaining_amount = models.DecimalField(max_digits=12, decimal_places=2,
+                                           help_text="Current remaining balance in EGP.")
+    monthly_payment  = models.DecimalField(max_digits=10, decimal_places=2, default=0,
+                                           help_text="Planned monthly payment in EGP.")
+    paid_off         = models.BooleanField(default=False)
+    priority         = models.IntegerField(default=0, help_text="Payoff priority order (lowest = pay first).")
+    notes            = models.TextField(blank=True)
+    created_at       = models.DateTimeField(auto_now_add=True)
+    updated_at       = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["paid_off", "priority", "remaining_amount"]
+
+    def __str__(self):
+        return f"{self.creditor}: {self.remaining_amount} EGP"
+
+
 class IncomeSource(BaseModel):
     """Named income stream tracked separately from the ledger."""
 
@@ -164,6 +187,28 @@ class IncomeSource(BaseModel):
 
     def __str__(self):
         return self.name
+
+
+class MonthlyBudgetPlan(models.Model):
+    """Per-month budget plan — stores planned spend per category for a given month."""
+
+    month = models.CharField(
+        max_length=7, primary_key=True,
+        help_text="Month in YYYY-MM format.",
+    )
+    planned_budgets = models.JSONField(
+        default=dict, blank=True,
+        help_text="Planned spend per category in EGP: {category: amount}.",
+    )
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-month"]
+
+    def __str__(self):
+        return f"Budget Plan {self.month}"
 
 
 class IncomeEvent(models.Model):

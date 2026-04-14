@@ -314,6 +314,10 @@ class LearningItem(models.Model):
     started = models.DateField(null=True, blank=True)
     finished = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True)
+    # Spaced repetition
+    review_at = models.DateField(null=True, blank=True, help_text="Next spaced-repetition review date.")
+    reviewed_count = models.IntegerField(default=0, help_text="Number of times reviewed.")
+    is_actionable = models.BooleanField(default=False, help_text="Can be converted to a goal action.")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

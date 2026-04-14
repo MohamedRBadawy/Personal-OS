@@ -1,7 +1,7 @@
 """Serializers for shared core APIs."""
 from rest_framework import serializers
 
-from core.models import AppSettings, DailyCheckIn, Profile
+from core.models import Alert, AppSettings, DailyCheckIn, Profile
 from finance.models import FinanceEntry
 
 
@@ -32,6 +32,25 @@ class DailyCheckInSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at", "updated_at", "briefing_text"]
 
 
+class DailyCheckInStatusSerializer(serializers.Serializer):
+    """Read-only status of today's check-in sessions."""
+
+    date = serializers.DateField()
+    morning_done = serializers.BooleanField()
+    evening_done = serializers.BooleanField()
+    morning_completed_at = serializers.DateTimeField(allow_null=True)
+    evening_completed_at = serializers.DateTimeField(allow_null=True)
+
+
+class EveningCheckInSerializer(serializers.Serializer):
+    """Request body for submitting the evening check-in fields."""
+
+    mood_score = serializers.IntegerField(required=False, allow_null=True, min_value=1, max_value=10)
+    gratitude_note = serializers.CharField(required=False, allow_blank=True)
+    evening_wins = serializers.CharField(required=False, allow_blank=True)
+    tomorrow_focus = serializers.CharField(required=False, allow_blank=True)
+
+
 class FinanceDeltaSerializer(serializers.Serializer):
     """Inline serializer for finance entries submitted during a check-in."""
 
@@ -43,6 +62,19 @@ class FinanceDeltaSerializer(serializers.Serializer):
     is_recurring = serializers.BooleanField(default=False)
     date = serializers.DateField(required=False)
     notes = serializers.CharField(required=False, allow_blank=True)
+
+
+class AlertSerializer(serializers.ModelSerializer):
+    """Read serializer for system alerts."""
+
+    class Meta:
+        model = Alert
+        fields = [
+            "id", "alert_type", "title", "body", "priority",
+            "link_url", "read", "sent_telegram", "dismissed_at",
+            "resolved_at", "date", "created_at",
+        ]
+        read_only_fields = fields
 
 
 class DailyCheckInRequestSerializer(serializers.Serializer):

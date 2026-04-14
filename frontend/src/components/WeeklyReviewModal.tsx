@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { generateWeeklyReview, getRoutineMetrics, listNodes, updateWeeklyReview } from '../lib/api'
@@ -64,13 +64,6 @@ export function WeeklyReviewModal({ onClose, onDone }: Props) {
   function handleGenerate() {
     generateMut.mutate()
   }
-
-  const canNext = (
-    (step === 0) ||
-    (step === 1) ||
-    (step === 2) ||
-    (step === 3 && !!generatedId)
-  )
 
   return createPortal(
     <div className="wr-overlay" onClick={onClose}>

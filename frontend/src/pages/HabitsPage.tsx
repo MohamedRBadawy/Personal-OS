@@ -1,5 +1,5 @@
 /**
- * HabitsPage — dedicated habit tracking with board and metrics.
+ * HabitsPage — dedicated habit tracking with board, metrics, and heatmap.
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -9,16 +9,93 @@ import { Panel } from '../components/Panel'
 import {
   createHabitLog,
   getHealthToday,
+  getHabitHeatmap,
   updateHabitLog,
 } from '../lib/api'
 import { formatPercent } from '../lib/formatters'
 import type { HabitBoardItem, HabitLogPayload } from '../lib/types'
+import type { HabitHeatmapPayload } from '../lib/api'
+
+// ── Heatmap component ─────────────────────────────────────────────────────────
+
+function HabitHeatmap({ data }: { data: HabitHeatmapPayload }) {
+  if (data.habits.length === 0) {
+    return <p className="muted" style={{ textAlign: 'center', padding: '20px 0' }}>No habits defined yet.</p>
+  }
+
+  // Build the 52-week grid (364 days, Mon-Sun columns, weeks as rows-left-to-right)
+  const today = new Date()
+  // Align to the nearest Sunday (end of last complete week + today)
+  const dayOfWeek = today.getDay() // 0=Sun…6=Sat
+  // We'll build 53 weeks back so we always have at least 364 days visible
+  const gridStart = new Date(today)
+  gridStart.setDate(today.getDate() - (52 * 7 + dayOfWeek))
+
+  // Build array of 52*7 date strings
+  const cells: string[] = []
+  const cursor = new Date(gridStart)
+  for (let i = 0; i < 52 * 7; i++) {
+    cells.push(cursor.toISOString().slice(0, 10))
+    cursor.setDate(cursor.getDate() + 1)
+  }
+
+  const WEEK_COUNT = 52
+  const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+
+  return (
+    <div className="habit-heatmap-section">
+      {data.habits.map(habit => {
+        const habitGrid = data.grid[habit.id] ?? {}
+        // Count completions
+        const doneCount = Object.keys(habitGrid).filter(d => habitGrid[d]).length
+        return (
+          <div key={habit.id} className="habit-heatmap-block">
+            <div className="habit-heatmap-label">
+              <span className="habit-heatmap-name">{habit.name}</span>
+              <span className="habit-heatmap-stat">{doneCount} days in last year</span>
+            </div>
+            <div className="habit-heatmap-grid-wrap">
+              <div className="habit-heatmap-day-labels">
+                {DAY_LABELS.map((d, i) => (
+                  <div key={i} className="habit-heatmap-day-label">{d}</div>
+                ))}
+              </div>
+              <div
+                className="habit-heatmap-grid"
+                style={{ gridTemplateColumns: `repeat(${WEEK_COUNT}, 12px)` }}
+              >
+                {cells.map((dateStr) => {
+                  const done = habitGrid[dateStr]
+                  const future = dateStr > today.toISOString().slice(0, 10)
+                  return (
+                    <div
+                      key={dateStr}
+                      title={`${dateStr}: ${future ? '—' : done ? 'Done' : 'Missed'}`}
+                      className={`habit-heatmap-cell${done ? ' done' : ''}${future ? ' future' : ''}`}
+                    />
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 export function HabitsPage() {
   const queryClient = useQueryClient()
   const todayQuery = useQuery({
     queryKey: ['health-today'],
     queryFn: getHealthToday,
+  })
+
+  const heatmapQuery = useQuery({
+    queryKey: ['habit-heatmap'],
+    queryFn: getHabitHeatmap,
   })
 
   const habitMutation = useMutation({
@@ -34,6 +111,7 @@ export function HabitsPage() {
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['health-today'] }),
+        queryClient.invalidateQueries({ queryKey: ['habit-heatmap'] }),
         queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
         queryClient.invalidateQueries({ queryKey: ['command-center'] }),
       ])
@@ -83,6 +161,16 @@ export function HabitsPage() {
           onToggle={(item, done) => habitMutation.mutate({ item, done })}
         />
         {habitMutation.isError ? <p className="error-text">We could not save that habit update.</p> : null}
+      </Panel>
+
+      <Panel title="Habit heatmap" description="Last 52 weeks of daily completion per habit.">
+        {heatmapQuery.isLoading ? (
+          <p className="muted" style={{ textAlign: 'center', padding: '20px 0' }}>Loading heatmap…</p>
+        ) : heatmapQuery.data ? (
+          <HabitHeatmap data={heatmapQuery.data} />
+        ) : (
+          <p className="muted">Could not load heatmap data.</p>
+        )}
       </Panel>
     </section>
   )

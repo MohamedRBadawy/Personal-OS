@@ -18,12 +18,41 @@
   --sans: 'IBM Plex Sans', 'Trebuchet MS', sans-serif;
   --heading: 'Space Grotesk', 'Arial Black', sans-serif;
   --mono: 'IBM Plex Mono', Consolas, monospace;
+
+  /* ── Type scale ─────────────────────────────── */
+  --text-xs:   0.8125rem;  /* 13px — badges, chips, fine print    */
+  --text-sm:   0.9375rem;  /* 15px — labels, secondary text       */
+  --text-base: 1rem;       /* 16px — body (prevents iOS zoom)     */
+  --text-lg:   1.125rem;   /* 18px — card titles, prominent labels */
+  --text-xl:   1.25rem;    /* 20px — subsection headings          */
+  --text-2xl:  1.5rem;     /* 24px — section headings             */
+  --text-3xl:  1.875rem;   /* 30px — page titles                  */
+
+  /* ── Font weights ───────────────────────────── */
+  --weight-normal:   400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     700;
+
+  /* ── Line heights ───────────────────────────── */
+  --leading-tight:   1.25;
+  --leading-snug:    1.4;
+  --leading-normal:  1.55;
+  --leading-relaxed: 1.7;
+
+  /* ── Letter spacing ─────────────────────────── */
+  --tracking-tight:   -0.02em;
+  --tracking-normal:   0;
+  --tracking-wide:     0.04em;
+  --tracking-wider:    0.06em;
+  --tracking-widest:   0.08em;
+
   color: var(--text);
   background:
     radial-gradient(circle at top left, rgba(211, 100, 59, 0.22), transparent 28%),
     radial-gradient(circle at top right, rgba(17, 50, 62, 0.14), transparent 24%),
     linear-gradient(180deg, #f7f1e7 0%, #f0e5d2 100%);
-  font: 16px/1.5 var(--sans);
+  font: var(--text-base)/var(--leading-normal) var(--sans);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;

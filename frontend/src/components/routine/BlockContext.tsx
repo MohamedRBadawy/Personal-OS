@@ -9,7 +9,7 @@ export function BlockContext({ block, onEdit }: { block: RoutineBlock; onEdit: (
   )
   if (!hasDetails) return (
     <div className="routine-block-context routine-block-context-empty">
-      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>No details added yet.</span>
+      <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>No details added yet.</span>
       <button className="routine-ctx-edit-btn" onClick={onEdit}>✏ Add details</button>
     </div>
   )

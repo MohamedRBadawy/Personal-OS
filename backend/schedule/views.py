@@ -100,7 +100,12 @@ class TodayScheduleAPIView(APIView):
 class RoutineLogSerializer(drf_serializers.ModelSerializer):
     class Meta:
         model = RoutineLog
-        fields = ["id", "date", "block_time", "status", "actual_time", "note", "updated_at"]
+        fields = [
+            "id", "date", "block_time", "status", "actual_time", "actual_duration_minutes",
+            "note", "updated_at",
+            "prayed_in_mosque", "first_row", "takbirat_al_ihram", "prayed_sunnah",
+            "morning_adhkar", "evening_adhkar",
+        ]
         read_only_fields = ["id", "updated_at"]
 
 
@@ -631,3 +636,125 @@ class ScheduledEntryViewSet(viewsets.ModelViewSet):
         elif date_from and date_to:
             qs = qs.filter(date__gte=date_from, date__lte=date_to)
         return qs
+
+
+# ── Google Calendar ───────────────────────────────────────────────────────────
+
+class GCalEventsView(APIView):
+    """Return Google Calendar events for a given date.
+
+    GET /api/schedule/gcal-events/?date=YYYY-MM-DD
+
+    Returns an empty list [] if Google credentials are not configured.
+    Never raises — errors are logged and swallowed so the UI stays functional.
+    """
+
+    def get(self, request):
+        date = request.query_params.get("date")
+        if not date:
+            return Response({"error": "date parameter required"}, status=400)
+
+        from schedule.gcal_service import get_gcal_events
+        events = get_gcal_events(date)
+        return Response(events)
+
+
+# ── AI Schedule Suggester ─────────────────────────────────────────────────────
+
+class AISuggestScheduleView(APIView):
+    """Return 2-3 AI-suggested time block assignments for today's free slots.
+
+    POST /api/schedule/ai-suggest/?date=YYYY-MM-DD
+
+    Computes free slots from routine blocks + scheduled entries, then calls
+    the AI provider to suggest which priority tasks to assign to those slots.
+    Returns [] gracefully when no free slots or no priority nodes exist.
+    """
+
+    def post(self, request):
+        import datetime as dt
+        from django.utils import timezone  # noqa: PLC0415
+
+        date_str = request.query_params.get("date", timezone.localdate().isoformat())
+        try:
+            target_date = dt.date.fromisoformat(date_str)
+        except ValueError:
+            return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+
+        free_slots = self._get_free_slots(target_date)
+
+        # Top priority nodes
+        try:
+            from goals.models import Node  # noqa: PLC0415
+            top_nodes = list(
+                Node.objects.filter(status__in=["active", "available"])
+                .order_by("-leverage_score", "due_date")[:5]
+                .values("id", "title", "due_date", "leverage_score")
+            )
+        except Exception:  # noqa: BLE001
+            top_nodes = []
+
+        if not top_nodes or not free_slots:
+            return Response({"suggestions": [], "date": date_str})
+
+        # Call AI
+        try:
+            from core.ai import get_ai_provider  # noqa: PLC0415
+            provider = get_ai_provider()
+            suggestions = provider.suggest_schedule_blocks(
+                free_slots=free_slots,
+                top_nodes=top_nodes,
+                date=date_str,
+            )
+        except Exception:  # noqa: BLE001
+            suggestions = []
+
+        return Response({"suggestions": suggestions, "date": date_str})
+
+    def _get_free_slots(self, date):
+        """Compute free 30-min+ slots between 06:00 and 22:00."""
+        import datetime as dt  # noqa: PLC0415
+
+        occupied = []
+
+        # Routine blocks (approximate 30 min each unless duration_minutes is set)
+        for block in RoutineBlock.objects.filter(active=True):
+            if block.time:
+                start = block.time.hour * 60 + block.time.minute
+                duration = getattr(block, "duration_minutes", None) or 30
+                occupied.append((start, start + duration))
+
+        # Scheduled entries for the target date
+        for entry in ScheduledEntry.objects.filter(date=date):
+            if entry.time:
+                start = entry.time.hour * 60 + entry.time.minute
+                occupied.append((start, start + (entry.duration_minutes or 60)))
+
+        occupied.sort(key=lambda x: x[0])
+
+        # Find gaps
+        free = []
+        cursor = 6 * 60  # 06:00
+        end_of_day = 22 * 60  # 22:00
+
+        for (s, e) in occupied:
+            if s > cursor and (s - cursor) >= 30:
+                free.append(
+                    {
+                        "start_time": f"{cursor // 60:02d}:{cursor % 60:02d}",
+                        "end_time": f"{s // 60:02d}:{s % 60:02d}",
+                        "duration_minutes": s - cursor,
+                    }
+                )
+            cursor = max(cursor, e)
+
+        if cursor < end_of_day and (end_of_day - cursor) >= 30:
+            free.append(
+                {
+                    "start_time": f"{cursor // 60:02d}:{cursor % 60:02d}",
+                    "end_time": f"{end_of_day // 60:02d}:{end_of_day % 60:02d}",
+                    "duration_minutes": end_of_day - cursor,
+                }
+            )
+
+        return free[:8]  # Cap at 8 slots to keep the prompt focused

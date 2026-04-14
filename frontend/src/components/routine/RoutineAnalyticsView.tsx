@@ -238,7 +238,7 @@ function TimeInvestmentSummary({ blocks }: { blocks: RoutineBlock[] }) {
         )
       })}
       <span className="ra-time-invest-item ra-time-invest-total">
-        <span style={{ fontWeight: 700, fontSize: 13 }}>Σ</span>
+        <span style={{ fontWeight: 700, fontSize: 14 }}>Σ</span>
         <strong className="ra-time-invest-val">{fmtM(totalMins)}</strong>
         <span className="ra-time-invest-label">/ day</span>
       </span>
@@ -272,7 +272,7 @@ export function RoutineAnalyticsView({ blocks }: { blocks: RoutineBlock[] }) {
       </div>
 
       {isLoading || !data ? (
-        <p style={{ padding: '24px 0', color: 'var(--text-muted)', fontSize: 13 }}>Loading analytics…</p>
+        <p style={{ padding: '24px 0', color: 'var(--text-muted)', fontSize: 14 }}>Loading analytics…</p>
       ) : (
         <>
           {/* ── Heatmap ── */}

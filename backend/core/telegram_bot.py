@@ -76,10 +76,11 @@ def _handle_brief() -> None:
 
 
 def _handle_next() -> None:
-    """Send the single most important action to take right now."""
+    """Send the single most important action to take right now — via real AI."""
     from django.utils import timezone  # noqa: PLC0415
 
-    from core.ai_base import DeterministicAIProvider  # noqa: PLC0415
+    from core.ai import get_ai_provider  # noqa: PLC0415
+    from core.ai_prompts import build_rich_profile_context  # noqa: PLC0415
     from core.telegram import send_message  # noqa: PLC0415
     from goals.models import Node  # noqa: PLC0415
     from pipeline.models import MarketingAction  # noqa: PLC0415
@@ -105,11 +106,14 @@ def _handle_next() -> None:
 
         due_follow_ups_count = MarketingAction.objects.filter(follow_up_date__lte=today, result="").count()
 
-        provider = DeterministicAIProvider()
+        profile_context = build_rich_profile_context()
+
+        provider = get_ai_provider()
         result = provider.suggest_next_action(
             top_nodes=nodes_ranked[:5],
             routine_pct=routine_pct,
             due_follow_ups_count=due_follow_ups_count,
+            profile_context=profile_context,
         )
         msg = f"⚡ <b>Do this now:</b>\n{result['action']}\n\n<i>{result['reason']}</i>"
         send_message(msg)

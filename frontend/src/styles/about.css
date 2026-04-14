@@ -28,8 +28,8 @@
   color: #fff;
   border: none;
   border-radius: var(--radius-sm);
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
   cursor: pointer;
   transition: background 0.15s, opacity 0.15s;
   white-space: nowrap;
@@ -74,8 +74,8 @@
 .about-facts-title {
   margin: 0;
   font-family: var(--heading);
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
 }
 
 .about-edit-btn {
@@ -84,8 +84,8 @@
   color: var(--accent);
   border: 1px solid transparent;
   border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -105,7 +105,7 @@
   justify-content: space-between;
   align-items: baseline;
   gap: 8px;
-  font-size: 0.88rem;
+  font-size: var(--text-sm);
   padding: 4px 0;
   border-bottom: 1px solid var(--border);
 }
@@ -117,13 +117,13 @@
 }
 
 .about-fact-value {
-  font-weight: 500;
+  font-weight: var(--weight-medium);
   text-align: right;
   word-break: break-word;
 }
 .about-fact-value--accent {
   color: var(--accent);
-  font-weight: 700;
+  font-weight: var(--weight-bold);
 }
 
 /* Finance block */
@@ -137,10 +137,10 @@
 
 .about-finance-heading {
   margin: 0 0 4px;
-  font-size: 0.78rem;
-  font-weight: 700;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--tracking-wider);
   color: var(--text-muted);
 }
 
@@ -164,7 +164,7 @@
 
 .about-progress-label {
   margin: 5px 0 0;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   color: var(--text-muted);
 }
 
@@ -202,14 +202,14 @@
 .about-section-title {
   margin: 0;
   font-family: var(--heading);
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
 }
 
 .about-section-title-input {
   font-family: var(--heading);
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
   margin-bottom: 10px;
   width: 100%;
 }
@@ -224,7 +224,7 @@
   color: var(--accent);
   border: none;
   border-radius: 50%;
-  font-size: 1rem;
+  font-size: var(--text-base);
   cursor: pointer;
   flex-shrink: 0;
   transition: background 0.15s;
@@ -236,7 +236,7 @@
 
 .about-section-content {
   margin: 0;
-  font-size: 0.92rem;
+  font-size: var(--text-sm);
   line-height: 1.65;
   white-space: pre-wrap;
   color: var(--text);
@@ -244,7 +244,7 @@
 
 .about-section-empty {
   margin: 0;
-  font-size: 0.88rem;
+  font-size: var(--text-sm);
   color: var(--text-muted);
   font-style: italic;
 }
@@ -254,8 +254,8 @@
   resize: vertical;
   min-height: 120px;
   margin-bottom: 10px;
-  font-size: 0.92rem;
-  line-height: 1.6;
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
 }
 
 .about-section-actions {
@@ -279,8 +279,8 @@
   background: transparent;
   border-radius: var(--radius);
   color: var(--text-muted);
-  font-size: 0.9rem;
-  font-weight: 500;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
   cursor: pointer;
   text-align: center;
   width: 100%;
@@ -327,7 +327,7 @@
 .about-modal-title {
   margin: 0;
   font-family: var(--heading);
-  font-size: 1.1rem;
+  font-size: var(--text-lg);
 }
 
 .about-modal-close {
@@ -337,7 +337,7 @@
   border: none;
   cursor: pointer;
   color: var(--text-muted);
-  font-size: 1rem;
+  font-size: var(--text-base);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -372,10 +372,10 @@
 
 .about-form-section-label {
   margin: 0 0 2px;
-  font-size: 0.78rem;
-  font-weight: 700;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--tracking-wider);
   color: var(--text-muted);
 }
 
@@ -396,9 +396,9 @@
 .about-form-field--currency { flex: 0 0 80px; min-width: 70px; }
 
 .about-label {
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   color: var(--text-muted);
-  font-weight: 500;
+  font-weight: var(--weight-medium);
 }
 
 /* Reusable button helpers (about-page scoped variants) */
@@ -408,8 +408,8 @@
   color: #fff;
   border: none;
   border-radius: var(--radius-sm);
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -422,8 +422,8 @@
   color: var(--text-muted);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  font-size: 0.9rem;
-  font-weight: 500;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
@@ -444,12 +444,12 @@
   margin-bottom: 16px;
 }
 .profile-domain-emoji {
-  font-size: 20px;
+  font-size: var(--text-xl);
   line-height: 1;
 }
 .profile-domain-title {
-  font-size: 15px;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
   color: var(--text);
   margin: 0;
 }
@@ -465,23 +465,23 @@
   padding: 12px 14px;
 }
 .profile-stat-label {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: .05em;
+  letter-spacing: var(--tracking-wider);
   margin: 0 0 4px;
 }
 .profile-stat-value {
-  font-size: 20px;
-  font-weight: 700;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
   font-family: var(--mono);
   color: var(--text);
   margin: 0;
   line-height: 1.2;
 }
 .profile-stat-sub {
-  font-size: 11px;
+  font-size: var(--text-xs);
   color: var(--text-muted);
   margin: 4px 0 0;
 }

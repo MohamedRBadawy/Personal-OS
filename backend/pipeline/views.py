@@ -46,6 +46,113 @@ class OpportunityViewSet(viewsets.ModelViewSet):
     def summary(self, request):
         return Response(OpportunityLifecycleService.summary())
 
+    @action(detail=True, methods=["post"])
+    def draft_message(self, request, pk=None):
+        """Ask AI to draft an outreach message for this opportunity.
+
+        Body: { "channel": "linkedin" | "email" | "upwork" }
+        """
+        opp = self.get_object()
+        channel = request.data.get("channel", "linkedin")
+        force_refresh = request.data.get("refresh", False)
+
+        # Return cached draft if available and not forcing refresh
+        if opp.ai_draft and not force_refresh:
+            return Response({"draft": opp.ai_draft, "cached": True})
+
+        try:
+            import os  # noqa: PLC0415
+            from profile.models import UserProfile  # noqa: PLC0415
+
+            profile = UserProfile.get_or_create_singleton()
+            profile_context = (
+                f"Name: {profile.full_name or 'Mohamed Badawy'}. "
+                f"Service: Operations Clarity Audit — operational systems consulting. "
+                f"Background: Operational systems expert. Built K Line Europe reporting system (reduced report time from 128h to minutes). Reduced external defect rate from 1.68% to 0.99%."
+            )
+
+            prompt = (
+                f"Write a concise, personalized outreach message for the following opportunity:\n\n"
+                f"Opportunity: {opp.name}\n"
+                f"Platform: {opp.platform}\n"
+                f"Channel: {channel}\n"
+                f"Description: {opp.description or 'Not provided'}\n"
+                f"Client: {opp.client_name or 'Unknown'}\n"
+                f"Prospect context: {opp.prospect_context or 'Not provided'}\n\n"
+                f"Sender profile: {profile_context}\n\n"
+                f"Requirements:\n"
+                f"- Tone: professional, direct, not salesy\n"
+                f"- Length: 3-5 sentences max for {channel}\n"
+                f"- Focus on the specific problem they might have\n"
+                f"- End with a soft CTA (e.g. 'Happy to send you a brief overview')\n"
+                f"- No generic templates — make it feel personal and specific\n\n"
+                f"Return ONLY the message text, nothing else."
+            )
+
+            api_key = os.getenv("ANTHROPIC_API_KEY", "")
+            if not api_key:
+                # Fallback: return a template
+                draft = (
+                    f"Hi {opp.client_name or 'there'},\n\n"
+                    f"I noticed {opp.name} and believe I can help with operational efficiency.\n\n"
+                    f"I recently helped a clear aligner manufacturer reduce reporting time from 128 hours to minutes.\n\n"
+                    f"Happy to send you a brief overview of how this could apply to your situation.\n\nBest,\nMohamed"
+                )
+            else:
+                from anthropic import Anthropic  # noqa: PLC0415
+                client = Anthropic(api_key=api_key)
+                response = client.messages.create(
+                    model="claude-3-5-haiku-latest",
+                    max_tokens=400,
+                    system="You write concise, professional outreach messages for a business consultant.",
+                    messages=[{"role": "user", "content": prompt}],
+                )
+                draft = response.content[0].text.strip()
+
+            # Cache the draft
+            opp.ai_draft = draft
+            opp.save(update_fields=["ai_draft"])
+
+        except Exception as exc:  # noqa: BLE001
+            return Response({"detail": f"AI drafting failed: {exc}"}, status=502)
+
+        return Response({"draft": draft, "cached": False})
+
+    @action(detail=True, methods=["post"])
+    def mark_outreach_sent(self, request, pk=None):
+        """Mark that an outreach message was sent and optionally set a follow-up date."""
+        from django.utils import timezone  # noqa: PLC0415
+        import datetime  # noqa: PLC0415
+
+        opp = self.get_object()
+        opp.last_outreach_at = timezone.now()
+        opp.outreach_count = (opp.outreach_count or 0) + 1
+
+        days = int(request.data.get("followup_days", 7))
+        opp.next_followup_date = timezone.localdate() + datetime.timedelta(days=days)
+
+        # Clear cached draft so next send gets a fresh follow-up draft
+        opp.ai_draft = ""
+        opp.save(update_fields=["last_outreach_at", "outreach_count", "next_followup_date", "ai_draft"])
+
+        return Response({
+            "outreach_count": opp.outreach_count,
+            "last_outreach_at": opp.last_outreach_at,
+            "next_followup_date": opp.next_followup_date,
+        })
+
+    @action(detail=False, methods=["get"])
+    def due_followups(self, request):
+        """Opportunities where next_followup_date <= today."""
+        from django.utils import timezone  # noqa: PLC0415
+
+        today = timezone.localdate()
+        overdue = self.queryset.filter(
+            next_followup_date__lte=today,
+            status__in=["new", "reviewing", "applied", "interview", "proposal_sent"],
+        ).order_by("next_followup_date")
+        return Response(OpportunitySerializer(overdue, many=True).data)
+
 
 class MarketingChannelViewSet(viewsets.ModelViewSet):
     """CRUD API for marketing presence channels."""

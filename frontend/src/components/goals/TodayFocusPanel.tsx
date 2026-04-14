@@ -58,7 +58,7 @@ export function TodayFocusPanel({ nodes, onUpdate }: { nodes: Node[]; onUpdate: 
         <span className="today-focus-icon">📅</span>
         <span className="today-focus-title">Today's focus</span>
         <span className="today-focus-count">{focusNodes.length}</span>
-        <span style={{ marginLeft: 'auto', fontSize: 11 }}>{collapsed ? '▸' : '▾'}</span>
+        <span style={{ marginLeft: 'auto', fontSize: 13 }}>{collapsed ? '▸' : '▾'}</span>
       </button>
       {!collapsed && (
         <div className="today-focus-list">

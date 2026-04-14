@@ -147,3 +147,99 @@ export type HealthOverviewPayload = {
   recent_spiritual_logs: SpiritualLog[]
   capacity_signals: string[]
 }
+
+export type MealLog = {
+  id: string
+  plan: string | null
+  date: string
+  slot: string
+  status: 'as_planned' | 'ate_less' | 'ate_more' | 'ate_differently' | 'skipped'
+  notes: string
+  created_at: string
+}
+
+export type FoodItem = {
+  id: string
+  name: string
+  category: 'protein' | 'grain' | 'vegetable' | 'fruit' | 'dairy' | 'legume' | 'nut' | 'fat' | 'beverage' | 'other'
+  calories_per_100g: string | null
+  protein_per_100g: string | null
+  fat_per_100g: string | null
+  carbs_per_100g: string | null
+  fiber_per_100g: string | null
+  saturated_fat_per_100g: string | null
+  sugar_per_100g: string | null
+  sodium_mg_per_100g: string | null
+  cholesterol_mg_per_100g: string | null
+  vitamins_per_100g: Record<string, number>
+  minerals_per_100g: Record<string, number>
+  is_verified: boolean
+  serving_unit: 'g' | 'piece'
+  grams_per_piece: string | null
+  serving_label: string
+}
+
+export type MealIngredient = {
+  id: string
+  meal_plan: string
+  food_item: string | null
+  name: string
+  quantity_g: string
+  quantity_pieces: string | null
+  grams_per_piece: string | null
+  serving_label: string
+  calories_per_100g: string | null
+  protein_per_100g: string | null
+  fat_per_100g: string | null
+  carbs_per_100g: string | null
+  fiber_per_100g: string | null
+  vitamins_per_100g: Record<string, number>
+  minerals_per_100g: Record<string, number>
+  // computed by serializer
+  calories: number
+  protein_g: number
+  fat_g: number
+  carbs_g: number
+  fiber_g: number
+}
+
+export type MealPlan = {
+  id: string
+  date: string
+  slot: 'breakfast' | 'lunch' | 'dinner' | 'snack'
+  name: string
+  calories: number | null
+  protein_g: string | null
+  fat_g: string | null
+  carbs_g: string | null
+  fiber_g: string | null
+  vitamins: Record<string, number>
+  minerals: Record<string, number>
+  notes: string
+  log: MealLog | null
+  ingredients: MealIngredient[]
+}
+
+export type MealTotals = {
+  calories: number
+  protein_g: number
+  fat_g: number
+  carbs_g: number
+  fiber_g: number
+  vitamins: Record<string, number>
+  minerals: Record<string, number>
+}
+
+export type MealTemplate = {
+  id: string
+  slot: 'breakfast' | 'lunch' | 'dinner' | 'snack'
+  name: string
+  calories: number | null
+  protein_g: string | null
+  fat_g: string | null
+  carbs_g: string | null
+  fiber_g: string | null
+  vitamins: Record<string, number>
+  minerals: Record<string, number>
+  notes: string
+}

@@ -214,6 +214,60 @@ class NodeViewSet(viewsets.ModelViewSet):
             "completed_this_month_count": completed_qs.count(),
         })
 
+    @action(detail=False, methods=["get"])
+    def velocity(self, request):
+        """Nodes completed per week, last 12 weeks.
+
+        Returns a list of {week_start, completed_count} dicts, oldest first.
+        """
+        import datetime  # noqa: PLC0415
+        from django.utils import timezone  # noqa: PLC0415
+
+        today = timezone.localdate()
+        weeks = []
+        for w in range(11, -1, -1):
+            week_end = today - datetime.timedelta(weeks=w)
+            week_start = week_end - datetime.timedelta(days=6)
+            count = Node.objects.filter(
+                completed_at__date__gte=week_start,
+                completed_at__date__lte=week_end,
+            ).count()
+            weeks.append({"week_start": week_start.isoformat(), "completed_count": count})
+
+        total_12w = sum(w["completed_count"] for w in weeks)
+        trend = "up" if len(weeks) >= 2 and weeks[-1]["completed_count"] >= weeks[-2]["completed_count"] else "down"
+        return Response({"weeks": weeks, "total_12w": total_12w, "trend": trend})
+
+    @action(detail=False, methods=["get"])
+    def funnel(self, request):
+        """Node counts by status for funnel visualisation.
+
+        Returns ordered stages with counts and conversion rates.
+        """
+        stages = [
+            ("idea",         "Ideas"),
+            ("available",    "Available"),
+            ("active",       "Active"),
+            ("in_progress",  "In Progress"),
+            ("done",         "Done"),
+        ]
+        counts = {stage: Node.objects.filter(status=stage).count() for stage, _ in stages}
+        total = sum(counts.values()) or 1  # avoid divide-by-zero
+
+        result = []
+        prev_count = None
+        for stage, label in stages:
+            count = counts[stage]
+            conversion = round(count / prev_count * 100) if prev_count and prev_count > 0 else None
+            result.append({"stage": stage, "label": label, "count": count, "conversion_from_prev": conversion})
+            prev_count = count or prev_count  # don't reset to 0
+
+        return Response({
+            "stages": result,
+            "total_active": Node.objects.exclude(status__in=["done", "deferred"]).count(),
+            "total_all": total,
+        })
+
 
 class GoalAttachmentProfileViewSet(viewsets.ModelViewSet):
     """CRUD API for structured goal support layers."""
@@ -236,9 +290,11 @@ class LearningItemSerializer(serializers.ModelSerializer):
         model = LearningItem
         fields = [
             "id", "title", "author", "type", "status", "progress_pct",
-            "linked_node", "started", "finished", "notes", "created_at", "updated_at",
+            "linked_node", "started", "finished", "notes",
+            "review_at", "reviewed_count", "is_actionable",
+            "created_at", "updated_at",
         ]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        read_only_fields = ["id", "reviewed_count", "created_at", "updated_at"]
 
 
 class LearningItemViewSet(viewsets.ModelViewSet):
@@ -254,6 +310,35 @@ class LearningItemViewSet(viewsets.ModelViewSet):
         if node_id:
             qs = qs.filter(linked_node_id=node_id)
         return qs
+
+    @action(detail=False, methods=["get"])
+    def due_review(self, request):
+        """Learning items where review_at <= today."""
+        from django.utils import timezone  # noqa: PLC0415
+        today = timezone.localdate()
+        due = self.get_queryset().filter(review_at__lte=today).order_by("review_at")
+        return Response(LearningItemSerializer(due, many=True).data)
+
+    @action(detail=True, methods=["post"])
+    def reviewed(self, request, pk=None):
+        """Mark reviewed. Interval: 3 → 7 → 14 → 30 → 60 → 90 days."""
+        import datetime  # noqa: PLC0415
+        from django.utils import timezone  # noqa: PLC0415
+
+        item = self.get_object()
+        item.reviewed_count = (item.reviewed_count or 0) + 1
+
+        INTERVALS = [3, 7, 14, 30, 60, 90]
+        idx = min(item.reviewed_count - 1, len(INTERVALS) - 1)
+        days = INTERVALS[idx]
+        item.review_at = timezone.localdate() + datetime.timedelta(days=days)
+        item.save(update_fields=["reviewed_count", "review_at"])
+
+        return Response({
+            "reviewed_count": item.reviewed_count,
+            "next_review_at": item.review_at.isoformat(),
+            "days_until_next": days,
+        })
 
 
 # ── Time Logs ─────────────────────────────────────────────────────────────────

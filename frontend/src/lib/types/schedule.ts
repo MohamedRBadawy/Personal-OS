@@ -108,8 +108,17 @@ export type RoutineLogEntry = {
   block_time: string
   status: 'done' | 'partial' | 'late' | 'skipped'
   actual_time: string | null
+  actual_duration_minutes: number | null
   note: string
   updated_at: string
+  // Prayer-specific detail fields (null = not tracked)
+  prayed_in_mosque:  boolean | null
+  first_row:         boolean | null
+  takbirat_al_ihram: boolean | null
+  prayed_sunnah:     boolean | null
+  // Adhkar anchored to the prayer block
+  morning_adhkar:    boolean | null
+  evening_adhkar:    boolean | null
 }
 
 export type RoutineBlock = {
@@ -228,4 +237,22 @@ export type ScheduledEntryPayload = {
   node?: string | null
   label?: string
   done?: boolean
+}
+
+export type GCalEvent = {
+  id: string
+  title: string
+  start_time: string | null   // "HH:MM" or null for all-day events
+  end_time: string | null
+  all_day: boolean
+  duration_minutes: number
+  calendar: string
+}
+
+export type ScheduleSuggestion = {
+  node_id: number | null
+  node_title: string
+  start_time: string          // "HH:MM"
+  duration_minutes: number
+  reason: string
 }

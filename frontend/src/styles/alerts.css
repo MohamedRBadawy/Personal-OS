@@ -1,0 +1,246 @@
+/* ── Alert Panel ─────────────────────────────────────────────────────────── */
+
+.alert-panel-wrapper {
+  position: relative;
+}
+
+/* Bell button */
+.alert-bell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.alert-bell:hover {
+  background: var(--surface-2, var(--surface));
+  border-color: var(--accent);
+}
+
+.alert-bell-critical {
+  border-color: #dc2626;
+  animation: alert-pulse 2s infinite;
+}
+
+@keyframes alert-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.3); }
+  50%       { box-shadow: 0 0 0 4px rgba(220, 38, 38, 0); }
+}
+
+/* Badge */
+.alert-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.alert-badge-critical {
+  background: #dc2626;
+}
+
+/* Dropdown */
+.alert-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 360px;
+  max-height: 480px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg, #0f0f0f);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.alert-dropdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.alert-dropdown-title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.alert-mark-all-btn {
+  font-size: 12px;
+  color: var(--accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 0;
+}
+
+.alert-mark-all-btn:hover {
+  text-decoration: underline;
+}
+
+.alert-dropdown-body {
+  overflow-y: auto;
+  flex: 1;
+  padding: 8px 0;
+}
+
+/* Empty state */
+.alert-empty {
+  padding: 20px;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+  margin: 0;
+}
+
+.alert-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 16px;
+  color: #16a34a;
+}
+
+.alert-empty-icon {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.alert-empty-state p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Groups */
+.alert-group {
+  margin-bottom: 4px;
+}
+
+.alert-group-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 8px 16px 4px;
+  margin: 0;
+}
+
+/* Alert row */
+.alert-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  border-left: 3px solid transparent;
+  padding-left: 13px;
+  margin: 2px 8px;
+  border-radius: 0 8px 8px 0;
+  transition: background 0.1s;
+}
+
+.alert-row-read {
+  opacity: 0.6;
+}
+
+.alert-row:hover {
+  background: var(--surface) !important;
+}
+
+.alert-row-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px 8px 8px 0;
+  color: var(--text);
+  min-width: 0;
+}
+
+.alert-row-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.alert-row-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.alert-row-title {
+  margin: 0 0 2px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.alert-row-body-text {
+  margin: 0 0 3px;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.alert-row-date {
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.alert-dismiss-btn {
+  flex-shrink: 0;
+  padding: 8px 10px 8px 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+}
+
+.alert-row:hover .alert-dismiss-btn {
+  opacity: 1;
+}
+
+.alert-dismiss-btn:hover {
+  color: #dc2626;
+}

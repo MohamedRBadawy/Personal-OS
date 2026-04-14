@@ -1,13 +1,18 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PageSkeleton } from '../components/PageSkeleton'
+import { HubTabs } from '../components/HubTabs'
+import { CollapsibleSection } from '../components/CollapsibleSection'
 import {
   getFinanceSummaryV2, updateFinanceSummaryV2,
   listIncomeEvents, createIncomeEvent, deleteIncomeEvent,
   getExchangeRates, updateExchangeRates,
   createFinanceEntry, getRecurringChecklist,
+  getCategoryBreakdown, getBudgetPlan, upsertBudgetPlan,
+  getDebtOverview, createDebt, updateDebt, deleteDebt,
 } from '../lib/api'
-import type { ExchangeRates, FinanceSummaryV2, IncomeEvent, RecurringChecklistItem } from '../lib/types'
+import type { ExchangeRates, FinanceSummaryV2, IncomeEvent, RecurringChecklistItem, CategoryBreakdownItem } from '../lib/types'
+import type { DebtOverview, DebtEntry as DebtEntryType } from '../lib/api'
 
 type Debt = { name: string; amount_egp: number }
 
@@ -237,6 +242,162 @@ function DebtEditForm({ debts, onSaved, onCancel }: { debts: Debt[]; onSaved: ()
   )
 }
 
+// ── Debt Command Center (new model-backed) ────────────────────────────────
+
+function DebtCommandCenter() {
+  const qc = useQueryClient()
+  const [extraEgp, setExtraEgp] = useState(0)
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [newCreditor, setNewCreditor] = useState('')
+  const [newOriginal, setNewOriginal] = useState('')
+  const [newRemaining, setNewRemaining] = useState('')
+  const [newMonthly, setNewMonthly] = useState('')
+
+  const { data: overview } = useQuery<DebtOverview>({
+    queryKey: ['debt-overview', extraEgp],
+    queryFn: () => getDebtOverview(extraEgp > 0 ? extraEgp : undefined),
+    staleTime: 60_000,
+  })
+
+  const addMut = useMutation({
+    mutationFn: createDebt,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['debt-overview'] })
+      setShowAddForm(false)
+      setNewCreditor(''); setNewOriginal(''); setNewRemaining(''); setNewMonthly('')
+    },
+  })
+
+  const deleteMut = useMutation({
+    mutationFn: (id: string) => deleteDebt(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['debt-overview'] }),
+  })
+
+  const markPaidMut = useMutation({
+    mutationFn: ({ id }: { id: string }) => updateDebt(id, { paid_off: true, remaining_amount: '0' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['debt-overview'] }),
+  })
+
+  if (!overview) return null
+
+  const totalEgp = overview.total_remaining_egp
+  const hasDebts = overview.debts.length > 0
+
+  return (
+    <div className="debt-command-center">
+      <div className="debt-cc-header">
+        <div>
+          <span className="debt-cc-total">{Math.round(totalEgp).toLocaleString()} EGP</span>
+          <span className="caption"> total remaining</span>
+        </div>
+        <button className="btn-ghost-sm" onClick={() => setShowAddForm(p => !p)}>
+          {showAddForm ? 'Cancel' : '+ Add debt'}
+        </button>
+      </div>
+
+      {showAddForm && (
+        <div className="debt-add-form">
+          <input className="form-input" placeholder="Creditor name" value={newCreditor} onChange={e => setNewCreditor(e.target.value)} />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+            <input className="form-input" type="number" placeholder="Original (EGP)" value={newOriginal} onChange={e => setNewOriginal(e.target.value)} />
+            <input className="form-input" type="number" placeholder="Remaining (EGP)" value={newRemaining} onChange={e => setNewRemaining(e.target.value)} />
+            <input className="form-input" type="number" placeholder="Monthly pay (EGP)" value={newMonthly} onChange={e => setNewMonthly(e.target.value)} />
+          </div>
+          <button
+            className="btn-primary"
+            disabled={addMut.isPending || !newCreditor || !newOriginal}
+            onClick={() => addMut.mutate({
+              creditor: newCreditor,
+              original_amount: newOriginal,
+              remaining_amount: newRemaining || newOriginal,
+              monthly_payment: newMonthly || '0',
+            } as Partial<DebtEntryType>)}
+          >
+            {addMut.isPending ? 'Adding…' : 'Add debt'}
+          </button>
+        </div>
+      )}
+
+      {hasDebts && (
+        <div className="debt-list">
+          {overview.debts.map(d => {
+            const pct = d.paid_pct
+            return (
+              <div key={d.id} className="debt-item">
+                <div className="debt-item-header">
+                  <span className="debt-item-name">{d.creditor}</span>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <span className="debt-item-amount">{Math.round(parseFloat(d.remaining_amount)).toLocaleString()} EGP</span>
+                    <button className="btn-ghost-sm" style={{ padding: '2px 8px', fontSize: 'var(--text-xs)' }} onClick={() => markPaidMut.mutate({ id: d.id })}>✓ Paid off</button>
+                    <button className="btn-ghost-sm" style={{ padding: '2px 6px', fontSize: 'var(--text-xs)', color: 'var(--error, #dc2626)' }} onClick={() => deleteMut.mutate(d.id)}>✕</button>
+                  </div>
+                </div>
+                <div className="debt-progress-bar">
+                  <div className="debt-progress-fill" style={{ width: `${pct}%` }} />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span className="caption">{Math.round(pct)}% paid</span>
+                  {parseFloat(d.monthly_payment) > 0 && (
+                    <span className="caption">{Math.round(parseFloat(d.monthly_payment)).toLocaleString()} EGP/mo</span>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {hasDebts && (
+        <div className="debt-scenarios">
+          <div className="debt-scenarios-header">
+            <span className="label-mono">Payoff Scenarios</span>
+          </div>
+          <div className="debt-scenario-grid">
+            {Object.entries(overview.scenarios).map(([key, s]) => (
+              <div key={key} className="debt-scenario-card">
+                <p className="debt-scenario-label">{s.label}</p>
+                <p className="debt-scenario-amount">{Math.round(s.monthly_egp).toLocaleString()} EGP/mo</p>
+                <p className="debt-scenario-date">
+                  {s.payoff_date
+                    ? new Date(s.payoff_date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
+                    : '—'}
+                </p>
+              </div>
+            ))}
+          </div>
+          <div className="debt-slider-row">
+            <label className="sp-label">Extra monthly payment: <strong>{extraEgp.toLocaleString()} EGP</strong></label>
+            <input
+              type="range"
+              min={0}
+              max={10000}
+              step={250}
+              value={extraEgp}
+              onChange={e => setExtraEgp(Number(e.target.value))}
+              style={{ width: '100%' }}
+            />
+            {overview.scenarios.custom && (
+              <p className="caption">
+                With +{extraEgp.toLocaleString()} EGP/mo → debt-free by{' '}
+                <strong>
+                  {overview.scenarios.custom.payoff_date
+                    ? new Date(overview.scenarios.custom.payoff_date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
+                    : '—'}
+                </strong>
+                {' '}({overview.scenarios.custom.months} months)
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {!hasDebts && (
+        <p className="empty-hint">No debts tracked. Add your debts to see a payoff plan.</p>
+      )}
+    </div>
+  )
+}
+
 // ── Debt Payoff Plan ───────────────────────────────────────────────────────
 
 function DebtPayoffPlan({ debts, surplusEgp }: { debts: Debt[]; surplusEgp: number }) {
@@ -287,7 +448,7 @@ function DebtPayoffPlan({ debts, surplusEgp }: { debts: Debt[]; surplusEgp: numb
           <td className="debt-amount payoff-month">{finalRow.label}</td>
         </tr>
         <tr>
-          <td colSpan={3} style={{ paddingTop: 4, fontSize: 12, color: 'var(--text-muted)' }}>
+          <td colSpan={3} style={{ paddingTop: 4, fontSize: 14, color: 'var(--text-muted)' }}>
             {daysUntil(finalRow.dateStr)} days away
           </td>
         </tr>
@@ -474,10 +635,10 @@ function IncomeHistory() {
           <tbody>
             {events.map(ev => (
               <tr key={ev.id}>
-                <td className="debt-name" style={{ fontSize: 12, color: 'var(--text-muted)' }}>{ev.date}</td>
+                <td className="debt-name" style={{ fontSize: 14, color: 'var(--text-muted)' }}>{ev.date}</td>
                 <td className="debt-name">
                   {ev.source}
-                  {ev.notes && <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 8 }}>{ev.notes}</span>}
+                  {ev.notes && <span style={{ fontSize: 13, color: 'var(--text-muted)', marginLeft: 8 }}>{ev.notes}</span>}
                 </td>
                 <td className="debt-amount" style={{ color: 'var(--success)' }}>
                   {ev.amount_eur > 0 ? `€${fmtEur(ev.amount_eur)}` : '—'}
@@ -596,7 +757,7 @@ function IncomeStreams({ independentMonthly }: { independentMonthly: number }) {
           })}
         </div>
       )}
-      <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+      <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
         <span>Total independent</span>
         <span style={{ fontWeight: 600, color: independentMonthly >= TARGET ? '#22c55e' : 'var(--text)' }}>
           €{fmtEur(independentMonthly)} / €{TARGET}
@@ -686,7 +847,7 @@ function DebtSection({
                 <td style={{ textAlign: 'right' }}>
                   <button
                     className="btn-ghost-sm"
-                    style={{ fontSize: 12 }}
+                    style={{ fontSize: 14 }}
                     onClick={() => setPayingDebtIdx(payingDebtIdx === i ? null : i)}
                   >
                     Log payment
@@ -715,7 +876,7 @@ function DebtSection({
                       />
                       <button
                         className="btn-primary"
-                        style={{ padding: '6px 12px', fontSize: 13 }}
+                        style={{ padding: '6px 12px', fontSize: 14 }}
                         disabled={!payAmount || logPaymentMut.isPending}
                         onClick={() => logPaymentMut.mutate({
                           debt,
@@ -727,7 +888,7 @@ function DebtSection({
                       </button>
                       <button
                         className="btn-ghost"
-                        style={{ padding: '6px 10px', fontSize: 13 }}
+                        style={{ padding: '6px 10px', fontSize: 14 }}
                         onClick={() => setPayingDebtIdx(null)}
                       >
                         Cancel
@@ -814,18 +975,237 @@ function ForecastWidget({ data, egpRate }: { data: FinanceSummaryV2; egpRate: nu
 // ── Category Budgets ──────────────────────────────────────────────────────
 
 const ALL_EXPENSE_CATEGORIES = [
-  { value: 'food', label: 'Food' },
-  { value: 'housing', label: 'Housing' },
-  { value: 'transport', label: 'Transport' },
-  { value: 'utilities', label: 'Utilities' },
-  { value: 'education', label: 'Education' },
-  { value: 'children', label: 'Children' },
-  { value: 'health', label: 'Health' },
-  { value: 'debt_payment', label: 'Debt Payment' },
-  { value: 'business', label: 'Business' },
-  { value: 'savings', label: 'Savings' },
-  { value: 'other', label: 'Other' },
+  { value: 'food',         label: 'Food & Groceries',  emoji: '🍔' },
+  { value: 'housing',      label: 'Housing & Rent',     emoji: '🏠' },
+  { value: 'transport',    label: 'Transport',           emoji: '🚗' },
+  { value: 'utilities',    label: 'Utilities & Bills',  emoji: '💡' },
+  { value: 'education',    label: 'Education',           emoji: '📚' },
+  { value: 'children',     label: 'Children',            emoji: '👶' },
+  { value: 'health',       label: 'Health',              emoji: '🏥' },
+  { value: 'debt_payment', label: 'Debt Payment',        emoji: '💳' },
+  { value: 'business',     label: 'Business',            emoji: '💼' },
+  { value: 'savings',      label: 'Savings',             emoji: '🏦' },
+  { value: 'other',        label: 'Other',               emoji: '📦' },
 ]
+
+// ── Month navigation helpers ──────────────────────────────────────────────────
+
+function currentMonthStr(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+function shiftMonth(m: string, delta: number): string {
+  const [y, mo] = m.split('-').map(Number)
+  const d = new Date(y, mo - 1 + delta, 1)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+function formatMonthLabel(m: string): string {
+  const [y, mo] = m.split('-').map(Number)
+  return new Date(y, mo - 1, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+}
+
+// ── Budget Planner ────────────────────────────────────────────────────────────
+
+function BudgetPlannerSection({ summaryData }: { summaryData: FinanceSummaryV2 }) {
+  const qc = useQueryClient()
+  const [selectedMonth, setSelectedMonth] = useState(currentMonthStr)
+  const [localBudgets, setLocalBudgets] = useState<Record<string, number>>({})
+  const [localNotes, setLocalNotes] = useState('')
+  const [isDirty, setIsDirty] = useState(false)
+
+  // Fetch saved plan for the selected month
+  const planQuery = useQuery({
+    queryKey: ['budget-plan', selectedMonth],
+    queryFn: () => getBudgetPlan(selectedMonth),
+    retry: false,
+  })
+
+  // Fetch actual spending for the selected month
+  const breakdownQuery = useQuery({
+    queryKey: ['finance-category-breakdown', selectedMonth],
+    queryFn: () => getCategoryBreakdown(selectedMonth),
+  })
+
+  // Sync plan data into local state when it loads (and not dirty)
+  useEffect(() => {
+    if (planQuery.data && !isDirty) {
+      setLocalBudgets(planQuery.data.planned_budgets ?? {})
+      setLocalNotes(planQuery.data.notes ?? '')
+    }
+    if (planQuery.isError) {
+      setLocalBudgets({})
+      setLocalNotes('')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planQuery.data, planQuery.isError])
+
+  // Reset dirty flag when switching months
+  useEffect(() => { setIsDirty(false) }, [selectedMonth])
+
+  // Build actual spending map from breakdown
+  const actualMap = useMemo<Record<string, number>>(() => {
+    const m: Record<string, number> = {}
+    for (const item of (breakdownQuery.data ?? []) as CategoryBreakdownItem[]) {
+      m[item.category] = item.total_egp
+    }
+    return m
+  }, [breakdownQuery.data])
+
+  const incomeEgp     = summaryData.income_egp ?? 0
+  const totalPlanned  = Object.values(localBudgets).reduce((s, v) => s + (v || 0), 0)
+  const totalActual   = Object.values(actualMap).reduce((s, v) => s + v, 0)
+  const unallocated   = incomeEgp - totalPlanned
+  const surplus       = incomeEgp - totalActual
+
+  // Copy from previous month
+  const copyMut = useMutation({
+    mutationFn: () => getBudgetPlan(shiftMonth(selectedMonth, -1)),
+    onSuccess: (prev) => {
+      setLocalBudgets(prev.planned_budgets ?? {})
+      setLocalNotes(prev.notes ?? '')
+      setIsDirty(true)
+    },
+  })
+
+  // Save plan
+  const saveMut = useMutation({
+    mutationFn: () => upsertBudgetPlan(selectedMonth, {
+      month: selectedMonth,
+      planned_budgets: localBudgets,
+      notes: localNotes,
+    }),
+    onSuccess: () => {
+      setIsDirty(false)
+      qc.invalidateQueries({ queryKey: ['budget-plan', selectedMonth] })
+    },
+  })
+
+  function setBudgetLine(cat: string, val: number) {
+    setLocalBudgets(prev => ({ ...prev, [cat]: val }))
+    setIsDirty(true)
+  }
+
+  return (
+    <div className="home-section">
+      {/* Header */}
+      <div className="bp-section-header">
+        <h2 className="section-title">Monthly Budget Plan</h2>
+        <div className="month-nav">
+          <button className="month-nav-btn" onClick={() => setSelectedMonth(m => shiftMonth(m, -1))}>‹</button>
+          <span className="month-nav-label">{formatMonthLabel(selectedMonth)}</span>
+          <button className="month-nav-btn" onClick={() => setSelectedMonth(m => shiftMonth(m, 1))}>›</button>
+        </div>
+      </div>
+
+      {/* Summary bar */}
+      <div className="bp-header-bar">
+        <div className="bp-header-stat">
+          <span className="bp-header-label">Income</span>
+          <span className="bp-header-value">{Math.round(incomeEgp).toLocaleString()} EGP</span>
+        </div>
+        <div className="bp-header-stat">
+          <span className="bp-header-label">Total Planned</span>
+          <span className="bp-header-value" style={{ color: totalPlanned > incomeEgp ? '#dc2626' : undefined }}>
+            {Math.round(totalPlanned).toLocaleString()} EGP
+          </span>
+        </div>
+        <div className="bp-header-stat">
+          <span className="bp-header-label">Total Actual</span>
+          <span className="bp-header-value">{Math.round(totalActual).toLocaleString()} EGP</span>
+        </div>
+        <div className="bp-header-stat">
+          <span className="bp-header-label">Unallocated</span>
+          <span className="bp-header-value" style={{ color: unallocated < 0 ? '#dc2626' : '#22c55e' }}>
+            {Math.round(unallocated).toLocaleString()} EGP
+          </span>
+        </div>
+        <div className="bp-header-stat">
+          <span className="bp-header-label">Surplus</span>
+          <span className="bp-header-value" style={{ color: surplus >= 0 ? '#22c55e' : '#dc2626' }}>
+            {Math.round(surplus).toLocaleString()} EGP
+          </span>
+        </div>
+      </div>
+
+      {/* Category rows */}
+      <div className="bp-category-list">
+        <div className="bp-row bp-row--header">
+          <span>Category</span>
+          <span>Budget (EGP)</span>
+          <span>Actual</span>
+          <span></span>
+          <span>Δ</span>
+        </div>
+        {ALL_EXPENSE_CATEGORIES.map(cat => {
+          const planned = localBudgets[cat.value] ?? 0
+          const actual  = actualMap[cat.value] ?? 0
+          const pct     = planned > 0 ? Math.min(100, Math.round((actual / planned) * 100)) : 0
+          const isOver  = actual > planned && planned > 0
+          const delta   = planned - actual  // positive = left, negative = over
+
+          return (
+            <div key={cat.value} className="bp-row">
+              <span className="bp-row-label">{cat.emoji} {cat.label}</span>
+              <input
+                type="number"
+                className="form-input bp-row-input"
+                placeholder="0"
+                min="0"
+                value={planned || ''}
+                onChange={e => setBudgetLine(cat.value, parseFloat(e.target.value) || 0)}
+              />
+              <span className="bp-row-actual">{Math.round(actual).toLocaleString()}</span>
+              <div className="bp-row-bar-wrap">
+                <div
+                  className={`bp-row-bar-fill${isOver ? ' over' : ''}`}
+                  style={{ width: `${planned > 0 ? pct : 0}%` }}
+                />
+              </div>
+              <span className={`bp-delta-badge${isOver ? ' over' : delta > 0 ? ' under' : ' zero'}`}>
+                {planned === 0
+                  ? '—'
+                  : delta > 0
+                    ? `${Math.round(delta).toLocaleString()} left`
+                    : `${Math.round(Math.abs(delta)).toLocaleString()} over`
+                }
+              </span>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Notes */}
+      <textarea
+        className="form-input bp-notes"
+        placeholder="Notes for this month's plan…"
+        rows={2}
+        value={localNotes}
+        onChange={e => { setLocalNotes(e.target.value); setIsDirty(true) }}
+      />
+
+      {/* Action row */}
+      <div className="bp-action-row">
+        <button
+          className="btn-secondary"
+          disabled={copyMut.isPending}
+          onClick={() => copyMut.mutate()}
+          title="Pre-fill from previous month's saved plan"
+        >
+          {copyMut.isPending ? 'Copying…' : '↑ Copy from last month'}
+        </button>
+        <button
+          className="btn-primary"
+          disabled={!isDirty || saveMut.isPending}
+          onClick={() => saveMut.mutate()}
+        >
+          {saveMut.isPending ? 'Saving…' : isDirty ? '● Save Plan' : 'Saved'}
+        </button>
+      </div>
+    </div>
+  )
+}
 
 function CategoryBudgets({ data, onRefresh }: { data: FinanceSummaryV2; onRefresh: () => void }) {
   const [editing, setEditing] = useState(false)
@@ -891,7 +1271,7 @@ function CategoryBudgets({ data, onRefresh }: { data: FinanceSummaryV2; onRefres
                 value={budgets[key] || ''}
                 onChange={e => setBudgets(prev => ({ ...prev, [key]: parseFloat(e.target.value) || 0 }))}
               />
-              <button className="btn-ghost" style={{ fontSize: 12 }}
+              <button className="btn-ghost" style={{ fontSize: 14 }}
                 onClick={() => setBudgets(prev => {
                   const next = { ...prev }
                   delete next[key]
@@ -958,7 +1338,7 @@ function NetWorthCard({ data }: { data: FinanceSummaryV2 }) {
     <div className="net-worth-card" style={{ margin: '12px 0' }}>
       <div>
         <div className="net-worth-label">Net Worth</div>
-        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+        <div style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 2 }}>
           Savings − Debt
         </div>
       </div>
@@ -973,6 +1353,7 @@ function NetWorthCard({ data }: { data: FinanceSummaryV2 }) {
 
 export function FinanceWorkspacePage() {
   const qc = useQueryClient()
+  const [finTab, setFinTab] = useState('overview')
   const [editing, setEditing] = useState(false)
   const [editingDebts, setEditingDebts] = useState(false)
 
@@ -990,8 +1371,6 @@ export function FinanceWorkspacePage() {
     ? Math.min(100, Math.round((data.independent_monthly / data.target_independent) * 100))
     : 0
 
-  const totalDebt = (data.debts || []).reduce((s, d) => s + (d.amount_egp || 0), 0)
-
   const savingsPct = (data.savings_target_egp ?? 0) > 0
     ? Math.min(100, Math.round(((data.savings_current_egp ?? 0) / data.savings_target_egp) * 100))
     : 0
@@ -1002,10 +1381,17 @@ export function FinanceWorkspacePage() {
     qc.invalidateQueries({ queryKey: ['finance-summary-v2'] })
   }
 
+  const FIN_TABS = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'budget',   label: 'Budget'   },
+    { id: 'income',   label: 'Income'   },
+    { id: 'debts',    label: 'Debts'    },
+  ]
+
   return (
     <div className="finance-page">
 
-      {/* Section 1: Kyrgyzstan Trigger Bar */}
+      {/* Kyrgyzstan Trigger Bar — always visible, key metric */}
       <div className="unlock-bar finance-trigger-bar">
         <p className="unlock-eyebrow">Independent income target (Kyrgyzstan trigger)</p>
         <div className="unlock-numbers">
@@ -1023,152 +1409,193 @@ export function FinanceWorkspacePage() {
         </p>
       </div>
 
-      {/* Exchange Rates Widget */}
-      <ForexWidget />
+      {/* Internal tabs */}
+      <HubTabs tabs={FIN_TABS} active={finTab} onChange={setFinTab} />
 
-      {/* Section 2: 4 stat cards */}
-      <div className="stat-grid finance-stat-grid">
-        <div className="stat-card" style={{ cursor: 'default' }}>
-          <span className="stat-value">~{formatK(data.income_egp)}</span>
-          <span className="stat-label">Monthly income (EGP)</span>
-        </div>
-        <div className="stat-card" style={{ cursor: 'default' }}>
-          <span className="stat-value">~{formatK(data.monthly_expenses_egp)}</span>
-          <span className="stat-label">Monthly expenses (EGP)</span>
-        </div>
-        <div className="stat-card" style={{ cursor: 'default' }}>
-          <span className="stat-value" style={{ color: data.surplus_egp >= 0 ? 'var(--success)' : '#c0392b' }}>
-            ~{formatK(data.surplus_egp)}
-          </span>
-          <span className="stat-label">Surplus (EGP)</span>
-        </div>
-        <div className="stat-card" style={{ cursor: 'default' }}>
-          <span className="stat-value">€{fmtEur(data.independent_monthly)}</span>
-          <span className="stat-label">Independent income</span>
-        </div>
-      </div>
-
-      {/* Net Worth card */}
-      <NetWorthCard data={data} />
-
-      {/* Section 2b: Monthly budget bar */}
-      <MonthlyBudgetBar budget={data.monthly_budget_egp} expenses={Number(data.monthly_expenses_egp)} />
-
-      {/* Section 3: Monthly Summary */}
-      <div className="home-section">
-        <div className="section-header">
-          <h2 className="section-title">Monthly summary</h2>
-          {!editing && (
-            <button className="btn-ghost-sm" onClick={() => setEditing(true)}>Edit</button>
-          )}
-        </div>
-        {editing ? (
-          <EditForm
-            data={data}
-            onSaved={() => { refresh(); setEditing(false) }}
-            onCancel={() => setEditing(false)}
-          />
-        ) : (
-          <div className="finance-summary-view">
-            <div className="finance-summary-row">
-              <span className="finance-summary-key">Income</span>
-              <span className="finance-summary-val">€{fmtEur(data.income_eur)}/mo</span>
-            </div>
-            {data.income_egp_direct > 0 && (
-              <div className="finance-summary-row">
-                <span className="finance-summary-key">Direct EGP income</span>
-                <span className="finance-summary-val">{formatK(data.income_egp_direct)} EGP/mo</span>
+      {/* ── OVERVIEW TAB ─────────────────────────────────────────── */}
+      {finTab === 'overview' && (
+        <>
+          <CollapsibleSection title="Key Numbers" storageKey="fin-stats" defaultOpen={true}>
+            <div className="stat-grid finance-stat-grid">
+              <div className="stat-card" style={{ cursor: 'default' }}>
+                <span className="stat-value">~{formatK(data.income_egp)}</span>
+                <span className="stat-label">Monthly income (EGP)</span>
               </div>
-            )}
-            <div className="finance-summary-row">
-              <span className="finance-summary-key">Sources</span>
-              <span className="finance-summary-val">{data.income_sources_text || '—'}</span>
-            </div>
-            <div className="finance-summary-row">
-              <span className="finance-summary-key">Independent income</span>
-              <span className="finance-summary-val">€{fmtEur(data.independent_monthly)}/mo</span>
-            </div>
-            <div className="finance-summary-row">
-              <span className="finance-summary-key">EGP/EUR rate</span>
-              <span className="finance-summary-val">{data.exchange_rate ?? 60}</span>
-            </div>
-            <div className="finance-summary-row">
-              <span className="finance-summary-key">Monthly expenses</span>
-              <span className="finance-summary-val">{formatK(data.monthly_expenses_egp)} EGP</span>
-            </div>
-            {data.notes && (
-              <div className="finance-summary-row">
-                <span className="finance-summary-key">Notes</span>
-                <span className="finance-summary-val">{data.notes}</span>
+              <div className="stat-card" style={{ cursor: 'default' }}>
+                <span className="stat-value">~{formatK(data.monthly_expenses_egp)}</span>
+                <span className="stat-label">Monthly expenses (EGP)</span>
               </div>
-            )}
-          </div>
-        )}
-      </div>
+              <div className="stat-card" style={{ cursor: 'default' }}>
+                <span className="stat-value" style={{ color: data.surplus_egp >= 0 ? 'var(--success)' : '#c0392b' }}>
+                  ~{formatK(data.surplus_egp)}
+                </span>
+                <span className="stat-label">Surplus (EGP)</span>
+              </div>
+              <div className="stat-card" style={{ cursor: 'default' }}>
+                <span className="stat-value">€{fmtEur(data.independent_monthly)}</span>
+                <span className="stat-label">Independent income</span>
+              </div>
+            </div>
+          </CollapsibleSection>
 
-      {/* Section 3b: Savings Target */}
-      {((data.savings_target_egp ?? 0) > 0 || !editing) && (
-        <div className="home-section">
-          <div className="section-header">
-            <h2 className="section-title">Emergency fund</h2>
-            <span className="finance-summary-key" style={{ marginLeft: 'auto' }}>
-              {formatK(data.savings_current_egp ?? 0)} / {formatK(data.savings_target_egp ?? 0)} EGP
-            </span>
-          </div>
-          {(data.savings_target_egp ?? 0) > 0 ? (
-            <>
-              <div className="unlock-track" style={{ marginBottom: 6 }}>
-                <div className="unlock-fill" style={{ width: `${savingsPct}%`, background: '#16a34a' }} />
-              </div>
-              <p className="sp-hint">
-                {savingsPct}% funded
-                {data.surplus_egp > 0 && data.savings_target_egp > 0 && (
-                  ` — ~${Math.ceil(((data.savings_target_egp ?? 0) - (data.savings_current_egp ?? 0)) / data.surplus_egp)} months at current surplus`
+          <CollapsibleSection title="Net Worth" storageKey="fin-networth" defaultOpen={true}>
+            <NetWorthCard data={data} />
+          </CollapsibleSection>
+
+          <CollapsibleSection title="Monthly Budget Progress" storageKey="fin-budgetbar" defaultOpen={true}>
+            <MonthlyBudgetBar budget={data.monthly_budget_egp} expenses={Number(data.monthly_expenses_egp)} />
+          </CollapsibleSection>
+
+          <CollapsibleSection title="Exchange Rates" storageKey="fin-forex" defaultOpen={false}>
+            <ForexWidget />
+          </CollapsibleSection>
+
+          <CollapsibleSection title="What If? Forecast" storageKey="fin-forecast" defaultOpen={false}>
+            <ForecastWidget data={data} egpRate={egpRate} />
+          </CollapsibleSection>
+        </>
+      )}
+
+      {/* ── BUDGET TAB ───────────────────────────────────────────── */}
+      {finTab === 'budget' && (
+        <>
+          <CollapsibleSection title="Monthly Summary" storageKey="fin-summary" defaultOpen={true}>
+            <div className="home-section">
+              <div className="section-header">
+                {!editing && (
+                  <button className="btn-ghost-sm" onClick={() => setEditing(true)}>Edit</button>
                 )}
-              </p>
-            </>
-          ) : (
-            <p className="sp-hint">Set a savings target in Edit to track your emergency fund.</p>
+              </div>
+              {editing ? (
+                <EditForm
+                  data={data}
+                  onSaved={() => { refresh(); setEditing(false) }}
+                  onCancel={() => setEditing(false)}
+                />
+              ) : (
+                <div className="finance-summary-view">
+                  <div className="finance-summary-row">
+                    <span className="finance-summary-key">Income</span>
+                    <span className="finance-summary-val">€{fmtEur(data.income_eur)}/mo</span>
+                  </div>
+                  {data.income_egp_direct > 0 && (
+                    <div className="finance-summary-row">
+                      <span className="finance-summary-key">Direct EGP income</span>
+                      <span className="finance-summary-val">{formatK(data.income_egp_direct)} EGP/mo</span>
+                    </div>
+                  )}
+                  <div className="finance-summary-row">
+                    <span className="finance-summary-key">Sources</span>
+                    <span className="finance-summary-val">{data.income_sources_text || '—'}</span>
+                  </div>
+                  <div className="finance-summary-row">
+                    <span className="finance-summary-key">Independent income</span>
+                    <span className="finance-summary-val">€{fmtEur(data.independent_monthly)}/mo</span>
+                  </div>
+                  <div className="finance-summary-row">
+                    <span className="finance-summary-key">EGP/EUR rate</span>
+                    <span className="finance-summary-val">{data.exchange_rate ?? 60}</span>
+                  </div>
+                  <div className="finance-summary-row">
+                    <span className="finance-summary-key">Monthly expenses</span>
+                    <span className="finance-summary-val">{formatK(data.monthly_expenses_egp)} EGP</span>
+                  </div>
+                  {data.notes && (
+                    <div className="finance-summary-row">
+                      <span className="finance-summary-key">Notes</span>
+                      <span className="finance-summary-val">{data.notes}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </CollapsibleSection>
+
+          <CollapsibleSection title="Monthly Budget Planner" storageKey="fin-bp" defaultOpen={true}>
+            <BudgetPlannerSection summaryData={data} />
+          </CollapsibleSection>
+
+          <CollapsibleSection title="Category Budgets (Global Template)" storageKey="fin-catbudgets" defaultOpen={false}>
+            <CategoryBudgets data={data} onRefresh={refresh} />
+          </CollapsibleSection>
+
+          <CollapsibleSection title="Recurring Checklist" storageKey="fin-recurring" defaultOpen={true}>
+            <RecurringChecklist />
+          </CollapsibleSection>
+        </>
+      )}
+
+      {/* ── INCOME TAB ───────────────────────────────────────────── */}
+      {finTab === 'income' && (
+        <>
+          <CollapsibleSection title="Income Streams" storageKey="fin-streams" defaultOpen={true}>
+            <IncomeStreams independentMonthly={data.independent_monthly} />
+          </CollapsibleSection>
+
+          <CollapsibleSection title="Income History" storageKey="fin-history" defaultOpen={true}>
+            <IncomeHistory />
+          </CollapsibleSection>
+        </>
+      )}
+
+      {/* ── DEBTS TAB ────────────────────────────────────────────── */}
+      {finTab === 'debts' && (
+        <>
+          <CollapsibleSection title="Emergency Fund" storageKey="fin-emergency" defaultOpen={true}>
+            <div className="home-section">
+              <div className="section-header">
+                <span className="finance-summary-key" style={{ marginLeft: 'auto' }}>
+                  {formatK(data.savings_current_egp ?? 0)} / {formatK(data.savings_target_egp ?? 0)} EGP
+                </span>
+              </div>
+              {(data.savings_target_egp ?? 0) > 0 ? (
+                <>
+                  <div className="unlock-track" style={{ marginBottom: 6 }}>
+                    <div className="unlock-fill" style={{ width: `${savingsPct}%`, background: '#16a34a' }} />
+                  </div>
+                  <p className="sp-hint">
+                    {savingsPct}% funded
+                    {data.surplus_egp > 0 && data.savings_target_egp > 0 && (
+                      ` — ~${Math.ceil(((data.savings_target_egp ?? 0) - (data.savings_current_egp ?? 0)) / data.surplus_egp)} months at current surplus`
+                    )}
+                  </p>
+                </>
+              ) : (
+                <p className="sp-hint">Set a savings target in the Budget tab → Monthly Summary → Edit.</p>
+              )}
+            </div>
+          </CollapsibleSection>
+
+          <CollapsibleSection title="Debts" storageKey="fin-debts" defaultOpen={true}
+            badge={String((data.debts || []).length)}>
+            <DebtSection
+              data={data}
+              editingDebts={editingDebts}
+              setEditingDebts={setEditingDebts}
+              onRefresh={refresh}
+            />
+          </CollapsibleSection>
+
+          {!editingDebts && (data.debts || []).length > 0 && (
+            <CollapsibleSection title="Payoff Plan" storageKey="fin-payoff" defaultOpen={true}>
+              <div className="home-section">
+                <p className="sp-hint" style={{ marginBottom: 10 }}>Snowball method — smallest debt first, using full monthly surplus ({formatK(data.surplus_egp)} EGP/mo).</p>
+                <DebtPayoffPlan debts={data.debts || []} surplusEgp={data.surplus_egp} />
+              </div>
+            </CollapsibleSection>
           )}
-        </div>
+
+          <CollapsibleSection title="Debt Command Center" storageKey="fin-debt-engine" defaultOpen={false}>
+            <div className="home-section">
+              <p className="sp-hint" style={{ marginBottom: 12 }}>
+                Track individual debts with progress bars and scenario modeling.
+              </p>
+              <DebtCommandCenter />
+            </div>
+          </CollapsibleSection>
+        </>
       )}
 
-      {/* Section 4: Debts with payment logging */}
-      <DebtSection
-        data={data}
-        editingDebts={editingDebts}
-        setEditingDebts={setEditingDebts}
-        onRefresh={refresh}
-      />
-
-      {/* Section 5: Debt Payoff Plan */}
-      {!editingDebts && (data.debts || []).length > 0 && (
-        <div className="home-section">
-          <div className="section-header">
-            <h2 className="section-title">Payoff plan</h2>
-            <span className="finance-summary-key" style={{ marginLeft: 'auto' }}>
-              surplus ~{formatK(data.surplus_egp)} EGP/mo
-            </span>
-          </div>
-          <p className="sp-hint" style={{ marginBottom: 10 }}>Snowball method — smallest debt first, using full monthly surplus.</p>
-          <DebtPayoffPlan debts={data.debts || []} surplusEgp={data.surplus_egp} />
-        </div>
-      )}
-
-      {/* Section 6: Income Streams */}
-      <IncomeStreams independentMonthly={data.independent_monthly} />
-
-      {/* Section 7: Category Budgets */}
-      <CategoryBudgets data={data} onRefresh={refresh} />
-
-      {/* Section 8: Recurring checklist */}
-      <RecurringChecklist />
-
-      {/* Section 9: What If? Forecast */}
-      <ForecastWidget data={data} egpRate={egpRate} />
-
-      {/* Section 10: Income History */}
-      <IncomeHistory />
     </div>
   )
 }

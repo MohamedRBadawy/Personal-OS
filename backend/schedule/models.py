@@ -205,7 +205,19 @@ class RoutineLog(models.Model):
     block_time = models.TimeField(help_text="Start time of the routine block (e.g. 05:00).")
     status = models.CharField(max_length=10, choices=LogStatus.choices)
     actual_time = models.TimeField(null=True, blank=True)
+    actual_duration_minutes = models.PositiveIntegerField(
+        null=True, blank=True,
+        help_text="Actual minutes spent on this block."
+    )
     note = models.TextField(blank=True)
+    # Prayer-specific detail fields (null = not tracked / not a prayer block)
+    prayed_in_mosque  = models.BooleanField(null=True, blank=True, help_text="Prayed in the masjid")
+    first_row         = models.BooleanField(null=True, blank=True, help_text="Prayed in the first row")
+    takbirat_al_ihram = models.BooleanField(null=True, blank=True, help_text="Reached the opening takbeer with the imam")
+    prayed_sunnah     = models.BooleanField(null=True, blank=True, help_text="Prayed the sunnah prayers")
+    # Adhkar fields — stored on the prayer block that anchors each adhkar session
+    morning_adhkar    = models.BooleanField(null=True, blank=True, help_text="Morning adhkar completed (Fajr block)")
+    evening_adhkar    = models.BooleanField(null=True, blank=True, help_text="Evening adhkar completed (Asr block)")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

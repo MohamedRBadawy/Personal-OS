@@ -164,7 +164,7 @@ export function BlockEditPanel({ block, linkableNodes, onClose, onSaved }: Block
                 </button>
               ))}
               {daysOfWeek !== '' && (
-                <button type="button" className="btn-ghost-sm" style={{ fontSize: 11 }}
+                <button type="button" className="btn-ghost-sm" style={{ fontSize: 13 }}
                   onClick={() => setDaysOfWeek('')}>
                   every day
                 </button>
@@ -281,7 +281,7 @@ export function BlockEditPanel({ block, linkableNodes, onClose, onSaved }: Block
 
         {/* Footer */}
         <div className="side-panel-footer">
-          {error && <span style={{ fontSize: 12, color: '#dc2626' }}>{error}</span>}
+          {error && <span style={{ fontSize: 14, color: '#dc2626' }}>{error}</span>}
           <div style={{ flex: 1 }} />
           <button className="btn-ghost" onClick={onClose} disabled={saving}>Cancel</button>
           <button className="btn-primary" onClick={handleSave} disabled={saving || !label.trim()}>

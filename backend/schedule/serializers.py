@@ -76,3 +76,29 @@ class ScheduledEntrySerializer(serializers.ModelSerializer):
 
     def get_node_title(self, obj):
         return obj.node.title if obj.node_id else None
+
+    def validate(self, data):
+        """Prevent overlapping scheduled entries on the same date."""
+        date     = data.get('date',             getattr(self.instance, 'date',             None))
+        time     = data.get('time',             getattr(self.instance, 'time',             None))
+        duration = data.get('duration_minutes', getattr(self.instance, 'duration_minutes', 60))
+
+        if date and time:
+            start_min = time.hour * 60 + time.minute
+            end_min   = start_min + duration
+
+            qs = ScheduledEntry.objects.filter(date=date)
+            if self.instance:
+                qs = qs.exclude(pk=self.instance.pk)
+
+            for entry in qs:
+                e_start = entry.time.hour * 60 + entry.time.minute
+                e_end   = e_start + entry.duration_minutes
+                if start_min < e_end and end_min > e_start:
+                    conflict_label = (
+                        entry.node.title if entry.node_id else (entry.label or 'another task')
+                    )
+                    raise serializers.ValidationError(
+                        f"Time conflict with '{conflict_label}' at {entry.time.strftime('%H:%M')}."
+                    )
+        return data

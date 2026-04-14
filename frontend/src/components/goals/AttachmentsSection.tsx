@@ -115,14 +115,14 @@ export function AttachmentsSection({ nodeId }: { nodeId: string }) {
           )}
 
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-            <button className="btn-ghost" style={{ fontSize: 12 }} onClick={() => setShowForm(false)}>Cancel</button>
-            <button className="btn-primary" style={{ fontSize: 12 }} disabled={saving || !aTitle.trim()} onClick={handleAdd}>
+            <button className="btn-ghost" style={{ fontSize: 14 }} onClick={() => setShowForm(false)}>Cancel</button>
+            <button className="btn-primary" style={{ fontSize: 14 }} disabled={saving || !aTitle.trim()} onClick={handleAdd}>
               {saving ? 'Saving…' : 'Add'}
             </button>
           </div>
         </div>
       ) : (
-        <button className="btn-ghost-sm" style={{ fontSize: 12 }} onClick={() => setShowForm(true)}>
+        <button className="btn-ghost-sm" style={{ fontSize: 14 }} onClick={() => setShowForm(true)}>
           + Add attachment
         </button>
       )}

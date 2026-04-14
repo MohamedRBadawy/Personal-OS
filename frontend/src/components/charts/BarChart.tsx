@@ -48,13 +48,13 @@ export function BarChart({
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(17,50,62,0.07)" vertical={false} />
           <XAxis
             dataKey="label"
-            tick={{ fontSize: 10, fill: 'var(--text-muted)', fontFamily: 'var(--mono)' }}
+            tick={{ fontSize: 12, fill: 'var(--text-muted)', fontFamily: 'var(--mono)' }}
             tickLine={false}
             axisLine={false}
           />
           <YAxis
             domain={maxValue ? [0, maxValue] : undefined}
-            tick={{ fontSize: 10, fill: 'var(--text-muted)', fontFamily: 'var(--mono)' }}
+            tick={{ fontSize: 12, fill: 'var(--text-muted)', fontFamily: 'var(--mono)' }}
             tickLine={false}
             axisLine={false}
             tickCount={4}
@@ -65,7 +65,7 @@ export function BarChart({
               background: 'var(--surface)',
               border: '1px solid var(--border)',
               borderRadius: 12,
-              fontSize: 12,
+              fontSize: 14,
               fontFamily: 'var(--sans)',
               boxShadow: 'var(--shadow)',
             }}

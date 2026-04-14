@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { BottomNav } from '../components/BottomNav'
 import { ChatPanel } from '../components/chat/ChatPanel'
 import { CommandPalette } from '../components/CommandPalette'
+import { AlertPanel } from '../components/AlertPanel'
 import { ExportButton } from '../components/ExportButton'
 import { QuickCaptureModal } from '../components/QuickCaptureModal'
 import {
@@ -26,33 +27,27 @@ const navGroups: NavGroup[] = [
   {
     label: 'Overview',
     items: [
-      { href: '/', label: 'Command Center' },
-      { href: '/about', label: 'About Me' },
-      { href: '/life-plan', label: 'Life Plan' },
+      { href: '/',        label: 'Command Center' },
+      { href: '/profile', label: 'Profile'        },
     ],
   },
   {
     label: 'Execute',
     items: [
-      { href: '/goals', label: 'Goals' },
-      { href: '/pipeline', label: 'Pipeline' },
-      { href: '/marketing', label: 'Marketing' },
-      { href: '/routine', label: 'Daily Routine' },
-      { href: '/schedule', label: 'Day Schedule' },
+      { href: '/daily',    label: 'Daily Check-in' },
+      { href: '/goals',    label: 'Goals'          },
+      { href: '/business', label: 'Business'       },
+      { href: '/schedule', label: 'Schedule'       },
     ],
   },
   {
     label: 'Life',
     items: [
-      { href: '/finance', label: 'Finance' },
-      { href: '/health', label: 'Health' },
-      { href: '/habits', label: 'Habits' },
-      { href: '/mood', label: 'Mood' },
-      { href: '/spiritual', label: 'Spiritual' },
-      { href: '/journal', label: 'Journal' },
-      { href: '/contacts', label: 'Contacts' },
-      { href: '/learning', label: 'Learning' },
-      { href: '/ideas', label: 'Ideas & Thinking' },
+      { href: '/finance',  label: 'Finance'       },
+      { href: '/health',   label: 'Health'        },
+      { href: '/journal',  label: 'Journal'       },
+      { href: '/contacts', label: 'Contacts'      },
+      { href: '/learn',    label: 'Learn & Ideas' },
     ],
   },
   {
@@ -60,6 +55,12 @@ const navGroups: NavGroup[] = [
     items: [
       { href: '/analytics', label: 'Analytics' },
       { href: '/profile', label: 'Progress & Stats' },
+    ],
+  },
+  {
+    label: 'Tools',
+    items: [
+      { href: '/data-bridge', label: 'AI Data Bridge' },
     ],
   },
 ]
@@ -192,6 +193,7 @@ export function AppShell({ children }: PropsWithChildren) {
             <p className="eyebrow">Home base</p>
             <h2 className="header-title">{activeItem?.label ?? 'Command Center'}</h2>
           </div>
+          <AlertPanel />
         </header>
 
         <main className="page-grid">{children}</main>

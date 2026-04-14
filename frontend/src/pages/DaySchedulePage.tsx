@@ -8,8 +8,10 @@ import {
   createScheduledEntry,
   updateScheduledEntry,
   deleteScheduledEntry,
+  listGCalEvents,
+  suggestScheduleBlocks,
 } from '../lib/api'
-import type { Node, RoutineBlock, ScheduledEntry, ScheduledEntryPayload } from '../lib/types'
+import type { GCalEvent, Node, RoutineBlock, ScheduledEntry, ScheduledEntryPayload, ScheduleSuggestion } from '../lib/types'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -146,6 +148,7 @@ function AddEntryModal({
   const [duration, setDuration]       = useState(initialDuration)
   const [selectedNode, setSelectedNode] = useState<string>('')
   const [label, setLabel]             = useState('')
+  const [conflictError, setConflictError] = useState<string | null>(null)
 
   const createMut = useMutation({
     mutationFn: () => {
@@ -159,6 +162,9 @@ function AddEntryModal({
       return createScheduledEntry(payload)
     },
     onSuccess: onSaved,
+    onError: (err: unknown) => {
+      setConflictError((err as Error).message ?? 'Could not save — time conflict with another task.')
+    },
   })
 
   const canSave = !createMut.isPending && (!!selectedNode || !!label.trim())
@@ -174,12 +180,12 @@ function AddEntryModal({
         <div className="form-group">
           <label className="form-label">Time</label>
           <input type="time" className="form-input" value={time}
-            onChange={e => setTime(e.target.value)} />
+            onChange={e => { setTime(e.target.value); setConflictError(null) }} />
         </div>
         <div className="form-group">
           <label className="form-label">Duration (minutes)</label>
           <input type="number" className="form-input" value={duration} min={15} step={15}
-            onChange={e => setDuration(Number(e.target.value))} />
+            onChange={e => { setDuration(Number(e.target.value)); setConflictError(null) }} />
         </div>
         <div className="form-group">
           <label className="form-label">Task from Goals</label>
@@ -198,8 +204,8 @@ function AddEntryModal({
               onChange={e => setLabel(e.target.value)} />
           </div>
         )}
-        {createMut.isError && (
-          <p className="form-error">Failed to save — please try again.</p>
+        {conflictError && (
+          <p className="ds-conflict-error">⚠ {conflictError}</p>
         )}
         <div className="modal-actions">
           <button className="btn-secondary" onClick={onClose}>Cancel</button>
@@ -212,6 +218,27 @@ function AddEntryModal({
   )
 }
 
+// ── Conflict detection ────────────────────────────────────────────────────────
+
+function findConflictIds(entries: ScheduledEntry[]): Set<number> {
+  const ids = new Set<number>()
+  for (let i = 0; i < entries.length; i++) {
+    const a      = entries[i]
+    const aStart = timeToMinutes(a.time.slice(0, 5))
+    const aEnd   = aStart + a.duration_minutes
+    for (let j = i + 1; j < entries.length; j++) {
+      const b      = entries[j]
+      const bStart = timeToMinutes(b.time.slice(0, 5))
+      const bEnd   = bStart + b.duration_minutes
+      if (aStart < bEnd && bStart < aEnd) {
+        ids.add(a.id)
+        ids.add(b.id)
+      }
+    }
+  }
+  return ids
+}
+
 // ── Shared Timeline Column ────────────────────────────────────────────────────
 // Used both in Day view (full width) and Week view (one column per day).
 
@@ -219,6 +246,7 @@ function TimelineColumn({
   dateStr,
   routineBlocks,
   entries,
+  gcalEvents = [],
   nowMinutes,
   isToday,
   onAddEntry,
@@ -229,6 +257,7 @@ function TimelineColumn({
   dateStr: string
   routineBlocks: RoutineBlock[]
   entries: ScheduledEntry[]
+  gcalEvents?: GCalEvent[]
   nowMinutes: number
   isToday: boolean
   onAddEntry: (dateStr: string, time: string, duration: number) => void
@@ -239,6 +268,7 @@ function TimelineColumn({
   const activeBlocks    = routineBlocks.filter(b => isBlockActiveOnDate(b, dateStr))
   const availableSlots  = getAvailableSlots(routineBlocks, entries, dateStr)
   const showNow         = isToday && nowMinutes >= START_HOUR * 60 && nowMinutes < END_HOUR * 60
+  const conflictIds     = findConflictIds(entries)
 
   return (
     <div className="ds-events-col" style={{ height: TIMELINE_HEIGHT }}>
@@ -286,30 +316,51 @@ function TimelineColumn({
         </div>
       ))}
 
-      {/* Scheduled entries */}
-      {entries.map(entry => (
+      {/* Google Calendar events */}
+      {gcalEvents.filter(ev => !ev.all_day && ev.start_time).map(ev => (
         <div
-          key={entry.id}
-          className={`ds-block ds-block-entry${entry.done ? ' ds-done' : ''}`}
+          key={ev.id}
+          className="ds-block ds-block-gcal"
           style={{
-            top:    minuteToY(timeToMinutes(entry.time.slice(0, 5))),
-            height: Math.max(entry.duration_minutes * PX_PER_MIN, 24),
+            top:    minuteToY(timeToMinutes(ev.start_time!)),
+            height: Math.max(ev.duration_minutes * PX_PER_MIN, 20),
           }}
-          title={`${entry.time.slice(0, 5)} — ${entry.node_title || entry.label || 'Task'}`}
+          title={`${ev.start_time} — ${ev.title} (Google Calendar)`}
         >
-          <span className="ds-block-time">{entry.time.slice(0, 5)}</span>
-          <span className="ds-block-label">{entry.node_title || entry.label || 'Task'}</span>
-          {!compact && <span className="ds-block-dur">{formatDuration(entry.duration_minutes)}</span>}
-          <div className="ds-entry-actions">
-            <button className="ds-done-btn" title={entry.done ? 'Undo' : 'Done'}
-              onClick={() => onDone(entry.id, !entry.done)}>
-              {entry.done ? '↩' : '✓'}
-            </button>
-            <button className="ds-del-btn" title="Remove"
-              onClick={() => onDelete(entry.id)}>×</button>
-          </div>
+          <span className="ds-block-time">{ev.start_time}</span>
+          <span className="ds-block-label">📅 {ev.title}</span>
+          {!compact && <span className="ds-block-dur">{formatDuration(ev.duration_minutes)}</span>}
         </div>
       ))}
+
+      {/* Scheduled entries */}
+      {entries.map(entry => {
+        const hasConflict = conflictIds.has(entry.id)
+        return (
+          <div
+            key={entry.id}
+            className={`ds-block ds-block-entry${entry.done ? ' ds-done' : ''}${hasConflict ? ' ds-block-conflict' : ''}`}
+            style={{
+              top:    minuteToY(timeToMinutes(entry.time.slice(0, 5))),
+              height: Math.max(entry.duration_minutes * PX_PER_MIN, 24),
+            }}
+            title={`${entry.time.slice(0, 5)} — ${entry.node_title || entry.label || 'Task'}${hasConflict ? ' ⚠ Time conflict' : ''}`}
+          >
+            <span className="ds-block-time">{entry.time.slice(0, 5)}</span>
+            <span className="ds-block-label">{entry.node_title || entry.label || 'Task'}</span>
+            {hasConflict && <span className="ds-conflict-badge" title="Time conflict">⚠</span>}
+            {!compact && <span className="ds-block-dur">{formatDuration(entry.duration_minutes)}</span>}
+            <div className="ds-entry-actions">
+              <button className="ds-done-btn" title={entry.done ? 'Undo' : 'Done'}
+                onClick={() => onDone(entry.id, !entry.done)}>
+                {entry.done ? '↩' : '✓'}
+              </button>
+              <button className="ds-del-btn" title="Remove"
+                onClick={() => onDelete(entry.id)}>×</button>
+            </div>
+          </div>
+        )
+      })}
 
       {/* Now line */}
       {showNow && (
@@ -409,6 +460,11 @@ export default function DaySchedulePage() {
   const [selectedDate, setSelectedDate] = useState(today)
   const [addModal, setAddModal]   = useState<ModalState | null>(null)
 
+  // AI schedule suggestions
+  const [aiSuggestions, setAiSuggestions]       = useState<ScheduleSuggestion[]>([])
+  const [aiSuggestLoading, setAiSuggestLoading] = useState(false)
+  const [aiSuggestError, setAiSuggestError]     = useState<string | null>(null)
+
   const qc = useQueryClient()
 
   // ── Data queries ──
@@ -424,6 +480,14 @@ export default function DaySchedulePage() {
     enabled:  view === 'day',
   })
 
+  // Google Calendar events (silently empty if not configured)
+  const gcalQ = useQuery({
+    queryKey: ['gcal-events', selectedDate],
+    queryFn:  () => listGCalEvents(selectedDate),
+    enabled:  view === 'day',
+    staleTime: 5 * 60 * 1000,  // treat as fresh for 5 minutes
+  })
+
   // Week-view entries (one range fetch for all 7 days)
   const weekEntriesQ = useQuery({
     queryKey: ['scheduled-entries', 'week', weekDates[0]],
@@ -431,9 +495,10 @@ export default function DaySchedulePage() {
     enabled:  view === 'week',
   })
 
-  const routineBlocks = blocksQ.data ?? []
-  const allNodes      = nodesQ.data  ?? []
+  const routineBlocks = blocksQ.data  ?? []
+  const allNodes      = nodesQ.data   ?? []
   const dayEntries    = dayEntriesQ.data ?? []
+  const gcalEvents    = gcalQ.data    ?? []
 
   // Build date→entries map for week view
   const entriesByDate = useMemo<Map<string, ScheduledEntry[]>>(() => {
@@ -498,6 +563,24 @@ export default function DaySchedulePage() {
   const activeBlocksToday = routineBlocks.filter(b => isBlockActiveOnDate(b, selectedDate))
   const availSlotsToday   = getAvailableSlots(routineBlocks, dayEntries, selectedDate)
 
+  async function handleAISuggest() {
+    setAiSuggestLoading(true)
+    setAiSuggestError(null)
+    try {
+      const res = await suggestScheduleBlocks(selectedDate)
+      setAiSuggestions(res.suggestions)
+      if (res.suggestions.length === 0) setAiSuggestError('No suggestions — add more tasks or free up some time slots.')
+    } catch {
+      setAiSuggestError('Could not load suggestions. Try again.')
+    } finally {
+      setAiSuggestLoading(false)
+    }
+  }
+
+  function dismissSuggestion(idx: number) {
+    setAiSuggestions(prev => prev.filter((_, i) => i !== idx))
+  }
+
   return (
     <div className="ds-page">
 
@@ -527,7 +610,20 @@ export default function DaySchedulePage() {
             {activeBlocksToday.length} block{activeBlocksToday.length !== 1 ? 's' : ''} ·{' '}
             {dayEntries.length} scheduled ·{' '}
             {availSlotsToday.length} free slot{availSlotsToday.length !== 1 ? 's' : ''}
+            {gcalEvents.length > 0 && ` · 📅 ${gcalEvents.length} meeting${gcalEvents.length !== 1 ? 's' : ''}`}
           </span>
+        )}
+
+        {/* AI Schedule Suggestions button (day view only) */}
+        {view === 'day' && (
+          <button
+            className="btn-ghost-sm ds-ai-suggest-btn"
+            onClick={handleAISuggest}
+            disabled={aiSuggestLoading}
+            title="Get AI suggestions for scheduling your top tasks into free slots"
+          >
+            {aiSuggestLoading ? '…' : '💡 AI Suggest'}
+          </button>
         )}
         {view === 'week' && (
           <span className="ds-header-info">
@@ -539,6 +635,38 @@ export default function DaySchedulePage() {
       {/* ── Content ── */}
       {view === 'day' && (
         <div className="ds-body">
+
+          {/* AI suggestion cards */}
+          {(aiSuggestions.length > 0 || aiSuggestError) && (
+            <div className="ds-ai-banner">
+              {aiSuggestError && (
+                <p className="ds-ai-error">{aiSuggestError}</p>
+              )}
+              {aiSuggestions.map((s, i) => (
+                <div key={i} className="ds-ai-card">
+                  <div className="ds-ai-card-body">
+                    <div className="ds-ai-card-title">
+                      <strong>{s.node_title}</strong>
+                      <span className="ds-ai-card-time"> @ {s.start_time} ({s.duration_minutes}m)</span>
+                    </div>
+                    <p className="ds-ai-card-reason">{s.reason}</p>
+                  </div>
+                  <div className="ds-ai-card-actions">
+                    <button
+                      className="btn-sm"
+                      onClick={() => {
+                        setAddModal({ date: selectedDate, time: s.start_time, duration: s.duration_minutes })
+                        dismissSuggestion(i)
+                      }}
+                    >
+                      Add to schedule
+                    </button>
+                    <button className="btn-ghost-sm" onClick={() => dismissSuggestion(i)}>✕</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Day timeline */}
           <div className="ds-timeline-wrap">
@@ -553,6 +681,7 @@ export default function DaySchedulePage() {
               dateStr={selectedDate}
               routineBlocks={routineBlocks}
               entries={dayEntries}
+              gcalEvents={gcalEvents}
               nowMinutes={nowMinutes}
               isToday={selectedDate === today}
               onAddEntry={(d, time, dur) => setAddModal({ date: d, time, duration: dur })}

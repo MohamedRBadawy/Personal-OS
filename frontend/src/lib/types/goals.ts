@@ -174,6 +174,7 @@ export type Node = {
   created_at: string
   updated_at: string
   children?: Node[]
+  dependent_count?: number
 }
 
 export type NodeCreatePayload = {

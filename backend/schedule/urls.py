@@ -10,7 +10,9 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from schedule.views import (
+    AISuggestScheduleView,
     BlockStreakView,
+    GCalEventsView,
     RoutineAnalyticsView,
     RoutineBriefingView,
     RoutineBlockViewSet,
@@ -41,5 +43,7 @@ urlpatterns = [
     path("routine-analytics/", RoutineAnalyticsView.as_view(), name="routine-analytics"),
     path("routine-notes/", RoutineNotesView.as_view(), name="routine-notes"),
     path("routine-briefing/", RoutineBriefingView.as_view(), name="routine-briefing"),
+    path("gcal-events/", GCalEventsView.as_view(), name="gcal-events"),
+    path("ai-suggest/", AISuggestScheduleView.as_view(), name="schedule-ai-suggest"),
     path("", include(router.urls)),
 ]

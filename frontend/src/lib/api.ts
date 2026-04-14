@@ -82,6 +82,14 @@ import type {
   CategoryBreakdownItem,
   RecurringChecklistItem,
   NodePriorityEntry,
+  MonthlyBudgetPlan,
+  MonthlyBudgetPlanPayload,
+  MealPlan,
+  MealLog,
+  MealTotals,
+  MealTemplate,
+  FoodItem,
+  MealIngredient,
 } from './types'
 
 export function resolveApiBaseUrl(rawValue: string | undefined = import.meta.env.VITE_API_BASE_URL) {
@@ -122,7 +130,16 @@ async function request<T>(path: string, init?: RequestInit) {
   }
 
   if (!response.ok) {
-    throw new Error(`Request failed (${response.status})`)
+    let errMsg = `Request failed (${response.status})`
+    try {
+      const body = await response.json()
+      if (Array.isArray(body.non_field_errors) && body.non_field_errors[0]) {
+        errMsg = body.non_field_errors[0]
+      } else if (typeof body.detail === 'string') {
+        errMsg = body.detail
+      }
+    } catch { /* ignore parse failure */ }
+    throw new Error(errMsg)
   }
 
   if (response.status === 204) {
@@ -239,6 +256,25 @@ export function getMonthlyChart(): Promise<MonthlyChartPoint[]> {
 
 export function getCategoryBreakdown(month?: string): Promise<CategoryBreakdownItem[]> {
   return request<CategoryBreakdownItem[]>(`/finance/category-breakdown/${month ? '?month=' + month : ''}`)
+}
+
+export function getBudgetPlan(month: string): Promise<MonthlyBudgetPlan> {
+  return request<MonthlyBudgetPlan>(`/finance/budget-plans/${month}/`)
+}
+
+export async function upsertBudgetPlan(month: string, payload: MonthlyBudgetPlanPayload): Promise<MonthlyBudgetPlan> {
+  try {
+    return await request<MonthlyBudgetPlan>(`/finance/budget-plans/${month}/`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    })
+  } catch {
+    // Plan doesn't exist yet for this month — create it
+    return await request<MonthlyBudgetPlan>('/finance/budget-plans/', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  }
 }
 
 export function getRecurringChecklist(): Promise<RecurringChecklistItem[]> {
@@ -649,7 +685,16 @@ export function getRoutineLogs(date: string) {
   return request<RoutineLogEntry[]>(`/schedule/routine-log/?date=${date}`)
 }
 
-export function saveRoutineLog(entry: { date: string; block_time: string; status: string; actual_time?: string; note?: string }) {
+export function saveRoutineLog(entry: {
+  date: string; block_time: string; status: string;
+  actual_time?: string; actual_duration_minutes?: number | null; note?: string;
+  prayed_in_mosque?: boolean | null;
+  first_row?: boolean | null;
+  takbirat_al_ihram?: boolean | null;
+  prayed_sunnah?: boolean | null;
+  morning_adhkar?: boolean | null;
+  evening_adhkar?: boolean | null;
+}) {
   return request<RoutineLogEntry>('/schedule/routine-log/', {
     method: 'POST',
     body: JSON.stringify(entry),
@@ -789,6 +834,14 @@ export function deleteLearningItem(id: number) {
   return request<void>(`/goals/learning/${id}/`, { method: 'DELETE' })
 }
 
+export function getDueLearningReviews() {
+  return request<import('./types').LearningItem[]>('/goals/learning/due_review/')
+}
+
+export function markLearningReviewed(id: number): Promise<{ reviewed_count: number; next_review_at: string; days_until_next: number }> {
+  return request(`/goals/learning/${id}/reviewed/`, { method: 'POST' })
+}
+
 // ── Contacts ──────────────────────────────────────────────────────────────────
 
 export function listContacts(relation?: string) {
@@ -907,6 +960,33 @@ export function getGoalsAnalyticsSummary() {
   return request<GoalsAnalyticsSummary>('/goals/nodes/analytics_summary/')
 }
 
+export type NodeVelocityPayload = {
+  weeks: { week_start: string; completed_count: number }[]
+  total_12w: number
+  trend: 'up' | 'down'
+}
+
+export type FunnelStage = {
+  stage: string
+  label: string
+  count: number
+  conversion_from_prev: number | null
+}
+
+export type GoalFunnelPayload = {
+  stages: FunnelStage[]
+  total_active: number
+  total_all: number
+}
+
+export function getNodeVelocity(): Promise<NodeVelocityPayload> {
+  return request<NodeVelocityPayload>('/goals/nodes/velocity/')
+}
+
+export function getGoalFunnel(): Promise<GoalFunnelPayload> {
+  return request<GoalFunnelPayload>('/goals/nodes/funnel/')
+}
+
 // ── Time Logs ─────────────────────────────────────────────────────────────────
 
 export function listTimeLogs(nodeId: string) {
@@ -960,6 +1040,44 @@ export function deleteScheduledEntry(id: number) {
   return request<void>(`/schedule/scheduled-entries/${id}/`, { method: 'DELETE' })
 }
 
+export function listGCalEvents(date: string) {
+  return request<import('./types').GCalEvent[]>(`/schedule/gcal-events/?date=${date}`)
+}
+
+// ── AI Schedule Suggester ─────────────────────────────────────────────────────
+
+export interface ScheduleSuggestion {
+  node_id: number | null
+  node_title: string
+  start_time: string        // "HH:MM"
+  duration_minutes: number
+  reason: string
+}
+
+export function suggestScheduleBlocks(date: string) {
+  return request<{ suggestions: ScheduleSuggestion[]; date: string }>(
+    `/schedule/ai-suggest/?date=${date}`,
+    { method: 'POST' }
+  )
+}
+
+// ── Gmail → Contacts ──────────────────────────────────────────────────────────
+
+export interface GmailThread {
+  id: string
+  subject: string
+  from_address: string
+  date: string
+  message_count: number
+  snippet: string
+}
+
+export function listContactGmailThreads(contactId: number) {
+  return request<{ threads: GmailThread[]; email: string; note?: string }>(
+    `/contacts/contacts/${contactId}/gmail-threads/`
+  )
+}
+
 // ── About Me / Self Profile ───────────────────────────────────────────────────
 
 export function getProfile(): Promise<import('./types').UserProfile> {
@@ -987,5 +1105,439 @@ export function updateExchangeRates(data: { eur_to_egp?: number; eur_to_usd?: nu
   return request<ExchangeRates>('/finance/exchange-rates/', {
     method: 'PATCH',
     body: JSON.stringify(data),
+  })
+}
+
+// ── Meal Plans ────────────────────────────────────────────────────────────────
+
+export function listMealPlans(date: string): Promise<MealPlan[]> {
+  return request<MealPlan[]>(`/health/meal-plans/?date=${date}`)
+}
+
+export function createMealPlan(data: Partial<MealPlan>): Promise<MealPlan> {
+  return request<MealPlan>('/health/meal-plans/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export function updateMealPlan(id: string, data: Partial<MealPlan>): Promise<MealPlan> {
+  return request<MealPlan>(`/health/meal-plans/${id}/`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  })
+}
+
+export function deleteMealPlan(id: string): Promise<void> {
+  return request<void>(`/health/meal-plans/${id}/`, { method: 'DELETE' })
+}
+
+export function getMealTotals(date: string): Promise<MealTotals> {
+  return request<MealTotals>(`/health/meal-plans/totals/?date=${date}`)
+}
+
+export function saveMealLog(data: {
+  plan?: string; date: string; slot: string; status: string; notes?: string
+}): Promise<MealLog> {
+  return request<MealLog>('/health/meal-logs/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export function updateMealLog(id: string, data: Partial<MealLog>): Promise<MealLog> {
+  return request<MealLog>(`/health/meal-logs/${id}/`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  })
+}
+
+// ── Meal Templates ─────────────────────────────────────────────────────────────
+
+export function listMealTemplates(): Promise<MealTemplate[]> {
+  return request<MealTemplate[]>('/health/meal-templates/')
+}
+
+export function createMealTemplate(data: Partial<MealTemplate>): Promise<MealTemplate> {
+  return request<MealTemplate>('/health/meal-templates/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export function deleteMealTemplate(id: string): Promise<void> {
+  return request<void>(`/health/meal-templates/${id}/`, { method: 'DELETE' })
+}
+
+export function copyMealDay(fromDate: string, toDate: string): Promise<MealPlan[]> {
+  return request<MealPlan[]>('/health/meal-plans/copy-day/', {
+    method: 'POST',
+    body: JSON.stringify({ from_date: fromDate, to_date: toDate }),
+  })
+}
+
+export function getMealWeekSummary(start: string): Promise<MealPlan[]> {
+  return request<MealPlan[]>(`/health/meal-plans/week-summary/?start=${start}`)
+}
+
+// ── Food Library ───────────────────────────────────────────────────────────────
+
+export function listFoodItems(search?: string, category?: string): Promise<FoodItem[]> {
+  const params: string[] = []
+  if (search) params.push(`search=${encodeURIComponent(search)}`)
+  if (category) params.push(`category=${encodeURIComponent(category)}`)
+  const qs = params.length ? `?${params.join('&')}` : ''
+  return request<FoodItem[]>(`/health/food-items/${qs}`)
+}
+
+export function createFoodItem(data: Partial<FoodItem>): Promise<FoodItem> {
+  return request<FoodItem>('/health/food-items/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export function updateFoodItem(id: string, data: Partial<FoodItem>): Promise<FoodItem> {
+  return request<FoodItem>(`/health/food-items/${id}/`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  })
+}
+
+export function deleteFoodItem(id: string): Promise<void> {
+  return request<void>(`/health/food-items/${id}/`, { method: 'DELETE' })
+}
+
+// ── Meal Ingredients ──────────────────────────────────────────────────────────
+
+export function createMealIngredient(data: Partial<MealIngredient>): Promise<MealIngredient> {
+  return request<MealIngredient>('/health/meal-ingredients/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export function updateMealIngredient(id: string, data: Partial<MealIngredient>): Promise<MealIngredient> {
+  return request<MealIngredient>(`/health/meal-ingredients/${id}/`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  })
+}
+
+export function deleteMealIngredient(id: string): Promise<void> {
+  return request<void>(`/health/meal-ingredients/${id}/`, { method: 'DELETE' })
+}
+
+// ── Daily Check-in status ─────────────────────────────────────────────────────
+
+export type CheckInStatus = {
+  date: string
+  morning_done: boolean
+  evening_done: boolean
+  morning_completed_at: string | null
+  evening_completed_at: string | null
+}
+
+export type EveningCheckInPayload = {
+  mood_score?: number | null
+  gratitude_note?: string
+  evening_wins?: string
+  tomorrow_focus?: string
+}
+
+// ── Outreach Pipeline / AI Drafting ──────────────────────────────────────────
+
+export type DraftMessagePayload = { channel?: string; refresh?: boolean }
+export type DraftMessageResult = { draft: string; cached: boolean }
+
+export function draftOpportunityMessage(id: string, payload: DraftMessagePayload = {}): Promise<DraftMessageResult> {
+  return request<DraftMessageResult>(`/pipeline/opportunities/${id}/draft_message/`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function markOutreachSent(id: string, followupDays = 7): Promise<{ outreach_count: number; next_followup_date: string }> {
+  return request<{ outreach_count: number; next_followup_date: string }>(
+    `/pipeline/opportunities/${id}/mark_outreach_sent/`,
+    { method: 'POST', body: JSON.stringify({ followup_days: followupDays }) },
+  )
+}
+
+export function getDuePipelineFollowups() {
+  return request<import('./types').Opportunity[]>('/pipeline/opportunities/due_followups/')
+}
+
+// ── Debt Payoff Engine ────────────────────────────────────────────────────────
+
+export type DebtEntry = {
+  id: string
+  creditor: string
+  original_amount: string
+  remaining_amount: string
+  monthly_payment: string
+  paid_off: boolean
+  priority: number
+  notes: string
+  paid_pct: number
+  created_at: string
+  updated_at: string
+}
+
+export type DebtScenario = {
+  label: string
+  monthly_egp: number
+  months: number | null
+  payoff_date: string | null
+}
+
+export type DebtOverview = {
+  debts: DebtEntry[]
+  total_remaining_egp: number
+  total_monthly_payment_egp: number
+  surplus_egp: number
+  scenarios: Record<string, DebtScenario>
+}
+
+export function getDebtOverview(extraEgp?: number): Promise<DebtOverview> {
+  const qs = extraEgp ? `?extra_egp=${extraEgp}` : ''
+  return request<DebtOverview>(`/finance/debts/overview/${qs}`)
+}
+
+export function listDebts(): Promise<DebtEntry[]> {
+  return request<DebtEntry[]>('/finance/debts/')
+}
+
+export function createDebt(payload: Partial<DebtEntry>): Promise<DebtEntry> {
+  return request<DebtEntry>('/finance/debts/', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updateDebt(id: string, payload: Partial<DebtEntry>): Promise<DebtEntry> {
+  return request<DebtEntry>(`/finance/debts/${id}/`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function deleteDebt(id: string): Promise<void> {
+  return request<void>(`/finance/debts/${id}/`, { method: 'DELETE' })
+}
+
+// ── Kyrgyzstan Readiness Score ────────────────────────────────────────────────
+
+export type ReadinessBreakdownItem = {
+  score: number
+  max: number
+  label: string
+}
+
+export type ReadinessScore = {
+  date: string
+  total_score: number
+  breakdown: Record<string, ReadinessBreakdownItem>
+  snapshot_data: Record<string, number | string>
+  history: { date: string; score: number }[]
+  projected_date: string | null
+}
+
+export function getReadinessScore(): Promise<ReadinessScore> {
+  return request<ReadinessScore>('/core/readiness/')
+}
+
+// ── Daily Check-in status ─────────────────────────────────────────────────────
+
+export function getCheckinTodayStatus(): Promise<CheckInStatus> {
+  return request<CheckInStatus>('/core/checkin/today-status/')
+}
+
+export function submitEveningCheckIn(payload: EveningCheckInPayload): Promise<{ checkin_id: string; evening_done: boolean }> {
+  return request<{ checkin_id: string; evening_done: boolean }>('/core/checkin/today-status/', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+// ── Focus Mode ────────────────────────────────────────────────────────────────
+
+export type FocusBlock = {
+  label: string
+  type: string
+  time: string
+  duration_minutes: number
+}
+
+export type FocusNode = {
+  id: string
+  title: string
+  type: string
+  leverage_score: number
+  dependent_count: number
+}
+
+export type FocusContext = {
+  current_block: FocusBlock | null
+  next_block: FocusBlock | null
+  top_node: FocusNode | null
+  morning_done: boolean
+  evening_done: boolean
+  next_prayer: string | null
+  minutes_to_prayer: number | null
+  instruction: string
+}
+
+export function getFocusContext(): Promise<FocusContext> {
+  return request<FocusContext>('/core/focus/')
+}
+
+// ── App Settings / Bad Day Mode ───────────────────────────────────────────────
+
+export type AppSettings = {
+  id: string
+  name: string
+  bad_day_mode: boolean
+  timezone: string
+}
+
+export function listAppSettings(): Promise<{ results: AppSettings[] }> {
+  return request<{ results: AppSettings[] }>('/core/settings/')
+}
+
+export function toggleBadDayMode(id: string): Promise<{ bad_day_mode: boolean }> {
+  return request<{ bad_day_mode: boolean }>(`/core/settings/${id}/toggle_bad_day/`, { method: 'POST' })
+}
+
+// ── Habit & Spiritual Heatmaps ────────────────────────────────────────────────
+
+export type HabitHeatmapPayload = {
+  habits: { id: string; name: string }[]
+  grid: Record<string, Record<string, boolean>>   // habit_id → date → done
+  date_range: { start: string; end: string }
+}
+
+export type SpiritualHeatmapPayload = {
+  dates: string[]
+  grid: Record<string, { fajr: boolean; dhuhr: boolean; asr: boolean; maghrib: boolean; isha: boolean }>
+  stats: {
+    full_prayer_days: number
+    prayer_counts: Record<string, number>
+    days_tracked: number
+  }
+}
+
+export function getHabitHeatmap(): Promise<HabitHeatmapPayload> {
+  return request<HabitHeatmapPayload>('/health/habit-heatmap/')
+}
+
+export function getSpiritualHeatmap(): Promise<SpiritualHeatmapPayload> {
+  return request<SpiritualHeatmapPayload>('/health/spiritual-heatmap/')
+}
+
+// ── Alerts ────────────────────────────────────────────────────────────────────
+
+export type SystemAlert = {
+  id: string
+  alert_type: string
+  title: string
+  body: string
+  priority: 'critical' | 'warning' | 'info'
+  link_url: string
+  read: boolean
+  sent_telegram: boolean
+  dismissed_at: string | null
+  resolved_at: string | null
+  date: string
+  created_at: string
+}
+
+export type AlertsPayload = {
+  alerts: SystemAlert[]
+  unread_count: number
+  critical_count: number
+}
+
+export type AlertCount = {
+  unread_count: number
+  critical_count: number
+}
+
+export function listAlerts(): Promise<AlertsPayload> {
+  return request<AlertsPayload>('/core/alerts/')
+}
+
+export function getAlertCount(): Promise<AlertCount> {
+  return request<AlertCount>('/core/alerts/count/')
+}
+
+export function markAlertRead(id: string): Promise<SystemAlert> {
+  return request<SystemAlert>(`/core/alerts/${id}/read/`, { method: 'POST' })
+}
+
+export function dismissAlert(id: string): Promise<SystemAlert> {
+  return request<SystemAlert>(`/core/alerts/${id}/dismiss/`, { method: 'POST' })
+}
+
+export function markAllAlertsRead(): Promise<{ ok: boolean }> {
+  return request<{ ok: boolean }>('/core/alerts/read-all/', { method: 'POST' })
+}
+
+// ── AI Data Bridge — Export ───────────────────────────────────────────────────
+
+export type BridgeDomain = 'goals' | 'finance' | 'pipeline' | 'health' | 'learning' | 'journal' | 'ideas' | 'contacts' | 'all'
+export type BridgeFormat = 'json' | 'markdown'
+
+export async function exportDomain(domain: BridgeDomain, fmt: BridgeFormat): Promise<string> {
+  const apiBaseUrl = resolveApiBaseUrl()
+  const url = `${apiBaseUrl}/core/export/domain/?domain=${domain}&format=${fmt}`
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(`Export failed (${res.status})`)
+  if (fmt === 'markdown') return res.text()
+  const json = await res.json()
+  return JSON.stringify(json, null, 2)
+}
+
+// ── AI Data Bridge — Import ───────────────────────────────────────────────────
+
+export type ImportDomain = 'goals' | 'pipeline' | 'learning' | 'finance' | 'ideas' | 'contacts' | 'journal' | 'habits'
+
+export type ImportPreviewRow = {
+  name: string
+  action: 'create' | 'skip' | 'update'
+  type?: string
+  reason?: string
+  changes?: string
+}
+
+export type ImportPreview = {
+  domain: string
+  dry_run: boolean
+  preview: ImportPreviewRow[]
+  created: number
+  updated?: number
+  skipped: number
+  errors: { item: unknown; error: string }[]
+}
+
+export function previewImport(
+  domain: ImportDomain,
+  data: unknown[],
+  updateExisting = false,
+): Promise<ImportPreview> {
+  return request<ImportPreview>('/core/import/', {
+    method: 'POST',
+    body: JSON.stringify({ domain, data, confirm: false, update_existing: updateExisting }),
+  })
+}
+
+export function confirmImport(
+  domain: ImportDomain,
+  data: unknown[],
+  updateExisting = false,
+): Promise<ImportPreview> {
+  return request<ImportPreview>('/core/import/', {
+    method: 'POST',
+    body: JSON.stringify({ domain, data, confirm: true, update_existing: updateExisting }),
   })
 }

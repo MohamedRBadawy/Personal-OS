@@ -255,7 +255,7 @@ export function NodeSidePanel({
             </>
           ) : (
             <>
-              <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Delete this node and all children?</span>
+              <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>Delete this node and all children?</span>
               <button className="btn-ghost" onClick={() => setConfirmDelete(false)}>Cancel</button>
               <button className="btn-danger" disabled={deleteMut.isPending} onClick={() => deleteMut.mutate()}>
                 {deleteMut.isPending ? '…' : 'Yes, delete'}

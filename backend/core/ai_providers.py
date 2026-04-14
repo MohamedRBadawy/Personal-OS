@@ -384,6 +384,81 @@ class AnthropicAIProvider(DeterministicAIProvider):
             ),
         )
 
+    def suggest_schedule_blocks(self, *, free_slots, top_nodes, date):
+        def call_live():
+            slots_text = "\n".join(
+                f"- {s['start_time']}–{s['end_time']} ({s['duration_minutes']} min free)"
+                for s in free_slots[:6]
+            )
+            nodes_text = "\n".join(
+                f"- id:{n['id']} | {n['title']} | due:{n.get('due_date', 'none')} | leverage:{n.get('leverage_score', 0)}"
+                for n in top_nodes[:5]
+            )
+            user_prompt = (
+                f"Date: {date}\n\n"
+                f"Free time slots today:\n{slots_text}\n\n"
+                f"Top priority tasks:\n{nodes_text}\n\n"
+                "Assign 2-3 tasks to the most suitable free slots. "
+                "Match task complexity to slot duration. Be specific about the start time."
+            )
+            system_prompt = (
+                "You are Mohamed's AI scheduler. Given his free time slots and priority tasks, "
+                "suggest concrete time block assignments for today. "
+                "Each suggestion must use an exact start_time from the free slots list. "
+                "Keep reasons brief (one sentence). Return 2-3 suggestions maximum."
+            )
+            schema = {
+                "type": "object",
+                "properties": {
+                    "suggestions": {
+                        "type": "array",
+                        "maxItems": 3,
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "node_id": {"type": ["integer", "null"]},
+                                "node_title": {"type": "string"},
+                                "start_time": {"type": "string"},
+                                "duration_minutes": {"type": "integer"},
+                                "reason": {"type": "string"},
+                            },
+                            "required": ["node_id", "node_title", "start_time", "duration_minutes", "reason"],
+                        },
+                    }
+                },
+                "required": ["suggestions"],
+            }
+            payload = self._request_json(
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                schema=schema,
+                max_tokens=600,
+            )
+            items = payload.get("suggestions", [])
+            if not isinstance(items, list):
+                raise ValueError("Expected suggestions list.")
+            return [
+                {
+                    "node_id": item.get("node_id"),
+                    "node_title": str(item.get("node_title", "")).strip(),
+                    "start_time": str(item.get("start_time", "")).strip(),
+                    "duration_minutes": int(item.get("duration_minutes", 60)),
+                    "reason": str(item.get("reason", "")).strip(),
+                }
+                for item in items
+                if isinstance(item, dict) and item.get("node_title")
+            ]
+
+        return self._run_or_fallback(
+            operation_name="suggest_schedule_blocks",
+            call_live=call_live,
+            call_fallback=lambda: super(AnthropicAIProvider, self).suggest_schedule_blocks(
+                free_slots=free_slots,
+                top_nodes=top_nodes,
+                date=date,
+            ),
+        )
+
 
 class GeminiAIProvider(DeterministicAIProvider):
     """Gemini-backed provider with deterministic fallback on any error."""

@@ -149,6 +149,19 @@ class Opportunity(BaseModel):
         blank=True, help_text="AI-drafted proposal text.",
     )
     outcome_notes = models.TextField(blank=True)
+
+    # Outreach tracking fields
+    last_outreach_at    = models.DateTimeField(null=True, blank=True,
+                                               help_text="When the last message was sent.")
+    outreach_count      = models.IntegerField(default=0,
+                                             help_text="Total number of outreach messages sent.")
+    next_followup_date  = models.DateField(null=True, blank=True,
+                                           help_text="Date when a follow-up should be sent.")
+    prospect_context    = models.TextField(blank=True,
+                                           help_text="Notes about this prospect for AI drafting.")
+    ai_draft            = models.TextField(blank=True,
+                                           help_text="Cached AI-generated outreach message.")
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

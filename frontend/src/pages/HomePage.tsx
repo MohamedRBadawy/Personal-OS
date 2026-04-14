@@ -3,9 +3,86 @@ import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PageSkeleton } from '../components/PageSkeleton'
-import { getDashboardV2, createNode, updateNode, getNextAction, listRoutineBlocks } from '../lib/api'
-import type { DashboardTask, DashboardV2, NodeCreatePayload, NodeStatus, NodeUpdatePayload, RoutineBlock } from '../lib/types'
+import { CollapsibleSection } from '../components/CollapsibleSection'
+import { getDashboardV2, createNode, updateNode, getNextAction, listRoutineBlocks, getRoutineLogs, saveRoutineLog, getCheckinTodayStatus, getReadinessScore, listAppSettings, toggleBadDayMode } from '../lib/api'
+import type { ReadinessScore } from '../lib/api'
+import type { DashboardTask, DashboardV2, NodeCreatePayload, NodeStatus, NodeUpdatePayload, RoutineBlock, RoutineLogEntry } from '../lib/types'
 import { getCurrentBlock, blockEndTime } from '../components/routine/helpers'
+
+// ── Readiness Widget ─────────────────────────────────────────────────────────
+
+function ReadinessWidget() {
+  const [expanded, setExpanded] = useState(false)
+  const { data } = useQuery<ReadinessScore>({
+    queryKey: ['readiness-score'],
+    queryFn: getReadinessScore,
+    staleTime: 10 * 60 * 1000,
+    retry: 1,
+  })
+
+  if (!data) return null
+
+  const score = Math.round(data.total_score)
+  const pct = Math.min(score, 100)
+
+  // Determine color tier
+  const color = pct >= 75 ? 'var(--success)' : pct >= 40 ? 'var(--accent)' : '#f59e0b'
+
+  return (
+    <div className="readiness-card" onClick={() => setExpanded(p => !p)}>
+      <div className="readiness-main">
+        <div className="readiness-score-wrap">
+          <svg width="56" height="56" viewBox="0 0 56 56">
+            <circle cx="28" cy="28" r="24" fill="none" stroke="var(--border)" strokeWidth="5" />
+            <circle
+              cx="28" cy="28" r="24"
+              fill="none"
+              stroke={color}
+              strokeWidth="5"
+              strokeLinecap="round"
+              strokeDasharray={`${2 * Math.PI * 24}`}
+              strokeDashoffset={`${2 * Math.PI * 24 * (1 - pct / 100)}`}
+              transform="rotate(-90 28 28)"
+              style={{ transition: 'stroke-dashoffset 0.6s ease' }}
+            />
+            <text x="28" y="33" textAnchor="middle" fontSize="14" fontWeight="bold" fill={color} fontFamily="var(--mono)">
+              {score}
+            </text>
+          </svg>
+        </div>
+        <div className="readiness-info">
+          <p className="readiness-title">🕌 Kyrgyzstan Readiness</p>
+          <p className="readiness-subtitle">
+            {score}/100
+            {data.projected_date && (
+              <span className="caption"> · on track for {new Date(data.projected_date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}</span>
+            )}
+          </p>
+        </div>
+        <span className="readiness-expand">{expanded ? '▴' : '▾'}</span>
+      </div>
+
+      {expanded && (
+        <div className="readiness-breakdown">
+          {Object.entries(data.breakdown).map(([key, item]) => (
+            <div key={key} className="readiness-dimension">
+              <span className="readiness-dim-label">{item.label}</span>
+              <div className="readiness-dim-bar-wrap">
+                <div
+                  className="readiness-dim-bar-fill"
+                  style={{ width: `${(item.score / item.max) * 100}%` }}
+                />
+              </div>
+              <span className="readiness-dim-score" style={{ fontFamily: 'var(--mono)' }}>
+                {Math.round(item.score)}/{item.max}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 // ── Next Action Card ─────────────────────────────────────────────────────────
 
@@ -41,6 +118,58 @@ function NextActionCard() {
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+// ── Routine Quick Panel ───────────────────────────────────────────────────────
+
+const RQP_STATUS_LABELS: { value: string; label: string }[] = [
+  { value: 'done',    label: '✓' },
+  { value: 'partial', label: '~' },
+  { value: 'skipped', label: '✗' },
+]
+
+function RoutineQuickPanel({
+  blocks,
+  logs,
+  today: _today,
+  onLog,
+  pending,
+}: {
+  blocks: RoutineBlock[]
+  logs: RoutineLogEntry[]
+  today: string
+  onLog: (blockTime: string, status: string) => void
+  pending: boolean
+}) {
+  const logMap = new Map(logs.map(l => [l.block_time.slice(0, 5), l]))
+  return (
+    <div className="rqp-panel">
+      {blocks.map(block => {
+        const timeKey = (block.time_str || block.time.slice(0, 5))
+        const log = logMap.get(timeKey)
+        const loggedStatus = log?.status ?? null
+        return (
+          <div key={block.id} className="rqp-row">
+            <span className="rqp-time">{timeKey}</span>
+            <span className="rqp-label">{block.label}</span>
+            <div className="rqp-btns">
+              {RQP_STATUS_LABELS.map(s => (
+                <button
+                  key={s.value}
+                  className={`rqp-btn${loggedStatus === s.value ? ` active-${s.value === 'skipped' ? 'skipped' : s.value}` : ''}`}
+                  disabled={pending}
+                  title={s.value}
+                  onClick={() => onLog(block.time, s.value)}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -179,6 +308,9 @@ export function HomePage() {
   const queryClient = useQueryClient()
   const [showAddTask, setShowAddTask] = useState(false)
   const [activePopover, setActivePopover] = useState<string | null>(null)
+  const [routineExpanded, setRoutineExpanded] = useState(false)
+
+  const today = new Date().toLocaleDateString('en-CA')
 
   const { data, isLoading, error } = useQuery<DashboardV2>({
     queryKey: ['dashboard-v2'],
@@ -192,14 +324,50 @@ export function HomePage() {
   })
   const currentBlock = getCurrentBlock(routineBlocks)
 
+  const { data: checkinStatus } = useQuery({
+    queryKey: ['checkin-today-status'],
+    queryFn: getCheckinTodayStatus,
+    staleTime: 5 * 60 * 1000,
+  })
+
+  const { data: settingsData } = useQuery({
+    queryKey: ['app-settings'],
+    queryFn: listAppSettings,
+    staleTime: 30 * 1000,
+  })
+  const appSettings = settingsData?.results?.[0]
+  const badDayMode = appSettings?.bad_day_mode ?? false
+
+  const badDayMutation = useMutation({
+    mutationFn: () => toggleBadDayMode(appSettings!.id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['app-settings'] }),
+  })
+
+  // Determine if a nudge should be shown
+  const nowHour = new Date().getHours()
+  const showMorningNudge = nowHour < 9 && checkinStatus && !checkinStatus.morning_done && !badDayMode
+  const showEveningNudge = nowHour >= 20 && checkinStatus && !checkinStatus.evening_done && !badDayMode
+
+  const { data: todayLogs = [] } = useQuery<RoutineLogEntry[]>({
+    queryKey: ['routine-logs', today],
+    queryFn: () => getRoutineLogs(today),
+    staleTime: 60_000,
+  })
+
+  const logMut = useMutation({
+    mutationFn: saveRoutineLog,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['routine-logs', today] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard-v2'] })
+    },
+  })
+
   if (isLoading) return <PageSkeleton />
   if (error || !data) return <div className="page-error">Could not load dashboard.</div>
 
   const independentPct = data.target_independent > 0
     ? Math.min(100, Math.round((data.independent_monthly / data.target_independent) * 100))
     : 0
-
-  const today = new Date().toLocaleDateString('en-CA')
 
   const hp = data.health_pulse
   const js = data.journal_status
@@ -209,10 +377,43 @@ export function HomePage() {
   return (
     <div className="home-page" onClick={() => setActivePopover(null)}>
 
-      {/* ── Date ── */}
-      <p className="home-date">
-        {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-      </p>
+      {/* ── Date + Focus shortcut ── */}
+      <div className="home-top-row">
+        <p className="home-date">
+          {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+        </p>
+        <div className="home-top-actions">
+          {badDayMode && (
+            <span className="home-bad-day-chip">😔 Minimal day</span>
+          )}
+          {appSettings && (
+            <button
+              type="button"
+              className={`home-bad-day-btn${badDayMode ? ' active' : ''}`}
+              onClick={() => badDayMutation.mutate()}
+              disabled={badDayMutation.isPending}
+              title={badDayMode ? 'Exit minimal mode' : 'Activate minimal/bad day mode'}
+            >
+              {badDayMode ? '✓ Minimal mode' : '🌧 Bad day?'}
+            </button>
+          )}
+          <Link to="/focus" className="home-focus-btn">⚡ Focus Mode</Link>
+        </div>
+      </div>
+
+      {/* ── Check-in nudge ── */}
+      {(showMorningNudge || showEveningNudge) && (
+        <Link to="/daily" className="home-checkin-nudge">
+          <span className="home-checkin-nudge-icon">{showMorningNudge ? '🌅' : '🌙'}</span>
+          <div className="home-checkin-nudge-text">
+            <strong>{showMorningNudge ? 'Morning check-in' : 'Evening check-in'}</strong>
+            <span className="caption">
+              {showMorningNudge ? 'Start the day right — takes 2 minutes' : 'Close the day with intention'}
+            </span>
+          </div>
+          <span className="home-checkin-nudge-cta">Start →</span>
+        </Link>
+      )}
 
       {/* ── Next Action ── */}
       <NextActionCard />
@@ -237,26 +438,50 @@ export function HomePage() {
         </p>
       </div>
 
+      {/* ── Kyrgyzstan Readiness ── */}
+      <ReadinessWidget />
+
       {/* ── SECTION 2: Today ── */}
       <div className="home-section">
         <div className="home-section-header">
           <p className="home-section-title">Today</p>
+          <Link to="/daily" className="home-section-link">Check-in →</Link>
         </div>
 
         {/* Routine */}
-        <Link to="/routine" className="pulse-row">
-          <span className="pulse-icon">▦</span>
-          <span className="pulse-label">Routine</span>
-          <span className="pulse-value">{data.routine_today.done}/{data.routine_today.total}</span>
-          <div className="pulse-bar-wrap">
-            <div className="pulse-bar-fill" style={{ width: `${data.routine_today.pct}%` }} />
-          </div>
-          <span className="pulse-pct">{data.routine_today.pct}%</span>
-        </Link>
+        <div className="pulse-row" style={{ cursor: 'default' }}>
+          <Link to="/schedule" className="pulse-row-inner" style={{ display: 'contents', textDecoration: 'none', color: 'inherit' }}>
+            <span className="pulse-icon">▦</span>
+            <span className="pulse-label">Routine</span>
+            <span className="pulse-value">{data.routine_today.done}/{data.routine_today.total}</span>
+            <div className="pulse-bar-wrap">
+              <div className="pulse-bar-fill" style={{ width: `${data.routine_today.pct}%` }} />
+            </div>
+            <span className="pulse-pct">{data.routine_today.pct}%</span>
+          </Link>
+          <button
+            className="rqp-toggle"
+            onClick={e => { e.stopPropagation(); setRoutineExpanded(p => !p) }}
+            title={routineExpanded ? 'Collapse' : 'Log blocks'}
+          >
+            {routineExpanded ? '▴ Close' : '▾ Log'}
+          </button>
+        </div>
+
+        {/* Inline quick-log panel */}
+        {routineExpanded && routineBlocks.length > 0 && (
+          <RoutineQuickPanel
+            blocks={routineBlocks}
+            logs={todayLogs}
+            today={today}
+            onLog={(blockTime, status) => logMut.mutate({ date: today, block_time: blockTime, status })}
+            pending={logMut.isPending}
+          />
+        )}
 
         {/* Current block indicator */}
         {currentBlock && (
-          <Link to="/routine" className="home-current-block">
+          <Link to="/schedule" className="home-current-block">
             <span className="home-current-now">● NOW</span>
             <strong>{currentBlock.label}</strong>
             <span className="home-current-until">until {blockEndTime(currentBlock)}</span>
@@ -329,7 +554,7 @@ export function HomePage() {
         {/* Tomorrow's focus note */}
         {js.tomorrow_focus && (
           <div className="focus-note">
-            <span style={{ fontSize: 13, color: 'var(--text-muted)', flexShrink: 0 }}>Focus:</span>
+            <span className="sp-label" style={{ flexShrink: 0 }}>Focus:</span>
             <em>{js.tomorrow_focus}</em>
             <Link to="/journal" className="focus-note-link">Edit →</Link>
           </div>
@@ -403,67 +628,72 @@ export function HomePage() {
       </div>
 
       {/* ── SECTION 4: Finance Snapshot ── */}
-      <div className="home-section">
-        <div className="home-section-header">
-          <p className="home-section-title">Finance</p>
-          <Link to="/finance" className="home-section-link">Details →</Link>
-        </div>
-        <Link to="/finance" className="finance-snapshot">
-          <div className="finance-snap-grid">
-            <div className="finance-snap-item">
-              <span className="finance-snap-value">~{formatK(data.surplus_egp)} EGP</span>
-              <span className="finance-snap-label">Monthly surplus</span>
-            </div>
-            {fd.savings_pct !== null && fd.savings_target_egp > 0 && (
-              <div className="finance-snap-item">
-                <span className="finance-snap-value">{fd.savings_pct}%</span>
-                <span className="finance-snap-label">Savings target</span>
-              </div>
-            )}
-            {fd.total_debt_egp > 0 && (
-              <div className="finance-snap-item finance-snap-item--warn">
-                <span className="finance-snap-value">{formatK(fd.total_debt_egp)} EGP</span>
-                <span className="finance-snap-label">Total debt</span>
-              </div>
-            )}
+      <CollapsibleSection title="Finance" storageKey="home-finance" defaultOpen={true}>
+        <div className="home-section">
+          <div className="home-section-header">
+            <p className="home-section-title">Finance</p>
+            <Link to="/finance" className="home-section-link">Details →</Link>
           </div>
-        </Link>
-      </div>
+          <Link to="/finance" className="finance-snapshot">
+            <div className="finance-snap-grid">
+              <div className="finance-snap-item">
+                <span className="finance-snap-value">~{formatK(data.surplus_egp)} EGP</span>
+                <span className="finance-snap-label">Monthly surplus</span>
+              </div>
+              {fd.savings_pct !== null && fd.savings_target_egp > 0 && (
+                <div className="finance-snap-item">
+                  <span className="finance-snap-value">{fd.savings_pct}%</span>
+                  <span className="finance-snap-label">Savings target</span>
+                </div>
+              )}
+              {fd.total_debt_egp > 0 && (
+                <div className="finance-snap-item finance-snap-item--warn">
+                  <span className="finance-snap-value">{formatK(fd.total_debt_egp)} EGP</span>
+                  <span className="finance-snap-label">Total debt</span>
+                </div>
+              )}
+            </div>
+          </Link>
+        </div>
+      </CollapsibleSection>
 
       {/* ── SECTION 5: Goals Overview ── */}
-      <div className="home-section">
-        <div className="home-section-header">
-          <p className="home-section-title">Goals</p>
-          <Link to="/goals" className="home-section-link">All goals →</Link>
+      <CollapsibleSection title="Goals" storageKey="home-goals" defaultOpen={true}>
+        <div className="home-section">
+          <div className="home-section-header">
+            <p className="home-section-title">Goals</p>
+            <Link to="/goals" className="home-section-link">All goals →</Link>
+          </div>
+          <div className="stat-grid">
+            {[
+              { label: 'Active',    value: data.node_counts.active,    to: '/goals?status=active' },
+              { label: 'Available', value: data.node_counts.available, to: '/goals?status=available' },
+              { label: 'Blocked',   value: data.node_counts.blocked,   to: '/goals?status=blocked' },
+              { label: 'Done',      value: data.node_counts.done,      to: '/goals?status=done' },
+            ].map(card => (
+              <Link key={card.label} to={card.to} className="stat-card">
+                <span className="stat-value">{card.value}</span>
+                <span className="stat-label">{card.label}</span>
+              </Link>
+            ))}
+          </div>
         </div>
-        <div className="stat-grid">
-          {[
-            { label: 'Active',    value: data.node_counts.active,    to: '/goals?status=active' },
-            { label: 'Available', value: data.node_counts.available, to: '/goals?status=available' },
-            { label: 'Blocked',   value: data.node_counts.blocked,   to: '/goals?status=blocked' },
-            { label: 'Done',      value: data.node_counts.done,      to: '/goals?status=done' },
-          ].map(card => (
-            <Link key={card.label} to={card.to} className="stat-card">
-              <span className="stat-value">{card.value}</span>
-              <span className="stat-label">{card.label}</span>
-            </Link>
-          ))}
-        </div>
-      </div>
+      </CollapsibleSection>
 
       {/* ── SECTION 6: Road to Kyrgyzstan ── */}
-      <div className="home-section">
-        <p className="home-section-title">Road to Kyrgyzstan</p>
-        <div className="milestone-chain">
-          {data.milestones.map((m, i) => (
-            <div key={i} className={`milestone-row ${m.done ? 'done' : m.next ? 'next' : ''}`}>
-              <span className="milestone-dot">{m.done ? '✓' : m.next ? '→' : '○'}</span>
-              <span className="milestone-label">{m.label}</span>
-              {m.next && <span className="milestone-badge">NEXT</span>}
-            </div>
-          ))}
+      <CollapsibleSection title="Road to Kyrgyzstan" storageKey="home-kyrgyzstan" defaultOpen={true}>
+        <div className="home-section">
+          <div className="milestone-chain">
+            {data.milestones.map((m, i) => (
+              <div key={i} className={`milestone-row ${m.done ? 'done' : m.next ? 'next' : ''}`}>
+                <span className="milestone-dot">{m.done ? '✓' : m.next ? '→' : '○'}</span>
+                <span className="milestone-label">{m.label}</span>
+                {m.next && <span className="milestone-badge">NEXT</span>}
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      </CollapsibleSection>
 
       {showAddTask && createPortal(
         <AddTaskModal

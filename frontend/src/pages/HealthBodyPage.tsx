@@ -58,7 +58,7 @@ function MiniSparkline({ logs, field, max, color }: {
   color: string
 }) {
   const last7 = logs.slice(0, 7).reverse()
-  if (last7.length === 0) return <span className="muted" style={{ fontSize: 12 }}>No data</span>
+  if (last7.length === 0) return <span className="muted" style={{ fontSize: 14 }}>No data</span>
 
   return (
     <div className="health-sparkline">
@@ -174,7 +174,7 @@ export function HealthBodyPage() {
             <div style={{ marginTop: 16 }}>
               <p className="eyebrow" style={{ marginBottom: 8 }}>Capacity signals</p>
               {capacitySignals.map((sig: string, i: number) => (
-                <p key={i} className="muted" style={{ fontSize: 13, lineHeight: 1.5 }}>· {sig}</p>
+                <p key={i} className="muted" style={{ fontSize: 14, lineHeight: 1.5 }}>· {sig}</p>
               ))}
             </div>
           )}

@@ -91,14 +91,14 @@ export function TimerSection({ node }: { node: Node }) {
               placeholder="Session note (optional)"
               value={logNote}
               onChange={e => setLogNote(e.target.value)}
-              style={{ flex: 1, fontSize: 12 }}
+              style={{ flex: 1, fontSize: 14 }}
             />
-            <button className="btn-danger" style={{ fontSize: 12, padding: '4px 10px' }} onClick={handleStop}>
+            <button className="btn-danger" style={{ fontSize: 14, padding: '4px 10px' }} onClick={handleStop}>
               Stop
             </button>
           </>
         ) : (
-          <button className="btn-ghost-sm" onClick={handleStart} style={{ fontSize: 12 }}>
+          <button className="btn-ghost-sm" onClick={handleStart} style={{ fontSize: 14 }}>
             ▶ Start session
           </button>
         )}
@@ -113,18 +113,18 @@ export function TimerSection({ node }: { node: Node }) {
             placeholder="Minutes"
             value={manualMin}
             onChange={e => setManualMin(e.target.value)}
-            style={{ width: 80, fontSize: 12 }}
+            style={{ width: 80, fontSize: 14 }}
           />
           <input
             className="form-input"
             placeholder="Note (optional)"
             value={note}
             onChange={e => setNote(e.target.value)}
-            style={{ flex: 1, fontSize: 12 }}
+            style={{ flex: 1, fontSize: 14 }}
           />
           <button
             className="btn-ghost-sm"
-            style={{ fontSize: 12 }}
+            style={{ fontSize: 14 }}
             disabled={!manualMin || parseInt(manualMin) < 1}
             onClick={handleManualLog}
           >

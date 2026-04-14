@@ -1,7 +1,7 @@
 """Serializers for finance entries and summaries."""
 from rest_framework import serializers
 
-from finance.models import FinanceEntry, FinanceSummary, IncomeEvent, IncomeSource
+from finance.models import DebtEntry, FinanceEntry, FinanceSummary, IncomeEvent, IncomeSource, MonthlyBudgetPlan
 from finance.services import FinanceMetricsService
 
 
@@ -67,3 +67,39 @@ class IncomeEventSerializer(serializers.ModelSerializer):
         model = IncomeEvent
         fields = ["id", "date", "source", "amount_eur", "notes", "created_at"]
         read_only_fields = ["id", "created_at"]
+
+
+class MonthlyBudgetPlanSerializer(serializers.ModelSerializer):
+    """Serializer for per-month budget plans."""
+
+    class Meta:
+        model = MonthlyBudgetPlan
+        fields = ["month", "planned_budgets", "notes", "created_at", "updated_at"]
+        read_only_fields = ["created_at", "updated_at"]
+
+    def validate_month(self, value):
+        import re
+        if not re.fullmatch(r"\d{4}-\d{2}", value):
+            raise serializers.ValidationError("Month must be in YYYY-MM format.")
+        return value
+
+
+class DebtEntrySerializer(serializers.ModelSerializer):
+    """Serializer for individual debt entries."""
+
+    paid_pct = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = DebtEntry
+        fields = [
+            "id", "creditor", "original_amount", "remaining_amount",
+            "monthly_payment", "paid_off", "priority", "notes",
+            "created_at", "updated_at", "paid_pct",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at", "paid_pct"]
+
+    def get_paid_pct(self, obj):
+        if not obj.original_amount:
+            return 0
+        paid = float(obj.original_amount) - float(obj.remaining_amount)
+        return round(max(0, paid / float(obj.original_amount) * 100), 1)

@@ -34,6 +34,7 @@ export function PipelineOpportunityForm({
   const [dateFound, setDateFound] = useState(initialValue?.date_found ?? today)
   const [dateApplied, setDateApplied] = useState(initialValue?.date_applied ?? '')
   const [outcomeNotes, setOutcomeNotes] = useState(initialValue?.outcome_notes ?? '')
+  const [prospectContext, setProspectContext] = useState(initialValue?.prospect_context ?? '')
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -48,6 +49,7 @@ export function PipelineOpportunityForm({
       date_found: dateFound,
       date_applied: dateApplied || null,
       outcome_notes: outcomeNotes,
+      prospect_context: prospectContext || undefined,
     })
   }
 
@@ -151,6 +153,16 @@ export function PipelineOpportunityForm({
           id="pipeline-outcome-notes"
           value={outcomeNotes}
           onChange={(event) => setOutcomeNotes(event.target.value)}
+        />
+      </div>
+      <div className="field span-2">
+        <label htmlFor="pipeline-prospect-context">Prospect context <span className="field-hint">(for AI drafting)</span></label>
+        <textarea
+          id="pipeline-prospect-context"
+          placeholder="Notes about this prospect — industry, pain points, tone preference…"
+          rows={2}
+          value={prospectContext}
+          onChange={(event) => setProspectContext(event.target.value)}
         />
       </div>
       <div className="field span-2 form-actions">

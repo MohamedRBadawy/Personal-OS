@@ -49,6 +49,21 @@ class Command(BaseCommand):
         today = timezone.localdate()
         lines = [f"<b>Good morning! {today.strftime('%A, %d %B')}</b>", ""]
 
+        # Today's Google Calendar meetings
+        try:
+            from schedule.gcal_service import get_gcal_events  # noqa: PLC0415
+            events = get_gcal_events(today.isoformat())
+            timed = [e for e in events if e.get("start_time") and not e.get("all_day")]
+            if timed:
+                lines.append("<b>📅 Today's meetings</b>")
+                for ev in timed:
+                    dur = ev.get("duration_minutes", 0)
+                    dur_str = f"{dur}m" if dur < 60 else f"{dur // 60}h{f' {dur%60}m' if dur%60 else ''}"
+                    lines.append(f"🕐 {ev['start_time']} — {ev['title']} ({dur_str})")
+                lines.append("")
+        except Exception:  # noqa: BLE001
+            pass
+
         # Today's routine blocks
         try:
             from schedule.models import RoutineBlock, RoutineLog  # noqa: PLC0415

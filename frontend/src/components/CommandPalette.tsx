@@ -17,6 +17,7 @@ const PAGES = [
   { id: 'page-journal',   label: 'Journal',          href: '/journal',   icon: '📓' },
   { id: 'page-learning',  label: 'Learning',         href: '/learning',  icon: '📚' },
   { id: 'page-profile',   label: 'Life Stats',       href: '/profile',   icon: '🧬' },
+  { id: 'page-bridge',   label: 'AI Data Bridge',   href: '/data-bridge', icon: '🔁' },
 ]
 
 type PaletteItem = {

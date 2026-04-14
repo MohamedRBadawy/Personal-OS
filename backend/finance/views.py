@@ -9,8 +9,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from finance.models import FinanceEntry, FinanceSummary, IncomeEvent, IncomeSource
-from finance.serializers import FinanceEntrySerializer, FinanceSummarySerializer, IncomeEventSerializer, IncomeSourceSerializer
+from finance.models import DebtEntry, FinanceEntry, FinanceSummary, IncomeEvent, IncomeSource, MonthlyBudgetPlan
+from finance.serializers import DebtEntrySerializer, FinanceEntrySerializer, FinanceSummarySerializer, IncomeEventSerializer, IncomeSourceSerializer, MonthlyBudgetPlanSerializer
 from finance.services import FinanceMetricsService, FinanceOverviewService
 
 
@@ -258,3 +258,102 @@ class FinanceExportView(APIView):
             content_type="text/csv",
             headers={"Content-Disposition": f'attachment; filename="{fname}"'},
         )
+
+
+class MonthlyBudgetPlanViewSet(viewsets.ModelViewSet):
+    """CRUD for per-month budget plans. Use month string (YYYY-MM) as the URL slug."""
+
+    serializer_class = MonthlyBudgetPlanSerializer
+    queryset = MonthlyBudgetPlan.objects.all()
+    lookup_field = "month"
+    pagination_class = None
+
+
+class DebtEntryViewSet(viewsets.ModelViewSet):
+    """CRUD for debt entries with payoff overview endpoint."""
+
+    serializer_class = DebtEntrySerializer
+    queryset = DebtEntry.objects.all()
+    pagination_class = None
+
+    @action(detail=False, methods=["get"])
+    def overview(self, request):
+        """Return debt totals, projected payoff date, and 3 scenarios."""
+        from decimal import Decimal  # noqa: PLC0415
+        import datetime  # noqa: PLC0415
+
+        debts = DebtEntry.objects.filter(paid_off=False).order_by("priority", "remaining_amount")
+        serialized = DebtEntrySerializer(debts, many=True).data
+
+        total_remaining = sum(float(d.remaining_amount) for d in debts)
+        total_monthly = sum(float(d.monthly_payment) for d in debts)
+
+        # Get surplus from FinanceSummary to compute baseline scenario
+        try:
+            fs = FinanceSummary.objects.order_by("created_at").first()
+            income_egp = float(fs.income_eur or 0) * float(fs.exchange_rate or 60) + float(fs.income_egp_direct or 0)
+            expenses_egp = float(fs.monthly_expenses_egp or 0)
+            surplus_egp = max(0, income_egp - expenses_egp)
+        except Exception:  # noqa: BLE001
+            surplus_egp = 0
+
+        def months_to_payoff(monthly_payment):
+            if monthly_payment <= 0:
+                return None
+            remaining = total_remaining
+            months = 0
+            while remaining > 0 and months < 600:
+                remaining -= monthly_payment
+                months += 1
+            return months
+
+        def payoff_date(months):
+            if months is None:
+                return None
+            today = datetime.date.today()
+            target = today + datetime.timedelta(days=months * 30)
+            return target.isoformat()
+
+        min_payment = max(total_monthly, 1)
+        full_surplus = max(surplus_egp * 0.5, min_payment)  # 50% of surplus to debt
+        accelerated = min_payment * 1.3
+
+        scenarios = {
+            "minimum": {
+                "label": "Minimum payments",
+                "monthly_egp": round(min_payment, 0),
+                "months": months_to_payoff(min_payment),
+                "payoff_date": payoff_date(months_to_payoff(min_payment)),
+            },
+            "full_surplus": {
+                "label": "50% of surplus",
+                "monthly_egp": round(full_surplus, 0),
+                "months": months_to_payoff(full_surplus),
+                "payoff_date": payoff_date(months_to_payoff(full_surplus)),
+            },
+            "accelerated": {
+                "label": "+30% extra",
+                "monthly_egp": round(accelerated, 0),
+                "months": months_to_payoff(accelerated),
+                "payoff_date": payoff_date(months_to_payoff(accelerated)),
+            },
+        }
+
+        # Extra EGP slider scenario
+        extra_payment = float(request.query_params.get("extra_egp", 0) or 0)
+        if extra_payment > 0:
+            custom_payment = min_payment + extra_payment
+            scenarios["custom"] = {
+                "label": f"+{extra_payment:.0f} EGP/mo",
+                "monthly_egp": round(custom_payment, 0),
+                "months": months_to_payoff(custom_payment),
+                "payoff_date": payoff_date(months_to_payoff(custom_payment)),
+            }
+
+        return Response({
+            "debts": serialized,
+            "total_remaining_egp": round(total_remaining, 2),
+            "total_monthly_payment_egp": round(total_monthly, 2),
+            "surplus_egp": round(surplus_egp, 2),
+            "scenarios": scenarios,
+        })

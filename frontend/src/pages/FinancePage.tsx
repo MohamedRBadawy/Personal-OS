@@ -217,10 +217,10 @@ function EntryRow({
               value={editForm.amount ?? entry.amount}
               onChange={(e) => onEditFormChange({ amount: e.target.value })}
             />
-            <button className="btn-primary" style={{ padding: '4px 12px', fontSize: 13 }} onClick={onSaveEdit}>
+            <button className="btn-primary" style={{ padding: '4px 12px', fontSize: 14 }} onClick={onSaveEdit}>
               Save
             </button>
-            <button className="btn-ghost" style={{ padding: '4px 10px', fontSize: 13 }} onClick={onCancelEdit}>
+            <button className="btn-ghost" style={{ padding: '4px 10px', fontSize: 14 }} onClick={onCancelEdit}>
               Cancel
             </button>
           </div>
@@ -231,15 +231,15 @@ function EntryRow({
 
   return (
     <tr>
-      <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>{entry.date}</td>
+      <td style={{ fontSize: 14, color: 'var(--text-muted)' }}>{entry.date}</td>
       <td>{entry.source}</td>
-      <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+      <td style={{ fontSize: 14, color: 'var(--text-muted)' }}>
         {CATEGORY_LABELS[entry.category] || entry.category || '—'}
       </td>
       <td>
         <span
           style={{
-            fontSize: 11,
+            fontSize: 13,
             padding: '2px 6px',
             borderRadius: 4,
             background: entry.type === 'income' ? '#dcfce7' : '#fee2e2',
@@ -249,9 +249,9 @@ function EntryRow({
           {entry.type}
         </span>
       </td>
-      <td style={{ fontSize: 12 }}>{entry.currency}</td>
+      <td style={{ fontSize: 14 }}>{entry.currency}</td>
       <td style={{ fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(entry.amount_eur)}</td>
-      <td style={{ fontVariantNumeric: 'tabular-nums', fontSize: 12, color: 'var(--text-muted)' }}>
+      <td style={{ fontVariantNumeric: 'tabular-nums', fontSize: 14, color: 'var(--text-muted)' }}>
         {entry.amount_egp.toLocaleString()} EGP
       </td>
       <td style={{ whiteSpace: 'nowrap' }}>
@@ -307,7 +307,7 @@ function IncomeEventsPanel() {
   })
 
   const totalEur = events.reduce((sum, e) => sum + Number(e.amount_eur), 0)
-  const targetEur = summary?.target_independent ?? 1000
+  const targetEur = (summary as any)?.target_independent ?? 1000
 
   function handleSubmit() {
     if (!form.source.trim() || !form.date) return
@@ -328,7 +328,7 @@ function IncomeEventsPanel() {
       <div className="income-events-progress">
         <div className="income-events-progress-label">
           <span>Total logged: <strong>{formatCurrency(totalEur)}</strong></span>
-          <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>
+          <span style={{ color: 'var(--text-muted)', fontSize: 14 }}>
             Target: {formatCurrency(targetEur)}/mo
           </span>
         </div>
@@ -342,9 +342,9 @@ function IncomeEventsPanel() {
 
       {/* Table */}
       {isLoading ? (
-        <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading…</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading…</p>
       ) : events.length === 0 ? (
-        <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>No income events logged yet.</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>No income events logged yet.</p>
       ) : (
         <div className="table-wrap" style={{ marginBottom: 16 }}>
           <table>
@@ -360,12 +360,12 @@ function IncomeEventsPanel() {
             <tbody>
               {events.map((ev) => (
                 <tr key={ev.id}>
-                  <td style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{ev.date}</td>
+                  <td style={{ fontSize: 14, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{ev.date}</td>
                   <td style={{ fontWeight: 500 }}>{ev.source}</td>
-                  <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', fontSize: 13 }}>
+                  <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', fontSize: 14 }}>
                     {Number(ev.amount_eur) > 0 ? formatCurrency(Number(ev.amount_eur)) : '—'}
                   </td>
-                  <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>{ev.notes || '—'}</td>
+                  <td style={{ fontSize: 14, color: 'var(--text-muted)' }}>{ev.notes || '—'}</td>
                   <td>
                     <button
                       className="table-action-btn danger"
@@ -411,13 +411,13 @@ function IncomeEventsPanel() {
           <div style={{ display: 'flex', gap: 8 }}>
             <button
               className="btn-primary"
-              style={{ padding: '6px 16px', fontSize: 13 }}
+              style={{ padding: '6px 16px', fontSize: 14 }}
               disabled={createMut.isPending || !form.source.trim()}
               onClick={handleSubmit}
             >
               {createMut.isPending ? 'Logging…' : 'Log event'}
             </button>
-            <button className="btn-ghost" style={{ padding: '6px 12px', fontSize: 13 }} onClick={() => setAdding(false)}>
+            <button className="btn-ghost" style={{ padding: '6px 12px', fontSize: 14 }} onClick={() => setAdding(false)}>
               Cancel
             </button>
           </div>

@@ -1,5 +1,5 @@
 import type { Profile, AppSettings, MorningBriefing, WeeklyReviewPreview } from './base'
-import type { GoalNode, GoalNodeType, GoalNodeStatus, GoalNodeManualPriority, NodeStatus, DashboardTask } from './goals'
+import type { GoalNode, GoalNodeType, GoalNodeStatus, GoalNodeManualPriority, DashboardTask } from './goals'
 import type { FinanceSummary, FinanceEntry, CheckInFinanceDelta } from './finance'
 import type { HealthSummary, HealthTodayPayload, OverwhelmSummary } from './health'
 import type { PipelineSummary, PipelineWorkspacePayload, PipelineWorkspaceMarketingAction, PipelineWorkspaceOpportunity } from './pipeline'

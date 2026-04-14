@@ -4,10 +4,11 @@ import { useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PageSkeleton } from '../components/PageSkeleton'
 import { WorkspaceTabs } from '../components/WorkspaceTabs'
+import { CollapsibleSection } from '../components/CollapsibleSection'
 import { listNodes, reorderNodes, getPrioritizedNodes } from '../lib/api'
 import type { Node, NodePriorityEntry } from '../lib/types'
 
-import { VIEWS, STATUSES, ExpandAllContext, IsFilteringContext } from '../components/goals/constants'
+import { VIEWS, ExpandAllContext, IsFilteringContext } from '../components/goals/constants'
 import type { ViewMode, SortKey } from '../components/goals/constants'
 import { makeSorter, buildTree } from '../components/goals/utils'
 import { NodeSidePanel } from '../components/goals/NodeSidePanel'
@@ -29,7 +30,7 @@ function PriorityView({ entries, loading, onSelect }: {
   onSelect: (id: string) => void
 }) {
   if (loading) return <PageSkeleton />
-  if (!entries.length) return <p style={{ padding: 24, color: 'var(--text-muted)' }}>No nodes here yet. Press <kbd style={{ fontSize: 11, padding: '1px 5px', borderRadius: 4, border: '1px solid var(--border)', background: 'var(--bg-alt)' }}>N</kbd> to add your first goal.</p>
+  if (!entries.length) return <p style={{ padding: 24, color: 'var(--text-muted)' }}>No nodes here yet. Press <kbd style={{ fontSize: 13, padding: '1px 5px', borderRadius: 4, border: '1px solid var(--border)', background: 'var(--bg-alt)' }}>N</kbd> to add your first goal.</p>
   const maxScore = Math.max(...entries.map(e => e.leverage_score), MAX_SCORE)
   return (
     <div className="priority-view">
@@ -162,33 +163,37 @@ export function GoalsPage() {
     <div className="goals-page">
       <WorkspaceTabs tabs={[...VIEWS]} activeTab={view} onChange={v => setView(v as ViewMode)} />
 
-      <GoalsFilters
-        view={view}
-        search={search}
-        filterStatus={filterStatus}
-        filterCategory={filterCategory}
-        filterType={filterType}
-        filterContext={filterContext}
-        sortBy={sortBy}
-        listGroupBy={listGroupBy}
-        chipFilter={chipFilter}
-        isFiltering={isFiltering}
-        statusCounts={statusCounts}
-        expandAll={expandAll}
-        onSearchChange={setSearch}
-        onFilterStatusChange={setFilterStatus}
-        onFilterCategoryChange={setFilterCategory}
-        onFilterTypeChange={setFilterType}
-        onFilterContextChange={setFilterContext}
-        onSortByChange={setSortBy}
-        onListGroupByChange={setListGroupBy}
-        onChipFilterChange={setChipFilter}
-        onClearFilters={clearFilters}
-        onAddNode={() => setShowAdd(true)}
-        onToggleExpandAll={() => setExpandAll(p => !p)}
-      />
+      <CollapsibleSection title="Filters" storageKey="goals-filters" defaultOpen={false}>
+        <GoalsFilters
+          view={view}
+          search={search}
+          filterStatus={filterStatus}
+          filterCategory={filterCategory}
+          filterType={filterType}
+          filterContext={filterContext}
+          sortBy={sortBy}
+          listGroupBy={listGroupBy}
+          chipFilter={chipFilter}
+          isFiltering={isFiltering}
+          statusCounts={statusCounts}
+          expandAll={expandAll}
+          onSearchChange={setSearch}
+          onFilterStatusChange={setFilterStatus}
+          onFilterCategoryChange={setFilterCategory}
+          onFilterTypeChange={setFilterType}
+          onFilterContextChange={setFilterContext}
+          onSortByChange={setSortBy}
+          onListGroupByChange={setListGroupBy}
+          onChipFilterChange={setChipFilter}
+          onClearFilters={clearFilters}
+          onAddNode={() => setShowAdd(true)}
+          onToggleExpandAll={() => setExpandAll(p => !p)}
+        />
+      </CollapsibleSection>
 
-      <TodayFocusPanel nodes={nodes} onUpdate={invalidate} />
+      <CollapsibleSection title="Today's Focus" storageKey="goals-focus" defaultOpen={true}>
+        <TodayFocusPanel nodes={nodes} onUpdate={invalidate} />
+      </CollapsibleSection>
 
       {view === 'list' && (
         <IsFilteringContext.Provider value={isFiltering}>

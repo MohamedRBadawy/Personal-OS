@@ -43,6 +43,10 @@ class AppSettings(BaseModel):
     kyrgyzstan_goal_code = models.CharField(max_length=32, default="g1")
     independent_income_goal_code = models.CharField(max_length=32, default="g2")
     timezone = models.CharField(max_length=64, default="Africa/Cairo")
+    bad_day_mode = models.BooleanField(
+        default=False,
+        help_text="When on: minimal routine, no nudges, show only 3 non-negotiables.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -105,12 +109,50 @@ class AppSettings(BaseModel):
         return cls.objects.create(**cls.bootstrap_defaults())
 
 
+class ReadinessSnapshot(BaseModel):
+    """Daily Kyrgyzstan readiness score — one record per day, cached."""
+
+    date            = models.DateField(unique=True)
+    total_score     = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+
+    # Component scores
+    income_score    = models.DecimalField(max_digits=5, decimal_places=2, default=0,
+                                          help_text="Max 40 — independent income vs €1,000 target")
+    debt_score      = models.DecimalField(max_digits=5, decimal_places=2, default=0,
+                                          help_text="Max 15 — total debt cleared vs 33,150 EGP baseline")
+    pipeline_score  = models.DecimalField(max_digits=5, decimal_places=2, default=0,
+                                          help_text="Max 10 — active outreach opportunities")
+    routine_score   = models.DecimalField(max_digits=5, decimal_places=2, default=0,
+                                          help_text="Max 10 — routine streak consistency")
+    spiritual_score = models.DecimalField(max_digits=5, decimal_places=2, default=0,
+                                          help_text="Max 10 — prayer completion rate (30 days)")
+    savings_score   = models.DecimalField(max_digits=5, decimal_places=2, default=0,
+                                          help_text="Max 10 — emergency buffer vs 3 months expenses")
+    family_score    = models.DecimalField(max_digits=5, decimal_places=2, default=0,
+                                          help_text="Max 5 — family goals progress")
+
+    # Raw values for tooltip / sparkline
+    snapshot_data   = models.JSONField(default=dict, blank=True,
+                                       help_text="Raw source values used in computation.")
+    created_at      = models.DateTimeField(auto_now_add=True)
+    updated_at      = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-date"]
+
+    def __str__(self):
+        return f"Readiness {self.date}: {self.total_score}"
+
+
 class DailyCheckIn(BaseModel):
     """Tracks daily check-ins and preserves the raw input from all 7 questions.
 
     Raw fields are stored here exactly as submitted so the check-in can be
     replayed or audited later. Domain models (HealthLog, MoodLog, etc.) are
     populated by CheckInService from these values.
+
+    One record per day. morning_completed_at / evening_completed_at track
+    whether each session has been submitted.
     """
 
     date = models.DateField(unique=True)
@@ -145,6 +187,34 @@ class DailyCheckIn(BaseModel):
         help_text="Q7: Anything blocking you today?",
     )
 
+    # Evening check-in fields
+    mood_score = models.IntegerField(
+        null=True, blank=True,
+        help_text="Overall mood today 1-10 (evening).",
+    )
+    gratitude_note = models.TextField(
+        blank=True,
+        help_text="Gratitude note from evening check-in.",
+    )
+    evening_wins = models.TextField(
+        blank=True,
+        help_text="3 wins from the day (evening check-in).",
+    )
+    tomorrow_focus = models.TextField(
+        blank=True,
+        help_text="Top priority / focus for tomorrow.",
+    )
+
+    # Session completion timestamps
+    morning_completed_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text="When the morning check-in session was submitted.",
+    )
+    evening_completed_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text="When the evening check-in session was submitted.",
+    )
+
     # AI-generated output
     briefing_text = models.TextField(
         blank=True,
@@ -158,3 +228,45 @@ class DailyCheckIn(BaseModel):
 
     def __str__(self):
         return f"Check-in {self.date}"
+
+
+class Alert(BaseModel):
+    """A smart system alert surfaced to Mohamed in the app and optionally via Telegram.
+
+    Alerts are generated automatically by AlertService (run hourly via cron).
+    They resolve automatically when the underlying condition clears.
+    """
+
+    TYPES = [
+        ("follow_up_due",  "Pipeline follow-up overdue"),
+        ("node_overdue",   "Goal/task past due date"),
+        ("checkin_missed", "Morning check-in not done"),
+        ("readiness_drop", "Kyrgyzstan score dropped"),
+        ("streak_broken",  "Routine streak broken"),
+        ("pipeline_empty", "No active pipeline opportunities"),
+        ("ai_suggestion",  "New AI recommendation"),
+        ("debt_milestone", "Debt payoff milestone"),
+    ]
+    PRIORITIES = [
+        ("critical", "Critical"),
+        ("warning",  "Warning"),
+        ("info",     "Info"),
+    ]
+
+    alert_type    = models.CharField(max_length=50, choices=TYPES)
+    title         = models.CharField(max_length=200)
+    body          = models.TextField()
+    priority      = models.CharField(max_length=20, choices=PRIORITIES, default="info")
+    link_url      = models.CharField(max_length=200, blank=True)  # e.g. '/pipeline'
+    read          = models.BooleanField(default=False)
+    sent_telegram = models.BooleanField(default=False)
+    dismissed_at  = models.DateTimeField(null=True, blank=True)
+    resolved_at   = models.DateTimeField(null=True, blank=True)  # auto-cleared when condition clears
+    date          = models.DateField(auto_now_add=True)
+    created_at    = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"[{self.priority.upper()}] {self.title}"

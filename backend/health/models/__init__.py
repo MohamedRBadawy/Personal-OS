@@ -10,6 +10,7 @@ from health.models.health_log import HealthLog
 from health.models.habit import Habit, HabitLog
 from health.models.mood_log import MoodLog
 from health.models.spiritual_log import SpiritualLog
+from health.models.meal import MealPlan, MealLog, MealTemplate, FoodItem, MealIngredient
 
 __all__ = [
     "HealthLog",
@@ -17,4 +18,9 @@ __all__ = [
     "HabitLog",
     "MoodLog",
     "SpiritualLog",
+    "MealPlan",
+    "MealLog",
+    "MealTemplate",
+    "FoodItem",
+    "MealIngredient",
 ]

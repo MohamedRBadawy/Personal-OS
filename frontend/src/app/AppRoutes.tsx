@@ -1,50 +1,56 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
-import { AnalyticsPage } from '../pages/AnalyticsPage'
-import { FinanceWorkspacePage } from '../pages/FinanceWorkspacePage'
-import { GoalsPage } from '../pages/GoalsPage'
-import { GoalsLifePlanPage } from '../pages/GoalsLifePlanPage'
-import { HealthBodyPage } from '../pages/HealthBodyPage'
-import { HabitsPage } from '../pages/HabitsPage'
-import { MoodPage } from '../pages/MoodPage'
-import { SpiritualPage } from '../pages/SpiritualPage'
 import { HomePage } from '../pages/HomePage'
+import { FocusPage } from '../pages/FocusPage'
+import { GoalsPage } from '../pages/GoalsPage'
+import { FinanceWorkspacePage } from '../pages/FinanceWorkspacePage'
 import { ContactsPage } from '../pages/ContactsPage'
-import { IdeasThinkingPage } from '../pages/IdeasThinkingPage'
 import { JournalPage } from '../pages/JournalPage'
-import { LearningPage } from '../pages/LearningPage'
-import { MarketingPage } from '../pages/MarketingPage'
-import { PipelinePage } from '../pages/PipelinePage'
-import { ProfilePage } from '../pages/ProfilePage'
-import { AboutPage } from '../pages/AboutPage'
-import { RoutinePage } from '../pages/RoutinePage'
-import DaySchedulePage from '../pages/DaySchedulePage'
+import { DailyCheckInPage } from '../pages/DailyCheckInPage'
+import { ProfileHubPage } from '../pages/ProfileHubPage'
+import { BusinessHubPage } from '../pages/BusinessHubPage'
+import { ScheduleHubPage } from '../pages/ScheduleHubPage'
+import { HealthHubPage } from '../pages/HealthHubPage'
+import { AnalyticsHubPage } from '../pages/AnalyticsHubPage'
+import { LearnIdeasHubPage } from '../pages/LearnIdeasHubPage'
 import { PageTransition } from '../components/PageTransition'
 import { QueryErrorBoundary } from '../components/QueryErrorBoundary'
+import { DataBridgePage } from '../pages/DataBridgePage'
 
 export function AppRoutes() {
   return (
     <QueryErrorBoundary>
       <PageTransition>
         <Routes>
+          {/* Core */}
           <Route path="/" element={<HomePage />} />
-          <Route path="/about" element={<AboutPage />} />
+          <Route path="/focus" element={<FocusPage />} />
+          <Route path="/daily" element={<DailyCheckInPage />} />
           <Route path="/goals" element={<GoalsPage />} />
-          <Route path="/pipeline" element={<PipelinePage />} />
-          <Route path="/marketing" element={<MarketingPage />} />
-          <Route path="/routine" element={<RoutinePage />} />
-          <Route path="/schedule" element={<DaySchedulePage />} />
           <Route path="/finance" element={<FinanceWorkspacePage />} />
-          <Route path="/health" element={<HealthBodyPage />} />
-          <Route path="/habits" element={<HabitsPage />} />
-          <Route path="/mood" element={<MoodPage />} />
-          <Route path="/spiritual" element={<SpiritualPage />} />
-          <Route path="/analytics" element={<AnalyticsPage />} />
-          <Route path="/contacts" element={<ContactsPage />} />
           <Route path="/journal" element={<JournalPage />} />
-          <Route path="/learning" element={<LearningPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/life-plan" element={<GoalsLifePlanPage />} />
-          <Route path="/ideas" element={<IdeasThinkingPage />} />
+          <Route path="/contacts" element={<ContactsPage />} />
+
+          {/* Hub pages */}
+          <Route path="/profile"  element={<ProfileHubPage />} />
+          <Route path="/business" element={<BusinessHubPage />} />
+          <Route path="/schedule" element={<ScheduleHubPage />} />
+          <Route path="/health"   element={<HealthHubPage />} />
+          <Route path="/analytics" element={<AnalyticsHubPage />} />
+          <Route path="/learn"    element={<LearnIdeasHubPage />} />
+          <Route path="/data-bridge" element={<DataBridgePage />} />
+
+          {/* Redirects for old URLs */}
+          <Route path="/about"     element={<Navigate to="/profile"  replace />} />
+          <Route path="/life-plan" element={<Navigate to="/profile"  replace />} />
+          <Route path="/pipeline"  element={<Navigate to="/business" replace />} />
+          <Route path="/marketing" element={<Navigate to="/business" replace />} />
+          <Route path="/routine"   element={<Navigate to="/schedule" replace />} />
+          <Route path="/habits"    element={<Navigate to="/health"   replace />} />
+          <Route path="/mood"      element={<Navigate to="/health"   replace />} />
+          <Route path="/spiritual" element={<Navigate to="/health"   replace />} />
+          <Route path="/learning"  element={<Navigate to="/learn"    replace />} />
+          <Route path="/ideas"     element={<Navigate to="/learn"    replace />} />
+
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </PageTransition>

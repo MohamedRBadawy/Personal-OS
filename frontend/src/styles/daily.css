@@ -1,0 +1,531 @@
+/* ─────────────────────────────────────────────────────────────
+   Daily Check-in Page (/daily)
+   dc-section, dc-section-*, daily-*, dm-*, dh-*, ds-*, dhb-*
+   ───────────────────────────────────────────────────────────── */
+
+.daily-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+/* Header */
+.daily-header {
+  margin-bottom: 20px;
+}
+.daily-header h1 {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  font-family: var(--heading);
+  margin: 0 0 6px;
+}
+.daily-date {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Progress row */
+.daily-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin: 0 0 16px;
+}
+.daily-progress-bar {
+  flex: 1;
+  height: 5px;
+  background: var(--border);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.daily-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+.daily-progress-count {
+  font-weight: var(--weight-bold);
+  color: var(--text);
+  font-family: var(--mono);
+}
+
+/* Section card */
+.dc-section {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  overflow: hidden;
+  margin-bottom: 4px;
+  transition: border-color 0.15s;
+}
+.dc-section--done {
+  border-color: color-mix(in srgb, var(--success) 45%, var(--border));
+}
+.dc-section--optional {
+  opacity: 0.85;
+}
+
+/* Section header button */
+.dc-section-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  text-align: left;
+  color: var(--text);
+  transition: background 0.12s;
+}
+.dc-section-header:hover {
+  background: var(--surface-muted);
+}
+
+/* Circle check */
+.dc-section-check {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-xs);
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s;
+  color: transparent;
+}
+.dc-section--done .dc-section-check {
+  background: var(--success);
+  border-color: var(--success);
+  color: #fff;
+}
+
+.dc-section-title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  min-width: 80px;
+}
+.dc-section-status {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  flex: 1;
+  text-align: right;
+}
+.dc-section-optional {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  opacity: 0.6;
+  margin-right: 4px;
+}
+.dc-section-arrow {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* Section body */
+.dc-section-body {
+  padding: 12px 16px 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Mood pills ───────────────────────────────────────────────── */
+.dm-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.dm-pill {
+  flex: 1;
+  min-width: 70px;
+  padding: 8px 4px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  font-size: var(--text-sm);
+  text-align: center;
+  transition: all 0.12s;
+  color: var(--text);
+}
+.dm-pill:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+}
+.dm-pill--active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  font-weight: var(--weight-semibold);
+}
+
+/* ── Journal fields ───────────────────────────────────────────── */
+.dj-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 540px) {
+  .dj-grid { grid-template-columns: 1fr; }
+}
+.dj-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dj-label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  color: var(--text-muted);
+}
+.dj-save-indicator {
+  font-size: var(--text-xs);
+  color: var(--success);
+  height: 14px;
+  transition: opacity 0.3s;
+}
+
+/* ── Health form ──────────────────────────────────────────────── */
+.dh-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 540px) {
+  .dh-grid { grid-template-columns: 1fr; }
+}
+.dh-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dh-label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  color: var(--text-muted);
+}
+.dh-energy-row {
+  display: flex;
+  gap: 4px;
+}
+.dh-energy-btn {
+  flex: 1;
+  padding: 6px 2px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  font-size: var(--text-sm);
+  text-align: center;
+  transition: all 0.12s;
+  color: var(--text-muted);
+}
+.dh-energy-btn:hover { border-color: var(--accent); color: var(--accent); }
+.dh-energy-btn--active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  color: var(--accent);
+  font-weight: var(--weight-bold);
+}
+.dh-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  background: transparent;
+  transition: border-color 0.12s, background 0.12s;
+  font-size: var(--text-sm);
+  color: var(--text);
+  width: 100%;
+  text-align: left;
+}
+.dh-toggle-row:hover { border-color: var(--accent); }
+.dh-toggle-row--on {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+/* ── Spiritual form ───────────────────────────────────────────── */
+.ds-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ds-quran-input {
+  width: 80px;
+}
+.ds-toggle-chip {
+  padding: 6px 14px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  transition: all 0.12s;
+}
+.ds-toggle-chip:hover { border-color: var(--accent); color: var(--accent); }
+.ds-toggle-chip--on {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  color: var(--accent);
+  font-weight: var(--weight-semibold);
+}
+
+/* ── Habits ───────────────────────────────────────────────────── */
+.dhb-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dhb-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  background: transparent;
+  transition: border-color 0.12s, background 0.12s;
+  font-size: var(--text-sm);
+  color: var(--text);
+  width: 100%;
+  text-align: left;
+}
+.dhb-row:hover { border-color: var(--accent); }
+.dhb-row--done {
+  border-color: color-mix(in srgb, var(--success) 40%, var(--border));
+  background: color-mix(in srgb, var(--success) 5%, transparent);
+}
+.dhb-check {
+  font-size: var(--text-sm);
+  flex-shrink: 0;
+  width: 18px;
+}
+.dhb-name { flex: 1; font-size: var(--text-sm); }
+.dhb-target { font-size: var(--text-xs); color: var(--text-muted); }
+
+/* ── Finance quick entry ──────────────────────────────────────── */
+.df-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+}
+@media (max-width: 480px) {
+  .df-row { grid-template-columns: 1fr 1fr; }
+}
+.df-type-row {
+  display: flex;
+  gap: 6px;
+}
+.df-type-btn {
+  flex: 1;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  transition: all 0.12s;
+  color: var(--text-muted);
+}
+.df-type-btn--income.df-type-btn--active  { background: #dcfce7; color: #15803d; border-color: #86efac; }
+.df-type-btn--expense.df-type-btn--active { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
+[data-theme='dark'] .df-type-btn--income.df-type-btn--active  { background: rgba(22,163,74,.15); color: #4ade80; border-color: rgba(74,222,128,.35); }
+[data-theme='dark'] .df-type-btn--expense.df-type-btn--active { background: rgba(220,38,38,.15); color: #f87171; border-color: rgba(248,113,113,.35); }
+.df-entries-list {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+}
+.df-entry-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: var(--surface-muted);
+  font-size: var(--text-xs);
+}
+
+/* ── Ideas quick capture ──────────────────────────────────────── */
+.di-captured {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.di-idea-chip {
+  font-size: var(--text-sm);
+  padding: 4px 10px;
+  background: var(--surface-muted);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+}
+
+/* ── Morning / Evening session status ────────────────────────── */
+.checkin-session-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.checkin-session-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+  background: transparent;
+}
+.checkin-session-badge.done {
+  background: color-mix(in srgb, var(--success) 10%, transparent);
+  border-color: color-mix(in srgb, var(--success) 40%, var(--border));
+  color: var(--success);
+}
+
+/* ── Evening highlighted section ─────────────────────────────── */
+.checkin-evening-highlight {
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--accent) 4%, var(--surface));
+  padding: 16px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.checkin-evening-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.checkin-session-complete {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--success) 6%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--success) 25%, var(--border));
+  margin-bottom: 16px;
+}
+
+/* ── Evening quick panel ──────────────────────────────────────── */
+.evening-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.evening-panel-desc {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin: 0;
+  line-height: var(--leading-relaxed);
+}
+.evening-mood-row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.evening-mood-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-muted);
+  transition: all 0.12s;
+}
+.evening-mood-btn:hover { border-color: var(--accent); color: var(--accent); }
+.evening-mood-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: var(--weight-bold);
+}
+
+/* ── Evening done card ────────────────────────────────────────── */
+.evening-done-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--success) 8%, var(--surface));
+}
+.evening-done-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--success);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  flex-shrink: 0;
+}
+.evening-done-text {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+/* ── Routine blocks inside daily page ────────────────────────── */
+.dc-routine-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--text-sm);
+  margin-bottom: 6px;
+}
+.dc-routine-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--border);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.dc-routine-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 99px;
+  transition: width 0.3s;
+}

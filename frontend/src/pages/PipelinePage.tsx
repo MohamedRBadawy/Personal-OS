@@ -10,6 +10,9 @@ import {
   getPipelineWorkspace,
   updateMarketingAction,
   updateOpportunity,
+  getDuePipelineFollowups,
+  draftOpportunityMessage,
+  markOutreachSent,
 } from '../lib/api'
 import { formatDate } from '../lib/formatters'
 import type { Opportunity, OpportunityPayload, OpportunityStatus, PipelineWorkspaceOpportunity } from '../lib/types'
@@ -25,19 +28,39 @@ const KANBAN_COLS: { status: OpportunityStatus; label: string; color: string }[]
   { status: 'lost',          label: '❌ Lost',          color: '#dc2626' },
 ]
 
+const DRAFT_CHANNELS = [
+  { value: 'linkedin', label: 'LinkedIn' },
+  { value: 'email',    label: 'Email' },
+  { value: 'upwork',   label: 'Upwork' },
+] as const
+
+type DraftChannel = 'linkedin' | 'email' | 'upwork'
+
 export function PipelinePage() {
   const queryClient = useQueryClient()
   const [editingOpportunity, setEditingOpportunity] = useState<Opportunity | null>(null)
   const draggingId = useRef<string | null>(null)
   const [dragOverStatus, setDragOverStatus] = useState<string | null>(null)
+
+  // AI drafting state
+  const [activeDraft, setActiveDraft] = useState<{ id: string; text: string } | null>(null)
+  const [draftChannel, setDraftChannel] = useState<DraftChannel>('linkedin')
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+
   const workspaceQuery = useQuery({
     queryKey: ['pipeline-workspace'],
     queryFn: getPipelineWorkspace,
   })
 
+  const dueFollowupsQuery = useQuery({
+    queryKey: ['pipeline-due-followups'],
+    queryFn: getDuePipelineFollowups,
+  })
+
   async function invalidatePipeline() {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['pipeline-workspace'] }),
+      queryClient.invalidateQueries({ queryKey: ['pipeline-due-followups'] }),
       queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
       queryClient.invalidateQueries({ queryKey: ['command-center'] }),
       queryClient.invalidateQueries({ queryKey: ['analytics-overview'] }),
@@ -67,6 +90,22 @@ export function PipelinePage() {
     onSuccess: invalidatePipeline,
   })
 
+  const draftMutation = useMutation({
+    mutationFn: ({ id, channel, refresh }: { id: string; channel: string; refresh?: boolean }) =>
+      draftOpportunityMessage(id, { channel, refresh }),
+    onSuccess: (data, variables) => {
+      setActiveDraft({ id: variables.id, text: data.draft })
+    },
+  })
+
+  const markSentMutation = useMutation({
+    mutationFn: (id: string) => markOutreachSent(id),
+    onSuccess: async () => {
+      setActiveDraft(null)
+      await invalidatePipeline()
+    },
+  })
+
   if (workspaceQuery.isLoading) {
     return <section className="loading-state">Loading pipeline workspace...</section>
   }
@@ -76,6 +115,7 @@ export function PipelinePage() {
   }
 
   const workspace = workspaceQuery.data
+  const dueFollowups = dueFollowupsQuery.data ?? []
 
   return (
     <section className="page">
@@ -93,6 +133,19 @@ export function PipelinePage() {
         <MetricCard label="Won" value={`${workspace.summary.won_count}`} tone="success" />
         <MetricCard label="Due follow-ups" value={`${workspace.summary.due_follow_ups_count}`} tone="warning" />
       </div>
+
+      {/* ── Outreach follow-up banner ─────────────────────────────────────────── */}
+      {dueFollowups.length > 0 && (
+        <div className="pipeline-followup-banner">
+          <span className="pipeline-followup-icon">🔔</span>
+          <span className="pipeline-followup-body">
+            <strong>{dueFollowups.length} outreach follow-up{dueFollowups.length !== 1 ? 's' : ''} due</strong>
+            {' — '}
+            {dueFollowups.slice(0, 3).map(o => o.name).join(', ')}
+            {dueFollowups.length > 3 ? ` + ${dueFollowups.length - 3} more` : ''}
+          </span>
+        </div>
+      )}
 
       <div className="two-column">
         <Panel
@@ -218,15 +271,73 @@ export function PipelinePage() {
                             </a>
                           )}
                         </div>
-                        <p className="muted" style={{ fontSize: 12, margin: 0 }}>
+                        <p className="muted" style={{ fontSize: 14, margin: 0 }}>
                           {opportunity.fit_reasoning
                             ? opportunity.fit_reasoning.slice(0, 80) + (opportunity.fit_reasoning.length > 80 ? '…' : '')
                             : opportunity.description?.slice(0, 80) ?? ''}
                         </p>
+
+                        {/* ── Draft panel (shown when this card is active) ── */}
+                        {activeDraft?.id === opportunity.id && (
+                          <div className="kanban-draft-panel">
+                            <div className="kanban-draft-channel-row">
+                              <select
+                                value={draftChannel}
+                                style={{ fontSize: 13, padding: '2px 6px' }}
+                                onChange={e => setDraftChannel(e.target.value as DraftChannel)}
+                              >
+                                {DRAFT_CHANNELS.map(ch => (
+                                  <option key={ch.value} value={ch.value}>{ch.label}</option>
+                                ))}
+                              </select>
+                              <button
+                                className="button-ghost"
+                                style={{ fontSize: 13 }}
+                                type="button"
+                                disabled={draftMutation.isPending}
+                                onClick={() => draftMutation.mutate({ id: opportunity.id, channel: draftChannel, refresh: true })}
+                              >
+                                {draftMutation.isPending ? '…' : '↻'}
+                              </button>
+                              <button
+                                className="button-ghost"
+                                style={{ fontSize: 13 }}
+                                type="button"
+                                onClick={() => setActiveDraft(null)}
+                              >
+                                ✕
+                              </button>
+                            </div>
+                            <p className="kanban-draft-text">{activeDraft.text}</p>
+                            <div className="button-row">
+                              <button
+                                className="button-muted"
+                                style={{ fontSize: 13 }}
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(activeDraft.text)
+                                  setCopiedId(opportunity.id)
+                                  setTimeout(() => setCopiedId(null), 2000)
+                                }}
+                              >
+                                {copiedId === opportunity.id ? '✓ Copied' : 'Copy'}
+                              </button>
+                              <button
+                                style={{ fontSize: 13 }}
+                                type="button"
+                                disabled={markSentMutation.isPending}
+                                onClick={() => markSentMutation.mutate(opportunity.id)}
+                              >
+                                {markSentMutation.isPending ? 'Saving…' : 'Mark Sent →'}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
                         <div className="button-row" style={{ marginTop: 8 }}>
                           <button
                             className="button-muted"
-                            style={{ fontSize: 12, padding: '2px 8px' }}
+                            style={{ fontSize: 14, padding: '2px 8px' }}
                             type="button"
                             onClick={() =>
                               setEditingOpportunity({
@@ -246,12 +357,36 @@ export function PipelinePage() {
                                 date_closed: opportunity.date_closed ?? null,
                                 proposal_draft: opportunity.proposal_draft ?? '',
                                 outcome_notes: opportunity.outcome_notes,
+                                last_outreach_at: null,
+                                outreach_count: 0,
+                                next_followup_date: null,
+                                prospect_context: '',
+                                ai_draft: '',
                                 created_at: '',
                                 updated_at: '',
                               })
                             }
                           >
                             Edit
+                          </button>
+                          <button
+                            className="button-muted"
+                            style={{ fontSize: 14, padding: '2px 8px' }}
+                            type="button"
+                            disabled={draftMutation.isPending && draftMutation.variables?.id === opportunity.id}
+                            onClick={() => {
+                              if (activeDraft?.id === opportunity.id) {
+                                setActiveDraft(null)
+                              } else {
+                                draftMutation.mutate({ id: opportunity.id, channel: draftChannel })
+                              }
+                            }}
+                          >
+                            {draftMutation.isPending && draftMutation.variables?.id === opportunity.id
+                              ? '✨ Drafting…'
+                              : activeDraft?.id === opportunity.id
+                              ? 'Close draft'
+                              : '✨ Draft'}
                           </button>
                         </div>
                       </article>

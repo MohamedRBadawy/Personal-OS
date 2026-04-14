@@ -9,6 +9,7 @@ import {
   deleteContact,
   getDueFollowups,
   listContacts,
+  listContactGmailThreads,
   logInteraction,
   updateContact,
 } from '../lib/api'
@@ -210,6 +211,14 @@ function ContactCard({
   const daysSince = contact.days_since_contact
   const [showInteractions, setShowInteractions] = useState(false)
   const [showLogForm, setShowLogForm] = useState(false)
+  const [showGmail, setShowGmail] = useState(false)
+
+  const gmailQ = useQuery({
+    queryKey: ['contact-gmail', contact.id],
+    queryFn:  () => listContactGmailThreads(contact.id),
+    enabled:  showGmail && !!contact.email,
+    staleTime: 5 * 60 * 1000,
+  })
 
   return (
     <div className={`contact-card${isOverdue ? ' contact-card--overdue' : ''}`}>
@@ -287,6 +296,42 @@ function ContactCard({
         </div>
       )}
 
+      {/* Gmail thread preview — only for contacts with an email */}
+      {contact.email && (
+        <div className="interaction-section">
+          <button
+            className="interaction-toggle"
+            onClick={() => setShowGmail(v => !v)}
+          >
+            {showGmail ? '▾' : '▸'} 📧 Recent emails
+          </button>
+          {showGmail && (
+            <div className="interaction-list">
+              {gmailQ.isLoading && (
+                <p className="contact-gmail-loading">Loading threads…</p>
+              )}
+              {gmailQ.data?.note && (
+                <p className="contact-gmail-note">{gmailQ.data.note}</p>
+              )}
+              {gmailQ.data?.threads.length === 0 && !gmailQ.data?.note && !gmailQ.isLoading && (
+                <p className="contact-gmail-note">No recent threads found.</p>
+              )}
+              {gmailQ.data?.threads.map(t => (
+                <div key={t.id} className="contact-gmail-thread">
+                  <p className="contact-gmail-subject">{t.subject}</p>
+                  {t.snippet && (
+                    <p className="contact-gmail-snippet">{t.snippet}</p>
+                  )}
+                  <p className="contact-gmail-meta">
+                    {t.from_address} · {t.date} · {t.message_count} msg
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {showLogForm ? (
         <LogInteractionForm
           contactId={contact.id}
@@ -298,20 +343,20 @@ function ContactCard({
       <div className="contact-card-actions">
         <button
           className="button-muted"
-          style={{ fontSize: 12 }}
+          style={{ fontSize: 14 }}
           onClick={() => onLogContact(contact.id)}
         >
           Log contact today
         </button>
         <button
           className="button-muted"
-          style={{ fontSize: 12 }}
+          style={{ fontSize: 14 }}
           onClick={() => setShowLogForm(v => !v)}
         >
           + Interaction
         </button>
-        <button className="button-ghost" style={{ fontSize: 12 }} onClick={() => onEdit(contact)}>Edit</button>
-        <button className="button-ghost" style={{ fontSize: 12, color: '#dc2626' }} onClick={() => onDelete(contact.id)}>✕</button>
+        <button className="button-ghost" style={{ fontSize: 14 }} onClick={() => onEdit(contact)}>Edit</button>
+        <button className="button-ghost" style={{ fontSize: 14, color: '#dc2626' }} onClick={() => onDelete(contact.id)}>✕</button>
       </div>
     </div>
   )

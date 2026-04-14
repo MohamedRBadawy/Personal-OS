@@ -1,4 +1,3 @@
-import type { Node } from '../../lib/types'
 import { STATUSES, CATEGORIES, NODE_TYPES } from './constants'
 import type { SortKey } from './constants'
 
@@ -99,7 +98,7 @@ export function GoalsFilters({
               {s}: {statusCounts[s] || 0}
             </button>
           ))}
-          <button className="btn-ghost-sm" onClick={onAddNode}>+ Add node <kbd style={{ fontSize: 10, opacity: 0.6, fontFamily: 'inherit' }}>N</kbd></button>
+          <button className="btn-ghost-sm" onClick={onAddNode}>+ Add node <kbd style={{ fontSize: 12, opacity: 0.6, fontFamily: 'inherit' }}>N</kbd></button>
           {view === 'list' && (
             <button className="btn-ghost-sm goals-expand-toggle" onClick={onToggleExpandAll}>
               {expandAll ? 'Collapse all' : 'Expand all'}
@@ -110,7 +109,7 @@ export function GoalsFilters({
 
       {view === 'kanban' && (
         <div className="goals-chips" style={{ justifyContent: 'flex-end' }}>
-          <button className="btn-ghost-sm" onClick={onAddNode}>+ Add node <kbd style={{ fontSize: 10, opacity: 0.6, fontFamily: 'inherit' }}>N</kbd></button>
+          <button className="btn-ghost-sm" onClick={onAddNode}>+ Add node <kbd style={{ fontSize: 12, opacity: 0.6, fontFamily: 'inherit' }}>N</kbd></button>
         </div>
       )}
     </>

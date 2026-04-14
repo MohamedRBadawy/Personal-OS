@@ -36,13 +36,18 @@ export type MarketingCampaign = {
   updated_at: string
 }
 
+export type ActiveMarketingCampaign = Omit<MarketingCampaign, 'channels'> & {
+  action_count: number
+  channels: MarketingChannel[]
+}
+
 export type MarketingWorkspacePayload = {
   this_week_count: number
   this_month_count: number
   active_campaign_count: number
   active_channel_count: number
   actions_by_type: Record<string, number>
-  active_campaigns: Array<MarketingCampaign & { action_count: number; channels: MarketingChannel[] }>
+  active_campaigns: Array<ActiveMarketingCampaign>
   channel_summary: Array<MarketingChannel & { total_actions: number }>
   recent_actions: MarketingAction[]
   due_follow_ups: MarketingAction[]
@@ -65,6 +70,12 @@ export type Opportunity = {
   date_closed: string | null
   proposal_draft: string
   outcome_notes: string
+  // Outreach tracking
+  last_outreach_at: string | null
+  outreach_count: number
+  next_followup_date: string | null
+  prospect_context: string
+  ai_draft: string
   created_at: string
   updated_at: string
 }
@@ -85,6 +96,7 @@ export type OpportunityPayload = {
   date_closed?: string | null
   proposal_draft?: string
   outcome_notes?: string
+  prospect_context?: string
 }
 
 export type Client = {

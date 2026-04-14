@@ -100,7 +100,7 @@ export function DecomposeSection({ node, onChildrenCreated }: {
             <button className="btn-ghost-sm" onClick={() => setSubtasks([])}>Dismiss</button>
             <button
               className="btn-primary"
-              style={{ fontSize: 12 }}
+              style={{ fontSize: 14 }}
               disabled={creating || selected.size === 0}
               onClick={handleCreateSelected}
             >

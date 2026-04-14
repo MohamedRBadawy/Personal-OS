@@ -19,6 +19,7 @@ import {
   updateMarketingChannel,
 } from '../lib/api'
 import type {
+  ActiveMarketingCampaign,
   MarketingAction,
   MarketingActionPayload,
   MarketingActionType,
@@ -160,7 +161,7 @@ function CampaignForm({
   onCancel,
   isPending,
 }: {
-  initial?: Partial<MarketingCampaign>
+  initial?: Partial<MarketingCampaign> | Partial<ActiveMarketingCampaign>
   channels: MarketingChannel[]
   goalOptions: Array<{ id: string; title: string }>
   onSave: (p: Partial<MarketingCampaign>) => void
@@ -176,7 +177,9 @@ function CampaignForm({
   const [startDate, setStartDate] = useState(initial?.start_date ?? today)
   const [endDate, setEndDate] = useState(initial?.end_date ?? '')
   const [targetCount, setTargetCount] = useState(initial?.target_outreach_count?.toString() ?? '0')
-  const [selectedChannels, setSelectedChannels] = useState<string[]>(initial?.channels ?? [])
+  const [selectedChannels, setSelectedChannels] = useState<string[]>(
+    (initial?.channels ?? []).map(ch => typeof ch === 'string' ? ch : (ch as MarketingChannel).id)
+  )
   const [goalNode, setGoalNode] = useState(initial?.goal_node ?? '')
   const [notes, setNotes] = useState(initial?.notes ?? '')
 
@@ -287,7 +290,7 @@ function ActionForm({
 }: {
   initial?: Partial<MarketingAction>
   channels: MarketingChannel[]
-  campaigns: MarketingCampaign[]
+  campaigns: Array<Pick<MarketingCampaign, 'id' | 'name'>>
   onSave: (p: MarketingActionPayload) => void
   onCancel: () => void
   isPending: boolean
@@ -386,10 +389,10 @@ export function MarketingPage() {
   const [tab, setTab] = useState<TabId>('channels')
   const [editingChannel, setEditingChannel] = useState<MarketingChannel | null>(null)
   const [showAddChannel, setShowAddChannel] = useState(false)
-  const [editingCampaign, setEditingCampaign] = useState<MarketingCampaign | null>(null)
+  const [editingCampaign, setEditingCampaign] = useState<ActiveMarketingCampaign | null>(null)
   const [showAddCampaign, setShowAddCampaign] = useState(false)
   const [editingAction, setEditingAction] = useState<MarketingAction | null>(null)
-  const [showAddAction, setShowAddAction] = useState(false)
+  const [_showAddAction, setShowAddAction] = useState(false)
 
   const { data: workspace, isLoading } = useQuery({
     queryKey: ['marketing-workspace'],
@@ -549,7 +552,7 @@ export function MarketingPage() {
                   </div>
 
                   {ch.target_audience && (
-                    <p className="muted" style={{ fontSize: 12, marginBottom: 8 }}>{ch.target_audience}</p>
+                    <p className="muted" style={{ fontSize: 14, marginBottom: 8 }}>{ch.target_audience}</p>
                   )}
 
                   <div className="button-row">
@@ -559,21 +562,21 @@ export function MarketingPage() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="button-muted"
-                        style={{ fontSize: 12 }}
+                        style={{ fontSize: 14 }}
                       >
                         View Profile →
                       </a>
                     )}
                     <button
                       className="button-ghost"
-                      style={{ fontSize: 12 }}
+                      style={{ fontSize: 14 }}
                       onClick={() => { setEditingChannel(ch); setShowAddChannel(false) }}
                     >
                       Edit
                     </button>
                     <button
                       className="button-ghost"
-                      style={{ fontSize: 12, color: 'var(--danger)' }}
+                      style={{ fontSize: 14, color: 'var(--danger)' }}
                       onClick={() => { if (confirm('Delete this channel?')) deleteChannelMut.mutate(ch.id) }}
                     >
                       Delete
@@ -639,14 +642,14 @@ export function MarketingPage() {
                       <div className="button-row">
                         <button
                           className="button-muted"
-                          style={{ fontSize: 12, padding: '2px 8px' }}
+                          style={{ fontSize: 14, padding: '2px 8px' }}
                           onClick={() => { setEditingCampaign(camp); setShowAddCampaign(false) }}
                         >
                           Edit
                         </button>
                         <button
                           className="button-ghost"
-                          style={{ fontSize: 12, padding: '2px 8px', color: 'var(--danger)' }}
+                          style={{ fontSize: 14, padding: '2px 8px', color: 'var(--danger)' }}
                           onClick={() => { if (confirm('Delete this campaign?')) deleteCampaignMut.mutate(camp.id) }}
                         >
                           Delete
@@ -654,10 +657,10 @@ export function MarketingPage() {
                       </div>
                     </div>
 
-                    <p className="muted" style={{ marginBottom: 8, fontSize: 13 }}>{camp.offer}</p>
+                    <p className="muted" style={{ marginBottom: 8, fontSize: 14 }}>{camp.offer}</p>
 
                     {camp.message_angle && (
-                      <p style={{ fontSize: 12, fontStyle: 'italic', marginBottom: 8, color: 'var(--text-secondary)' }}>
+                      <p style={{ fontSize: 14, fontStyle: 'italic', marginBottom: 8, color: 'var(--text-secondary)' }}>
                         "{camp.message_angle.slice(0, 120)}{camp.message_angle.length > 120 ? '…' : ''}"
                       </p>
                     )}
@@ -723,11 +726,11 @@ export function MarketingPage() {
                           </div>
                         </div>
                       </div>
-                      {a.result && <p className="muted" style={{ fontSize: 12 }}>{a.result}</p>}
+                      {a.result && <p className="muted" style={{ fontSize: 14 }}>{a.result}</p>}
                       <div className="button-row" style={{ marginTop: 6 }}>
                         <button
                           className="button-muted"
-                          style={{ fontSize: 12 }}
+                          style={{ fontSize: 14 }}
                           disabled={updateActionMut.isPending}
                           onClick={() => updateActionMut.mutate({ id: a.id, data: { follow_up_done: true } })}
                         >
@@ -735,7 +738,7 @@ export function MarketingPage() {
                         </button>
                         <button
                           className="button-ghost"
-                          style={{ fontSize: 12 }}
+                          style={{ fontSize: 14 }}
                           onClick={() => setEditingAction(a)}
                         >
                           Edit
@@ -770,23 +773,23 @@ export function MarketingPage() {
                         <div className="button-row">
                           <button
                             className="button-ghost"
-                            style={{ fontSize: 12 }}
+                            style={{ fontSize: 14 }}
                             onClick={() => setEditingAction(a)}
                           >
                             Edit
                           </button>
                           <button
                             className="button-ghost"
-                            style={{ fontSize: 12, color: 'var(--danger)' }}
+                            style={{ fontSize: 14, color: 'var(--danger)' }}
                             onClick={() => { if (confirm('Delete this action?')) deleteActionMut.mutate(a.id) }}
                           >
                             Delete
                           </button>
                         </div>
                       </div>
-                      {a.result && <p className="muted" style={{ fontSize: 12 }}>{a.result}</p>}
+                      {a.result && <p className="muted" style={{ fontSize: 14 }}>{a.result}</p>}
                       {a.follow_up_date && !a.follow_up_done && (
-                        <p style={{ fontSize: 12, color: 'var(--warning)' }}>
+                        <p style={{ fontSize: 14, color: 'var(--warning)' }}>
                           Follow-up: {formatDate(a.follow_up_date)}
                         </p>
                       )}
