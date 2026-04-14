@@ -415,6 +415,213 @@
 .next-action-link { font-size: var(--text-sm); color: var(--accent); text-decoration: none; }
 .next-action-idle { font-size: var(--text-sm); color: var(--text-muted); margin: 0; font-style: italic; }
 
+/* ── Status Strip ────────────────────────────────────────────── */
+.cc-status-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 8px;
+}
+.cc-status-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  text-decoration: none;
+  color: var(--text);
+  transition: opacity 0.15s, transform 0.12s;
+  position: relative;
+  overflow: hidden;
+}
+.cc-status-tile:hover { transform: translateY(-1px); opacity: 0.9; }
+.cc-status-tile-label {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  color: var(--text-muted);
+  font-weight: var(--weight-semibold);
+}
+.cc-status-tile-value {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  font-family: var(--mono);
+}
+.cc-status-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.cc-status-dot--clear     { background: #22c55e; }
+.cc-status-dot--attention { background: #f59e0b; }
+.cc-status-dot--warning   { background: #ef4444; }
+
+/* ── Re-entry banner ─────────────────────────────────────────── */
+.cc-reentry-banner {
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cc-reentry-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.cc-reentry-title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+.cc-reentry-dismiss {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  padding: 0 2px;
+}
+.cc-reentry-section { display: flex; flex-direction: column; gap: 4px; }
+.cc-reentry-section-label {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  color: var(--text-muted);
+  font-weight: var(--weight-semibold);
+  margin: 0;
+}
+.cc-reentry-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.cc-reentry-list li { font-size: var(--text-sm); color: var(--text-muted); }
+
+/* ── AI Suggestions ──────────────────────────────────────────── */
+.cc-suggestions { display: flex; flex-direction: column; gap: 8px; }
+.cc-suggestion-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px dashed color-mix(in srgb, var(--accent) 35%, var(--border));
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--accent) 4%, var(--surface));
+}
+.cc-suggestion-body { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.cc-suggestion-topic {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  color: var(--accent);
+  margin: 0;
+}
+.cc-suggestion-text {
+  font-size: var(--text-sm);
+  color: var(--text);
+  margin: 0;
+  line-height: var(--leading-snug);
+}
+.cc-suggestion-actions { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+.cc-suggestion-btn {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  padding: 3px 10px;
+  border-radius: 99px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: transparent;
+  white-space: nowrap;
+  transition: all 0.12s;
+}
+.cc-suggestion-btn--act {
+  color: #16a34a;
+  border-color: #86efac;
+  background: #dcfce7;
+}
+.cc-suggestion-btn--act:hover { background: #bbf7d0; }
+.cc-suggestion-btn--dismiss { color: var(--text-muted); }
+.cc-suggestion-btn--dismiss:hover { border-color: var(--accent); color: var(--accent); }
+[data-theme='dark'] .cc-suggestion-btn--act {
+  background: rgba(22,163,74,.2); color: #4ade80; border-color: rgba(74,222,128,.4);
+}
+
+/* ── Priority upgrades ───────────────────────────────────────── */
+.cc-unblock-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  padding: 2px 6px;
+  border-radius: 99px;
+  background: color-mix(in srgb, #2563eb 12%, transparent);
+  color: #2563eb;
+  border: 1px solid color-mix(in srgb, #2563eb 30%, transparent);
+  flex-shrink: 0;
+}
+[data-theme='dark'] .cc-unblock-badge {
+  background: rgba(37,99,235,.2); color: #93c5fd; border-color: rgba(147,197,253,.3);
+}
+.cc-due-soon-chip {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  flex-shrink: 0;
+}
+[data-theme='dark'] .cc-due-soon-chip {
+  background: rgba(180,90,0,.2); color: #fbbf24; border-color: rgba(251,191,36,.35);
+}
+.cc-priority-parent {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin: 3px 0 0;
+  line-height: 1;
+}
+.cc-followup-chip {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+  flex-shrink: 0;
+}
+[data-theme='dark'] .cc-followup-chip {
+  background: rgba(220,38,38,.2); color: #f87171; border-color: rgba(248,113,113,.4);
+}
+
+/* ── Last Wins strip ─────────────────────────────────────────── */
+.cc-wins-list { display: flex; flex-direction: column; gap: 6px; }
+.cc-win-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.cc-win-icon { font-size: var(--text-sm); flex-shrink: 0; width: 20px; text-align: center; }
+.cc-win-body { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.cc-win-title { font-size: var(--text-sm); font-weight: var(--weight-medium); line-height: var(--leading-snug); }
+.cc-win-detail { font-size: var(--text-xs); color: var(--text-muted); }
+.cc-win-meta { font-size: var(--text-xs); color: var(--text-muted); white-space: nowrap; flex-shrink: 0; }
+
 /* ── Kyrgyzstan Readiness Widget ─────────────────────────────── */
 .readiness-card {
   border: 1px solid var(--border);

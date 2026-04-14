@@ -4,10 +4,183 @@ import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PageSkeleton } from '../components/PageSkeleton'
 import { CollapsibleSection } from '../components/CollapsibleSection'
-import { getDashboardV2, createNode, updateNode, getNextAction, listRoutineBlocks, getRoutineLogs, saveRoutineLog, getCheckinTodayStatus, getReadinessScore, listAppSettings, toggleBadDayMode } from '../lib/api'
+import {
+  getDashboardV2,
+  getCommandCenter,
+  createNode,
+  updateNode,
+  getNextAction,
+  listRoutineBlocks,
+  getRoutineLogs,
+  saveRoutineLog,
+  getCheckinTodayStatus,
+  getReadinessScore,
+  listAppSettings,
+  toggleBadDayMode,
+  actSuggestion,
+  dismissSuggestion,
+} from '../lib/api'
 import type { ReadinessScore } from '../lib/api'
-import type { DashboardTask, DashboardV2, NodeCreatePayload, NodeStatus, NodeUpdatePayload, RoutineBlock, RoutineLogEntry } from '../lib/types'
+import type {
+  DashboardV2,
+  CommandCenterPayload,
+  CommandCenterStatusCard,
+  CommandCenterPriorityItem,
+  CommandCenterRecentProgressItem,
+} from '../lib/types'
+import type { NodeCreatePayload, NodeStatus, NodeUpdatePayload, RoutineBlock, RoutineLogEntry } from '../lib/types'
 import { getCurrentBlock, blockEndTime } from '../components/routine/helpers'
+
+// ── Status Strip ─────────────────────────────────────────────────────────────
+
+const STATUS_COLORS: Record<CommandCenterStatusCard['status'], { bg: string; border: string; text: string }> = {
+  clear:     { bg: 'color-mix(in srgb, #16a34a 10%, var(--surface))', border: '#bbf7d0', text: '#15803d' },
+  attention: { bg: 'color-mix(in srgb, #d97706 10%, var(--surface))', border: '#fde68a', text: '#b45309' },
+  warning:   { bg: 'color-mix(in srgb, #dc2626 10%, var(--surface))', border: '#fecaca', text: '#dc2626' },
+}
+
+function StatusStrip({ cards }: { cards: CommandCenterStatusCard[] }) {
+  if (!cards.length) return null
+  return (
+    <div className="cc-status-strip">
+      {cards.map(card => {
+        const c = STATUS_COLORS[card.status]
+        return (
+          <Link
+            key={card.id}
+            to={card.route}
+            className="cc-status-tile"
+            style={{ background: c.bg, borderColor: c.border }}
+            title={card.detail}
+          >
+            <span className="cc-status-tile-label">{card.label}</span>
+            <span className="cc-status-tile-value" style={{ color: c.text }}>
+              {card.total > 0 ? `${card.value}/${card.total}` : card.detail || '—'}
+            </span>
+            <span className={`cc-status-dot cc-status-dot--${card.status}`} />
+          </Link>
+        )
+      })}
+    </div>
+  )
+}
+
+// ── Reentry Banner ────────────────────────────────────────────────────────────
+
+function ReentryBanner({
+  reentry,
+  onDismiss,
+}: {
+  reentry: CommandCenterPayload['reentry']
+  onDismiss: () => void
+}) {
+  if (!reentry.active) return null
+  return (
+    <div className="cc-reentry-banner">
+      <div className="cc-reentry-header">
+        <span className="cc-reentry-title">👋 {reentry.message}</span>
+        <button className="cc-reentry-dismiss" onClick={onDismiss} title="Dismiss">✕</button>
+      </div>
+      {reentry.what_changed.length > 0 && (
+        <div className="cc-reentry-section">
+          <p className="cc-reentry-section-label">What changed</p>
+          <ul className="cc-reentry-list">
+            {reentry.what_changed.map((item, i) => <li key={i}>{item}</li>)}
+          </ul>
+        </div>
+      )}
+      {reentry.matters_now.length > 0 && (
+        <div className="cc-reentry-section">
+          <p className="cc-reentry-section-label">Matters now</p>
+          <ul className="cc-reentry-list">
+            {reentry.matters_now.slice(0, 2).map((item, i) => <li key={i}>{item}</li>)}
+          </ul>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── AI Suggestions ────────────────────────────────────────────────────────────
+
+function AISuggestions({ suggestions }: { suggestions: CommandCenterPayload['weekly_review']['pending_suggestions'] }) {
+  const qc = useQueryClient()
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set())
+
+  const actMut = useMutation({
+    mutationFn: (id: string) => actSuggestion(id),
+    onSuccess: (_, id) => {
+      setDismissed(p => new Set([...p, id]))
+      qc.invalidateQueries({ queryKey: ['command-center'] })
+    },
+  })
+  const dismissMut = useMutation({
+    mutationFn: (id: string) => dismissSuggestion(id),
+    onSuccess: (_, id) => {
+      setDismissed(p => new Set([...p, id]))
+      qc.invalidateQueries({ queryKey: ['command-center'] })
+    },
+  })
+
+  const visible = suggestions.filter(s => !dismissed.has(s.id)).slice(0, 3)
+  if (!visible.length) return null
+
+  return (
+    <div className="cc-suggestions">
+      {visible.map(s => (
+        <div key={s.id} className="cc-suggestion-card">
+          <div className="cc-suggestion-body">
+            <p className="cc-suggestion-topic">💡 {s.topic.replace(/_/g, ' ')}</p>
+            <p className="cc-suggestion-text">{s.suggestion_text}</p>
+          </div>
+          <div className="cc-suggestion-actions">
+            <button
+              className="cc-suggestion-btn cc-suggestion-btn--act"
+              onClick={() => actMut.mutate(s.id)}
+              disabled={actMut.isPending || dismissMut.isPending}
+            >
+              ✓ Done
+            </button>
+            <button
+              className="cc-suggestion-btn cc-suggestion-btn--dismiss"
+              onClick={() => dismissMut.mutate(s.id)}
+              disabled={actMut.isPending || dismissMut.isPending}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ── Last Wins ─────────────────────────────────────────────────────────────────
+
+function LastWins({ items }: { items: CommandCenterRecentProgressItem[] }) {
+  if (!items.length) return null
+
+  function winIcon(kind: CommandCenterRecentProgressItem['kind']) {
+    return kind === 'win' ? '🏆' : '✓'
+  }
+
+  return (
+    <CollapsibleSection title="Recent Wins" storageKey="home-wins" defaultOpen={false}>
+      <div className="cc-wins-list">
+        {items.slice(0, 5).map(item => (
+          <div key={item.id} className="cc-win-row">
+            <span className="cc-win-icon">{winIcon(item.kind)}</span>
+            <div className="cc-win-body">
+              <span className="cc-win-title">{item.title}</span>
+              {item.detail && <span className="cc-win-detail">{item.detail}</span>}
+            </div>
+            <span className="cc-win-meta">{item.domain} · {item.date}</span>
+          </div>
+        ))}
+      </div>
+    </CollapsibleSection>
+  )
+}
 
 // ── Readiness Widget ─────────────────────────────────────────────────────────
 
@@ -25,7 +198,6 @@ function ReadinessWidget() {
   const score = Math.round(data.total_score)
   const pct = Math.min(score, 100)
 
-  // Determine color tier
   const color = pct >= 75 ? 'var(--success)' : pct >= 40 ? 'var(--accent)' : '#f59e0b'
 
   return (
@@ -90,7 +262,7 @@ function NextActionCard() {
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ['next-action'],
     queryFn: getNextAction,
-    staleTime: 5 * 60 * 1000,   // cache for 5 minutes
+    staleTime: 5 * 60 * 1000,
     retry: 1,
   })
   return (
@@ -174,11 +346,11 @@ function RoutineQuickPanel({
   )
 }
 
-// ── Status Popover ───────────────────────────────────────────────────────────
+// ── Status Popover (for priority items) ─────────────────────────────────────
 
-const STATUSES: NodeStatus[] = ['active', 'available', 'blocked', 'done', 'deferred']
+const NODE_STATUSES: NodeStatus[] = ['active', 'available', 'blocked', 'done', 'deferred']
 
-const STATUS_COLORS: Record<NodeStatus, string> = {
+const NODE_STATUS_COLORS: Record<NodeStatus, string> = {
   active:   '#2563eb',
   available:'#16a34a',
   blocked:  '#dc2626',
@@ -192,11 +364,18 @@ const HEALTH_ALERT_LABELS: Record<string, string> = {
   prayer_gap: 'Prayer gap',
 }
 
-function StatusPopover({ task, onClose }: { task: DashboardTask; onClose: () => void }) {
+function PriorityStatusPopover({
+  item,
+  onClose,
+}: {
+  item: CommandCenterPriorityItem
+  onClose: () => void
+}) {
   const qc = useQueryClient()
   const mut = useMutation({
-    mutationFn: (status: NodeStatus) => updateNode(task.id, { status } as NodeUpdatePayload),
+    mutationFn: (status: NodeStatus) => updateNode(item.id, { status } as NodeUpdatePayload),
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['command-center'] })
       qc.invalidateQueries({ queryKey: ['dashboard-v2'] })
       qc.invalidateQueries({ queryKey: ['nodes-v2'] })
       onClose()
@@ -205,17 +384,90 @@ function StatusPopover({ task, onClose }: { task: DashboardTask; onClose: () => 
 
   return (
     <div className="status-popover" onClick={e => e.stopPropagation()}>
-      {STATUSES.map(s => (
+      {NODE_STATUSES.map(s => (
         <button
           key={s}
-          className={`status-popover-btn ${s === task.status ? 'active' : ''}`}
-          style={{ '--status-color': STATUS_COLORS[s] } as React.CSSProperties}
+          className={`status-popover-btn ${s === item.status ? 'active' : ''}`}
+          style={{ '--status-color': NODE_STATUS_COLORS[s] } as React.CSSProperties}
           disabled={mut.isPending}
           onClick={() => mut.mutate(s)}
         >
           {s}
         </button>
       ))}
+    </div>
+  )
+}
+
+// ── Priority Item Row ─────────────────────────────────────────────────────────
+
+function PriorityRow({
+  item,
+  isActive,
+  onToggle,
+}: {
+  item: CommandCenterPriorityItem
+  isActive: boolean
+  onToggle: () => void
+}) {
+  return (
+    <div
+      className="task-row"
+      style={{ position: 'relative', cursor: 'pointer' }}
+      onClick={e => { e.stopPropagation(); onToggle() }}
+    >
+      <div className="task-row-main">
+        <span className="task-title">{item.title}</span>
+
+        {/* Dependency unblock badge */}
+        {item.dependency_unblock_count > 0 && (
+          <span className="cc-unblock-badge" title={`Completes this → unlocks ${item.dependency_unblock_count} other goal${item.dependency_unblock_count !== 1 ? 's' : ''}`}>
+            ↗{item.dependency_unblock_count}
+          </span>
+        )}
+
+        {/* Overdue badge */}
+        {item.is_overdue && (
+          <span className="overdue-badge">OVERDUE</span>
+        )}
+
+        {/* Due soon chip */}
+        {!item.is_overdue && item.due_in_days !== null && item.due_in_days <= 3 && (
+          <span className="cc-due-soon-chip">
+            in {item.due_in_days === 0 ? 'today' : `${item.due_in_days}d`}
+          </span>
+        )}
+
+        {/* Due date text (if not too urgent — already shown as chip) */}
+        {item.due_date && !item.is_overdue && (item.due_in_days === null || item.due_in_days > 3) && (
+          <span className="task-date">{item.due_date}</span>
+        )}
+
+        <span
+          className="task-status-chip"
+          style={{
+            background: `color-mix(in srgb, ${NODE_STATUS_COLORS[item.status as NodeStatus] ?? '#6b7280'} 15%, transparent)`,
+            color: NODE_STATUS_COLORS[item.status as NodeStatus] ?? '#6b7280',
+          }}
+        >
+          {item.status}
+        </span>
+        <Link
+          className="task-goto-btn"
+          to={`/goals?node=${item.id}`}
+          onClick={e => e.stopPropagation()}
+          title="Open in Goals"
+        >
+          →
+        </Link>
+      </div>
+      {item.notes && <p className="task-notes">{item.notes.slice(0, 120)}{item.notes.length > 120 ? '…' : ''}</p>}
+      {item.parent_title && (
+        <p className="cc-priority-parent">↳ {item.parent_title}</p>
+      )}
+      {isActive && (
+        <PriorityStatusPopover item={item} onClose={onToggle} />
+      )}
     </div>
   )
 }
@@ -309,10 +561,20 @@ export function HomePage() {
   const [showAddTask, setShowAddTask] = useState(false)
   const [activePopover, setActivePopover] = useState<string | null>(null)
   const [routineExpanded, setRoutineExpanded] = useState(false)
+  const [reentryDismissed, setReentryDismissed] = useState(false)
 
   const today = new Date().toLocaleDateString('en-CA')
 
-  const { data, isLoading, error } = useQuery<DashboardV2>({
+  // ── Primary: Command Center (richer data) ──
+  const { data: cc, isLoading: ccLoading } = useQuery<CommandCenterPayload>({
+    queryKey: ['command-center'],
+    queryFn: getCommandCenter,
+    staleTime: 2 * 60 * 1000,
+    retry: 1,
+  })
+
+  // ── Secondary: DashboardV2 (milestones, node_counts, finance details) ──
+  const { data, isLoading: dvLoading, error } = useQuery<DashboardV2>({
     queryKey: ['dashboard-v2'],
     queryFn: getDashboardV2,
   })
@@ -343,7 +605,6 @@ export function HomePage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['app-settings'] }),
   })
 
-  // Determine if a nudge should be shown
   const nowHour = new Date().getHours()
   const showMorningNudge = nowHour < 9 && checkinStatus && !checkinStatus.morning_done && !badDayMode
   const showEveningNudge = nowHour >= 20 && checkinStatus && !checkinStatus.evening_done && !badDayMode
@@ -362,17 +623,59 @@ export function HomePage() {
     },
   })
 
+  const isLoading = dvLoading && ccLoading
+
   if (isLoading) return <PageSkeleton />
   if (error || !data) return <div className="page-error">Could not load dashboard.</div>
 
-  const independentPct = data.target_independent > 0
-    ? Math.min(100, Math.round((data.independent_monthly / data.target_independent) * 100))
+  // ── Computed values ──
+  // Prefer CC finance data; fall back to DashboardV2
+  const indepMonthly = cc
+    ? cc.finance.summary.independent_income_eur
+    : data.independent_monthly
+  const targetIndep = cc
+    ? parseFloat(cc.finance.summary.target_eur)
+    : data.target_independent
+  const independentPct = targetIndep > 0
+    ? Math.min(100, Math.round((indepMonthly / targetIndep) * 100))
     : 0
 
-  const hp = data.health_pulse
+  // Routine today counts — prefer CC schedule summary
+  const routineToday = cc
+    ? {
+        done: cc.schedule.summary.done_count + cc.schedule.summary.partial_count,
+        total: cc.schedule.summary.done_count + cc.schedule.summary.late_count + cc.schedule.summary.partial_count + cc.schedule.summary.skipped_count + cc.schedule.summary.pending_count,
+        pct: Math.round(
+          ((cc.schedule.summary.done_count + cc.schedule.summary.partial_count) /
+            Math.max(1, cc.schedule.summary.done_count + cc.schedule.summary.late_count + cc.schedule.summary.partial_count + cc.schedule.summary.skipped_count + cc.schedule.summary.pending_count)) * 100
+        ),
+      }
+    : data.routine_today
+
+  // Health data — prefer CC
+  const hp = cc ? cc.health_today.summary : data.health_pulse
+  const healthAlerts: string[] = []
+  if (hp) {
+    if (cc) {
+      if ((cc.health_today.summary as any).low_sleep_today) healthAlerts.push('low_sleep')
+      if ((cc.health_today.summary as any).low_mood_today) healthAlerts.push('low_mood')
+      if ((cc.health_today.summary as any).prayer_gap_streak > 0) healthAlerts.push('prayer_gap')
+    } else {
+      healthAlerts.push(...data.health_pulse.alerts)
+    }
+  }
+
   const js = data.journal_status
   const cd = data.contacts_due
   const fd = data.finance_detail
+
+  // CC-specific
+  const priorities: CommandCenterPriorityItem[] = cc?.priorities ?? []
+  const blockedGoals = priorities.filter(p => p.status === 'blocked')
+  const pipelineSummary = cc?.pipeline.summary
+  const suggestions = cc?.weekly_review.pending_suggestions ?? []
+  const reentry = cc?.reentry
+  const recentProgress = cc?.recent_progress ?? []
 
   return (
     <div className="home-page" onClick={() => setActivePopover(null)}>
@@ -401,6 +704,11 @@ export function HomePage() {
         </div>
       </div>
 
+      {/* ── Re-entry banner (conditional) ── */}
+      {reentry && !reentryDismissed && (
+        <ReentryBanner reentry={reentry} onDismiss={() => setReentryDismissed(true)} />
+      )}
+
       {/* ── Check-in nudge ── */}
       {(showMorningNudge || showEveningNudge) && (
         <Link to="/daily" className="home-checkin-nudge">
@@ -415,16 +723,24 @@ export function HomePage() {
         </Link>
       )}
 
+      {/* ── Status Strip ── */}
+      {cc && cc.status_cards.length > 0 && (
+        <StatusStrip cards={cc.status_cards} />
+      )}
+
       {/* ── Next Action ── */}
       <NextActionCard />
+
+      {/* ── AI Suggestions ── */}
+      {suggestions.length > 0 && <AISuggestions suggestions={suggestions} />}
 
       {/* ── SECTION 1: North Star ── */}
       <div className="unlock-bar">
         <p className="unlock-eyebrow">The number that unlocks everything</p>
         <div className="unlock-numbers">
-          <span className="unlock-current">€{data.independent_monthly}/mo</span>
+          <span className="unlock-current">€{indepMonthly}/mo</span>
           <span className="unlock-sep"> / </span>
-          <span className="unlock-target">€{data.target_independent}/mo independent</span>
+          <span className="unlock-target">€{targetIndep}/mo independent</span>
         </div>
         <div className="unlock-track">
           <div className="unlock-fill" style={{ width: `${independentPct}%` }} />
@@ -453,11 +769,11 @@ export function HomePage() {
           <Link to="/schedule" className="pulse-row-inner" style={{ display: 'contents', textDecoration: 'none', color: 'inherit' }}>
             <span className="pulse-icon">▦</span>
             <span className="pulse-label">Routine</span>
-            <span className="pulse-value">{data.routine_today.done}/{data.routine_today.total}</span>
+            <span className="pulse-value">{routineToday.done}/{routineToday.total}</span>
             <div className="pulse-bar-wrap">
-              <div className="pulse-bar-fill" style={{ width: `${data.routine_today.pct}%` }} />
+              <div className="pulse-bar-fill" style={{ width: `${routineToday.pct}%` }} />
             </div>
-            <span className="pulse-pct">{data.routine_today.pct}%</span>
+            <span className="pulse-pct">{routineToday.pct}%</span>
           </Link>
           <button
             className="rqp-toggle"
@@ -488,6 +804,25 @@ export function HomePage() {
           </Link>
         )}
 
+        {/* Pipeline row */}
+        {pipelineSummary && (cc!.pipeline.active_opportunities.length > 0 || pipelineSummary.due_follow_ups_count > 0) && (
+          <Link
+            to="/business"
+            className={`pulse-row${pipelineSummary.due_follow_ups_count > 0 ? ' pulse-row--alert' : ''}`}
+          >
+            <span className="pulse-icon">🚀</span>
+            <span className="pulse-label">Pipeline</span>
+            {cc!.pipeline.active_opportunities.length > 0 && (
+              <span className="pulse-value">{cc!.pipeline.active_opportunities.length} active</span>
+            )}
+            {pipelineSummary.due_follow_ups_count > 0 && (
+              <span className="cc-followup-chip">
+                {pipelineSummary.due_follow_ups_count} follow-up{pipelineSummary.due_follow_ups_count !== 1 ? 's' : ''} due
+              </span>
+            )}
+          </Link>
+        )}
+
         {/* Journal */}
         <Link
           to="/journal"
@@ -507,23 +842,23 @@ export function HomePage() {
         {/* Health */}
         <Link
           to="/health"
-          className={`pulse-row${hp.alerts.length > 0 ? ' pulse-row--alert' : ''}`}
+          className={`pulse-row${healthAlerts.length > 0 ? ' pulse-row--alert' : ''}`}
         >
           <span className="pulse-icon">❤</span>
           <span className="pulse-label">Health</span>
-          {hp.avg_sleep_7d !== null && (
+          {hp && hp.avg_sleep_7d !== null && (
             <span className="pulse-value">{hp.avg_sleep_7d}h sleep</span>
           )}
-          {hp.avg_mood_7d !== null && (
+          {hp && hp.avg_mood_7d !== null && (
             <span className="pulse-meta">· mood {hp.avg_mood_7d}/5</span>
           )}
-          {hp.full_prayer_streak > 0 && (
+          {hp && hp.full_prayer_streak > 0 && (
             <span className="pulse-meta">· {hp.full_prayer_streak}d prayer</span>
           )}
-          {hp.alerts.map(a => (
+          {healthAlerts.map(a => (
             <span key={a} className="pulse-chip">{HEALTH_ALERT_LABELS[a]}</span>
           ))}
-          {!hp.health_logged_today && (
+          {hp && !hp.health_logged_today && (
             <span className="pulse-chip">Log today</span>
           )}
         </Link>
@@ -560,65 +895,32 @@ export function HomePage() {
           </div>
         )}
 
-        {data.top_tasks.length === 0 ? (
-          <p className="empty-hint">No P1 tasks available. <Link to="/goals">Go to Goals to add.</Link></p>
+        {/* Priority list using CommandCenter data */}
+        {priorities.length === 0 ? (
+          <p className="empty-hint">No priorities. <Link to="/goals">Go to Goals to add.</Link></p>
         ) : (
           <div className="task-list">
-            {data.top_tasks.map(task => (
-              <div
-                key={task.id}
-                className="task-row"
-                style={{ position: 'relative', cursor: 'pointer' }}
-                onClick={e => { e.stopPropagation(); setActivePopover(p => p === task.id ? null : task.id) }}
-              >
-                <div className="task-row-main">
-                  <span className="task-title">{task.title}</span>
-                  {task.effort && <span className="task-meta">{task.effort}</span>}
-                  {task.target_date && (
-                    <span className="task-date task-date-urgent">{task.target_date}</span>
-                  )}
-                  {task.target_date && task.target_date < today && task.status !== 'done' && (
-                    <span className="overdue-badge">OVERDUE</span>
-                  )}
-                  <span
-                    className="task-status-chip"
-                    style={{ background: `color-mix(in srgb, ${STATUS_COLORS[task.status]} 15%, transparent)`, color: STATUS_COLORS[task.status] }}
-                  >
-                    {task.status}
-                  </span>
-                  <Link
-                    className="task-goto-btn"
-                    to={`/goals?node=${task.id}`}
-                    onClick={e => e.stopPropagation()}
-                    title="Open in Goals"
-                  >
-                    →
-                  </Link>
-                </div>
-                {task.notes && <p className="task-notes">{task.notes}</p>}
-                {task.tags.length > 0 && (
-                  <div className="tag-row">
-                    {task.tags.map(t => <span key={t} className="tag">{t}</span>)}
-                  </div>
-                )}
-                {activePopover === task.id && (
-                  <StatusPopover task={task} onClose={() => setActivePopover(null)} />
-                )}
-              </div>
+            {priorities.slice(0, 8).map(item => (
+              <PriorityRow
+                key={item.id}
+                item={item}
+                isActive={activePopover === item.id}
+                onToggle={() => setActivePopover(p => p === item.id ? null : item.id)}
+              />
             ))}
           </div>
         )}
 
         {/* Blocked goals — inside Priorities section */}
-        {data.blocked_goals.length > 0 && (
+        {blockedGoals.length > 0 && (
           <div className="blocked-panel" style={{ marginTop: 8 }}>
             <p className="section-title" style={{ marginBottom: 6 }}>⚠ Blocked goals</p>
             <div className="blocked-list">
-              {data.blocked_goals.map(g => (
+              {blockedGoals.map(g => (
                 <Link key={g.id} to={`/goals?node=${g.id}`} className="blocked-row" style={{ textDecoration: 'none' }}>
                   <span className="blocked-title">{g.title}</span>
-                  {g.blocked_by.length > 0 && (
-                    <span className="blocked-by">blocked by: {g.blocked_by.join(', ')}</span>
+                  {g.blocked_by_titles.length > 0 && (
+                    <span className="blocked-by">blocked by: {g.blocked_by_titles.join(', ')}</span>
                   )}
                 </Link>
               ))}
@@ -626,6 +928,9 @@ export function HomePage() {
           </div>
         )}
       </div>
+
+      {/* ── Last Wins ── */}
+      {recentProgress.length > 0 && <LastWins items={recentProgress} />}
 
       {/* ── SECTION 4: Finance Snapshot ── */}
       <CollapsibleSection title="Finance" storageKey="home-finance" defaultOpen={true}>
@@ -698,7 +1003,10 @@ export function HomePage() {
       {showAddTask && createPortal(
         <AddTaskModal
           onClose={() => setShowAddTask(false)}
-          onSaved={() => queryClient.invalidateQueries({ queryKey: ['dashboard-v2'] })}
+          onSaved={() => {
+            queryClient.invalidateQueries({ queryKey: ['dashboard-v2'] })
+            queryClient.invalidateQueries({ queryKey: ['command-center'] })
+          }}
         />,
         document.body
       )}
