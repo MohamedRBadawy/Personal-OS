@@ -236,6 +236,29 @@ class HealthSummaryService:
             capacity_signals.append("Spiritual consistency has slipped for multiple days in a row.")
         if not capacity_signals:
             capacity_signals.append("Health signals are stable enough for a normal day.")
+        # ── New: workout, body composition, readiness ──────────────────────────
+        from health.analytics import ExerciseAnalyticsService
+        from health.models.workout import WorkoutSession
+        from health.serializers.workout import WorkoutSessionSerializer
+
+        readiness = None
+        body_composition_latest = None
+        recent_workout_sessions = []
+        muscle_activation = []
+        try:
+            readiness = ExerciseAnalyticsService.readiness_today(reference_date)
+            body_comp = ExerciseAnalyticsService.body_composition_trend(days=90)
+            body_composition_latest = body_comp.get('latest')
+            sessions = list(
+                WorkoutSession.objects
+                .prefetch_related('exercises__sets')
+                .order_by('-date')[:5]
+            )
+            recent_workout_sessions = WorkoutSessionSerializer(sessions, many=True).data
+            muscle_activation = ExerciseAnalyticsService.muscle_activation_summary(reference_date)
+        except Exception:
+            pass  # never break the overview payload
+
         return {
             "date": reference_date.isoformat(),
             "summary": summary,
@@ -244,6 +267,10 @@ class HealthSummaryService:
             "recent_mood_logs": recent_mood_logs,
             "recent_spiritual_logs": recent_spiritual_logs,
             "capacity_signals": capacity_signals,
+            "readiness": readiness,
+            "body_composition_latest": body_composition_latest,
+            "recent_workout_sessions": recent_workout_sessions,
+            "muscle_activation": muscle_activation,
         }
 
     @staticmethod

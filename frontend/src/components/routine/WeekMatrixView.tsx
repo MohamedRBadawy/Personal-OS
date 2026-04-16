@@ -15,6 +15,7 @@ export function WeekMatrixView({ blocks, onEdit }: { blocks: RoutineBlock[]; onE
       <div className="week-matrix-header">
         <span />
         <span className="week-matrix-time-col" />
+        <span className="week-matrix-block-col">Block</span>
         {DAY_SHORT.map(d => (
           <span key={d} className="week-matrix-day-col">{d}</span>
         ))}
@@ -46,7 +47,7 @@ export function WeekMatrixView({ blocks, onEdit }: { blocks: RoutineBlock[]; onE
 
       {/* Footer: daily load */}
       <div className="week-matrix-footer">
-        <span style={{ gridColumn: '1 / 3' }}>Daily load</span>
+        <span style={{ gridColumn: '1 / 4' }}>Daily load</span>
         {dayTotals.map((mins, i) => (
           <span key={i} className="week-matrix-day-load">{fmtDuration(mins)}</span>
         ))}

@@ -218,6 +218,7 @@ class RoutineLog(models.Model):
     # Adhkar fields — stored on the prayer block that anchors each adhkar session
     morning_adhkar    = models.BooleanField(null=True, blank=True, help_text="Morning adhkar completed (Fajr block)")
     evening_adhkar    = models.BooleanField(null=True, blank=True, help_text="Evening adhkar completed (Asr block)")
+    salah_adhkar      = models.BooleanField(null=True, blank=True, help_text="Adhkar Al-Salah completed after this prayer")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

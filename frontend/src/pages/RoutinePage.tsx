@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, Fragment } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   getBlockStreaks,
@@ -17,6 +18,7 @@ import { WeeklyGrid }             from '../components/routine/WeeklyGrid'
 import { MetricsPanel }           from '../components/routine/MetricsPanel'
 import { BlockRow }               from '../components/routine/BlockRow'
 import { BlockEditPanel }         from '../components/routine/BlockEditPanel'
+import { ActualDayPanel }         from '../components/routine/ActualDayPanel'
 import { RoutineEditor }          from '../components/routine/RoutineEditor'
 import { WeekMatrixView }         from '../components/routine/WeekMatrixView'
 import { RoutineAnalyticsView }   from '../components/routine/RoutineAnalyticsView'
@@ -31,14 +33,30 @@ function timeToMin(timeStr: string): number {
 
 // ── GapRow ────────────────────────────────────────────────────────────────
 
-function GapRow({ minutes }: { minutes: number }) {
+function GapRow({
+  minutes,
+  startTime,
+  onAdd,
+}: {
+  minutes: number
+  startTime?: string
+  onAdd?: (time: string, duration: number) => void
+}) {
   const label = minutes >= 60
     ? `${Math.floor(minutes / 60)}h ${minutes % 60 > 0 ? `${minutes % 60}m` : ''} free`.trim()
     : `${minutes} min free`
   return (
-    <div className="routine-gap-row">
+    <div className="routine-gap-row" onClick={() => startTime && onAdd?.(startTime, Math.min(minutes, 90))}>
       <div className="routine-gap-line" />
       <span className="routine-gap-label">{label}</span>
+      {startTime && onAdd && (
+        <button
+          className="routine-gap-add-btn"
+          onClick={e => { e.stopPropagation(); onAdd(startTime, Math.min(minutes, 90)) }}
+        >
+          + Schedule
+        </button>
+      )}
       <div className="routine-gap-line" />
     </div>
   )
@@ -49,6 +67,7 @@ function GapRow({ minutes }: { minutes: number }) {
 
 export function RoutinePage() {
   const qc = useQueryClient()
+  const navigate = useNavigate()
   const today = todayStr()
   const [view, setView] = useState<'today' | 'week' | 'analytics'>('today')
   const [editMode, setEditMode] = useState(false)
@@ -56,6 +75,8 @@ export function RoutinePage() {
   const [editingBlockId, setEditingBlockId] = useState<number | null>(null)
   // Schedule drift tracking (minutes behind/ahead of plan)
   const [drift, setDrift] = useState(0)
+  // Actual day logger panel
+  const [showActualPanel, setShowActualPanel] = useState(false)
 
   const { data: blocks = [], isLoading: blocksLoading } = useQuery<RoutineBlock[]>({
     queryKey: ['routine-blocks'],
@@ -239,6 +260,16 @@ export function RoutinePage() {
             )}
             {view === 'today' && (
               <button
+                className="btn-ghost-sm"
+                style={{ fontSize: 14 }}
+                onClick={() => setShowActualPanel(true)}
+                title="Log what actually happened today"
+              >
+                📝 Actual day
+              </button>
+            )}
+            {view === 'today' && (
+              <button
                 className={`btn-ghost-sm ${editMode ? 'active' : ''}`}
                 style={{ fontSize: 14 }}
                 onClick={() => setEditMode(m => !m)}
@@ -280,7 +311,10 @@ export function RoutinePage() {
       {view === 'analytics' ? (
         <RoutineAnalyticsView blocks={blocks} />
       ) : view === 'week' ? (
-        <WeekMatrixView blocks={blocks} onEdit={id => setEditingBlockId(id)} />
+        <>
+          <p className="routine-week-matrix-hint">Your routine structure — which blocks run on which days. Tap a row to edit it.</p>
+          <WeekMatrixView blocks={blocks} onEdit={id => setEditingBlockId(id)} />
+        </>
       ) : editMode ? (
         <RoutineEditor blocks={blocks} onDone={() => setEditMode(false)} />
       ) : (
@@ -347,9 +381,21 @@ export function RoutinePage() {
                 ? timeToMin(block.time_str || block.time) - (timeToMin(prev.time_str || prev.time) + (prev.duration_minutes ?? 30))
                 : 0
 
+              // Compute gap start time (= end of previous block)
+              const gapStartStr = prev ? (() => {
+                const endMin = timeToMin(prev.time_str || prev.time) + (prev.duration_minutes ?? 30)
+                return `${String(Math.floor(endMin / 60)).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}`
+              })() : undefined
+
               return (
                 <Fragment key={block.id}>
-                  {gapMin > 5 && <GapRow minutes={gapMin} />}
+                  {gapMin > 5 && (
+                    <GapRow
+                      minutes={gapMin}
+                      startTime={gapStartStr}
+                      onAdd={(time, dur) => navigate(`/schedule?openAdd=1&time=${time}&duration=${dur}`)}
+                    />
+                  )}
                   <BlockRow
                     block={block}
                     log={logsByTime[block.time_str || block.time.slice(0, 5)]}
@@ -377,6 +423,21 @@ export function RoutinePage() {
           onSaved={() => {
             qc.invalidateQueries({ queryKey: ['routine-blocks'] })
             setEditingBlockId(null)
+          }}
+        />
+      )}
+
+      {/* Actual day logger panel */}
+      {showActualPanel && (
+        <ActualDayPanel
+          blocks={blocks}
+          logs={logs}
+          today={today}
+          onClose={() => setShowActualPanel(false)}
+          onSaved={() => {
+            qc.invalidateQueries({ queryKey: ['routine-logs', today] })
+            qc.invalidateQueries({ queryKey: ['scheduled-entries', today] })
+            setShowActualPanel(false)
           }}
         />
       )}

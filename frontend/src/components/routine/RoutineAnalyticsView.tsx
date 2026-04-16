@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getRoutineAnalytics } from '../../lib/api'
-import type { RoutineBlock, RoutineDailyEntry, RoutineTypeStats, RoutineBlockStat } from '../../lib/types'
+import type { RoutineBlock, RoutineDailyEntry, RoutineTypeStats, RoutineBlockStat, PrayerBlockStat, ExerciseBlockStat } from '../../lib/types'
 import { TYPE_INFO, DAY_DIGITS, DAY_SHORT } from './constants'
 import { heatLevel } from './helpers'
 
@@ -246,6 +246,97 @@ function TimeInvestmentSummary({ blocks }: { blocks: RoutineBlock[] }) {
   )
 }
 
+// ── Prayer Quality Stats ───────────────────────────────────────────────────
+
+function PrayerQualityStats({ stats }: { stats: PrayerBlockStat[] }) {
+  if (!stats.length) return <p className="ra-section-sub">No prayer data yet.</p>
+
+  const rows: { key: keyof PrayerBlockStat; label: string; alwaysShow?: boolean }[] = [
+    { key: 'mosque_pct',         label: '🕌 Masjid' },
+    { key: 'first_row_pct',      label: '1st Row' },
+    { key: 'takbir_pct',         label: 'Takbirat Al-Ihram' },
+    { key: 'sunnah_pct',         label: 'Sunnah' },
+    { key: 'salah_adhkar_pct',   label: '📿 Adhkar Al-Salah' },
+    { key: 'morning_adhkar_pct', label: '🤲 Morning Adhkar' },
+    { key: 'evening_adhkar_pct', label: '🌙 Evening Adhkar' },
+  ]
+
+  return (
+    <div className="ra-prayer-grid">
+      {stats.map(ps => {
+        const nKey = (key: string) => key.replace('_pct', '_n') as keyof PrayerBlockStat
+        // Only show rows that have at least 1 log or are relevant to this prayer
+        const relevantRows = rows.filter(r => {
+          if (r.key === 'morning_adhkar_pct') return ps.morning_adhkar_n > 0 || ps.mosque_n > 0
+          if (r.key === 'evening_adhkar_pct') return ps.evening_adhkar_n > 0 || ps.mosque_n > 0
+          return true
+        })
+        return (
+          <div key={ps.block_id} className="ra-prayer-card">
+            <div className="ra-prayer-card-header">
+              <span className="ra-prayer-time">{ps.time_str}</span>
+              <span className="ra-prayer-label">{ps.label}</span>
+              <span className="ra-prayer-logged">{ps.logged}× logged</span>
+            </div>
+            {ps.logged === 0 ? (
+              <p className="ra-prayer-no-data">No logs in this window</p>
+            ) : (
+              <div className="ra-prayer-rows">
+                {relevantRows.map(({ key, label }) => {
+                  const pct = ps[key] as number
+                  const n = ps[nKey(key as string)] as number
+                  if (n === 0 && pct === 0 && key !== 'salah_adhkar_pct') {
+                    // skip untracked fields silently if never set
+                    if (key === 'morning_adhkar_pct' || key === 'evening_adhkar_pct') return null
+                  }
+                  return (
+                    <div key={key} className="ra-prayer-row">
+                      <span className="ra-prayer-row-label">{label}</span>
+                      <div className="ra-prayer-bar-bg">
+                        <div
+                          className="ra-prayer-bar-fill"
+                          style={{
+                            width: `${pct}%`,
+                            background: pct >= 80 ? '#16a34a' : pct >= 50 ? '#f59e0b' : '#ef4444',
+                          }}
+                        />
+                      </div>
+                      <span className="ra-prayer-pct" title={`${n} / ${ps.logged}`}>{pct}%</span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ── Exercise Quality Stats ─────────────────────────────────────────────────
+
+function ExerciseStats({ stats }: { stats: ExerciseBlockStat[] }) {
+  if (!stats.length) return <p className="ra-section-sub">No exercise blocks found.</p>
+  return (
+    <div className="ra-exercise-list">
+      {stats.map(es => (
+        <div key={es.block_id} className="ra-exercise-row">
+          <span className="ra-exercise-time">{es.time_str}</span>
+          <span className="ra-exercise-label">{es.label}</span>
+          {es.exercise_type && (
+            <span className="ra-exercise-badge">{es.exercise_type}</span>
+          )}
+          {es.intensity && (
+            <span className={`ra-exercise-badge ra-intensity-${es.intensity}`}>{es.intensity}</span>
+          )}
+          <span className="ra-exercise-logged">{es.logged}× logged</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ── Routine Analytics View (main export) ──────────────────────────────────
 
 export function RoutineAnalyticsView({ blocks }: { blocks: RoutineBlock[] }) {
@@ -332,6 +423,24 @@ export function RoutineAnalyticsView({ blocks }: { blocks: RoutineBlock[] }) {
             <p className="ra-section-sub">Sorted worst → best by default. Drift = avg minutes early/late vs scheduled time.</p>
             <BlockStatsTable blockStats={data.block_stats} />
           </div>
+
+          {/* ── Prayer quality ── */}
+          {data.prayer_stats?.length > 0 && (
+            <div className="ra-section">
+              <h3 className="ra-section-title">Prayer quality — {days} days</h3>
+              <p className="ra-section-sub">Of prayers you logged as done/partial, what % included each quality marker.</p>
+              <PrayerQualityStats stats={data.prayer_stats} />
+            </div>
+          )}
+
+          {/* ── Exercise details ── */}
+          {data.exercise_stats?.length > 0 && (
+            <div className="ra-section">
+              <h3 className="ra-section-title">Exercise blocks</h3>
+              <p className="ra-section-sub">Your scheduled exercise blocks and how often you complete them.</p>
+              <ExerciseStats stats={data.exercise_stats} />
+            </div>
+          )}
         </>
       )}
     </div>

@@ -18,6 +18,13 @@ from health.views import (
     MealTemplateViewSet,
     FoodItemViewSet,
     MealIngredientViewSet,
+    WorkoutSessionViewSet,
+    WorkoutExerciseViewSet,
+    SetLogViewSet,
+    BodyCompositionLogViewSet,
+    WearableLogViewSet,
+    HealthReadinessAPIView,
+    HealthAIInsightsAPIView,
 )
 
 router = DefaultRouter()
@@ -31,6 +38,12 @@ router.register("meal-logs",        MealLogViewSet,        basename="meallog")
 router.register("meal-templates",   MealTemplateViewSet,   basename="mealtemplate")
 router.register("food-items",       FoodItemViewSet,       basename="fooditem")
 router.register("meal-ingredients", MealIngredientViewSet, basename="mealingredient")
+# New: workout engine, body composition, wearable
+router.register("workout-sessions",   WorkoutSessionViewSet,    basename="workoutsession")
+router.register("workout-exercises",  WorkoutExerciseViewSet,   basename="workoutexercise")
+router.register("set-logs",           SetLogViewSet,            basename="setlog")
+router.register("body-composition",   BodyCompositionLogViewSet, basename="bodycomposition")
+router.register("wearable-logs",      WearableLogViewSet,       basename="wearablelog")
 
 urlpatterns = [
     path("overview/", HealthOverviewAPIView.as_view(), name="health-overview"),
@@ -38,5 +51,7 @@ urlpatterns = [
     path("today/", HealthTodayAPIView.as_view(), name="health-today"),
     path("habit-heatmap/", HabitHeatmapAPIView.as_view(), name="habit-heatmap"),
     path("spiritual-heatmap/", SpiritualHeatmapAPIView.as_view(), name="spiritual-heatmap"),
+    path("readiness/",    HealthReadinessAPIView.as_view(),   name="health-readiness"),
+    path("ai-insights/",  HealthAIInsightsAPIView.as_view(),  name="health-ai-insights"),
     path("", include(router.urls)),
 ]

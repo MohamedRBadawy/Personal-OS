@@ -7,6 +7,10 @@ from health.views.spiritual_log import SpiritualLogViewSet, SpiritualHeatmapAPIV
 from health.views.summary import HealthSummaryAPIView
 from health.views.today import HealthTodayAPIView
 from health.views.meal import MealPlanViewSet, MealLogViewSet, MealTemplateViewSet, FoodItemViewSet, MealIngredientViewSet
+from health.views.workout import WorkoutSessionViewSet, WorkoutExerciseViewSet, SetLogViewSet
+from health.views.body_composition import BodyCompositionLogViewSet
+from health.views.wearable import WearableLogViewSet
+from health.views.ai_health import HealthReadinessAPIView, HealthAIInsightsAPIView
 
 __all__ = [
     "HealthLogViewSet",
@@ -24,4 +28,11 @@ __all__ = [
     "MealTemplateViewSet",
     "FoodItemViewSet",
     "MealIngredientViewSet",
+    "WorkoutSessionViewSet",
+    "WorkoutExerciseViewSet",
+    "SetLogViewSet",
+    "BodyCompositionLogViewSet",
+    "WearableLogViewSet",
+    "HealthReadinessAPIView",
+    "HealthAIInsightsAPIView",
 ]

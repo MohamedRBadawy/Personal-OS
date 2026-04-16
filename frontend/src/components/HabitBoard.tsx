@@ -5,6 +5,8 @@ type HabitBoardProps = {
   items: HabitBoardItem[]
   pendingHabitId?: string | null
   onToggle: (item: HabitBoardItem, done: boolean) => void
+  onDelete?: (item: HabitBoardItem) => void
+  deletingHabitId?: string | null
 }
 
 function describeTarget(item: HabitBoardItem) {
@@ -14,7 +16,7 @@ function describeTarget(item: HabitBoardItem) {
   return titleCase(item.habit.target).replace('3x Week', '3x/week')
 }
 
-export function HabitBoard({ items, pendingHabitId, onToggle }: HabitBoardProps) {
+export function HabitBoard({ items, pendingHabitId, onToggle, onDelete, deletingHabitId }: HabitBoardProps) {
   if (items.length === 0) {
     return <p className="muted">No habits are defined yet.</p>
   }
@@ -32,9 +34,26 @@ export function HabitBoard({ items, pendingHabitId, onToggle }: HabitBoardProps)
                 <h3>{item.habit.name}</h3>
                 <p className="muted">{describeTarget(item)}</p>
               </div>
-              <span className={`status-pill ${item.today_log?.done ? 'success' : item.today_log ? 'warning' : ''}`}>
-                {todayState}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span className={`status-pill ${item.today_log?.done ? 'success' : item.today_log ? 'warning' : ''}`}>
+                  {todayState}
+                </span>
+                {onDelete && (
+                  <button
+                    className="btn-ghost-sm"
+                    disabled={deletingHabitId === item.habit.id}
+                    title="Delete habit"
+                    onClick={() => {
+                      if (window.confirm(`Delete habit "${item.habit.name}"? This cannot be undone.`)) {
+                        onDelete(item)
+                      }
+                    }}
+                    style={{ color: 'var(--text-muted)', opacity: 0.6 }}
+                  >
+                    {deletingHabitId === item.habit.id ? '…' : '✕'}
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="summary-strip">

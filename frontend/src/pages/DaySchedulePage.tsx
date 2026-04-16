@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   listRoutineBlocks,
@@ -459,6 +460,22 @@ export default function DaySchedulePage() {
   const [view, setView]           = useState<ViewMode>('day')
   const [selectedDate, setSelectedDate] = useState(today)
   const [addModal, setAddModal]   = useState<ModalState | null>(null)
+
+  // Auto-open AddEntryModal from URL params (e.g. from RoutinePage gap quick-add)
+  const [searchParams, setSearchParams] = useSearchParams()
+  useEffect(() => {
+    const openAdd = searchParams.get('openAdd')
+    const time    = searchParams.get('time')
+    const dur     = searchParams.get('duration')
+    if (openAdd && time) {
+      setAddModal({
+        date: today,
+        time,
+        duration: dur ? parseInt(dur, 10) : 60,
+      })
+      setSearchParams({}, { replace: true })
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // AI schedule suggestions
   const [aiSuggestions, setAiSuggestions]       = useState<ScheduleSuggestion[]>([])

@@ -11,6 +11,9 @@ from health.models.habit import Habit, HabitLog
 from health.models.mood_log import MoodLog
 from health.models.spiritual_log import SpiritualLog
 from health.models.meal import MealPlan, MealLog, MealTemplate, FoodItem, MealIngredient
+from health.models.workout import WorkoutSession, WorkoutExercise, SetLog
+from health.models.body_composition import BodyCompositionLog
+from health.models.wearable import WearableLog
 
 __all__ = [
     "HealthLog",
@@ -23,4 +26,9 @@ __all__ = [
     "MealTemplate",
     "FoodItem",
     "MealIngredient",
+    "WorkoutSession",
+    "WorkoutExercise",
+    "SetLog",
+    "BodyCompositionLog",
+    "WearableLog",
 ]

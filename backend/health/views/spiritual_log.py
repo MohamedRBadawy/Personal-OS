@@ -29,7 +29,8 @@ class SpiritualHeatmapAPIView(APIView):
 
     def get(self, request):
         today = date.today()
-        start = today - timedelta(days=29)
+        days = min(int(request.query_params.get('days', 60)), 90)
+        start = today - timedelta(days=days - 1)
 
         logs = SpiritualLog.objects.filter(date__gte=start, date__lte=today)
 
@@ -38,7 +39,7 @@ class SpiritualHeatmapAPIView(APIView):
             grid[str(log.date)] = {p: getattr(log, p) for p in PRAYERS}
 
         # Build ordered date list
-        dates = [(start + timedelta(days=i)).isoformat() for i in range(30)]
+        dates = [(start + timedelta(days=i)).isoformat() for i in range(days)]
 
         # Stats
         prayer_counts = {p: 0 for p in PRAYERS}

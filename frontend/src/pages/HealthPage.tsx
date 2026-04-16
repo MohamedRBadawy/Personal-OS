@@ -133,9 +133,9 @@ export function HealthPage() {
       <div className="two-column">
         <Panel title="Related pages" description="Mood, habits, and spiritual tracking are now full pages.">
           <div className="stack">
-            <Link className="button-link" to="/health">Mood and mental state</Link>
-            <Link className="button-link" to="/health">Habit board</Link>
-            <Link className="button-link" to="/health">Prayer and spiritual</Link>
+            <Link className="button-link" to="/health?tab=mood">Mood and mental state</Link>
+            <Link className="button-link" to="/health?tab=habits">Habit board</Link>
+            <Link className="button-link" to="/health?tab=spiritual">Prayer and spiritual</Link>
           </div>
         </Panel>
 

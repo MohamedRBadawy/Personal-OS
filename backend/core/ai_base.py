@@ -55,6 +55,26 @@ class AIProvider(ABC):
         Returns list of {node_id, node_title, start_time, duration_minutes, reason}
         """
 
+    @abstractmethod
+    def analyze_health_week(self, *, context: dict) -> dict:
+        """Analyze the last 7 days of health data and return specific insights.
+
+        context: dict from ExerciseAnalyticsService.build_ai_context()
+
+        Returns:
+        {
+            "insights": [
+                {"type": "strength"|"recovery"|"composition"|"correlation"|"neutral",
+                 "headline": str,
+                 "detail": str,
+                 "severity": "positive"|"neutral"|"warning"},
+                ...  # 1-5 items
+            ],
+            "week_summary": str,   # 1-sentence overall characterization
+            "suggested_focus": str, # what to prioritize next week
+        }
+        """
+
 
 class DeterministicAIProvider(AIProvider):
     """Rule-driven fallback that keeps API contracts stable before live AI succeeds."""
@@ -389,6 +409,93 @@ class DeterministicAIProvider(AIProvider):
                 }
             )
         return suggestions
+
+    def analyze_health_week(self, *, context: dict) -> dict:
+        """Rule-based fallback health week analysis."""
+        insights = []
+        workouts = context.get('workouts_7d', [])
+        readiness = context.get('readiness', {})
+        body_comp = context.get('body_composition_latest')
+        fat_trend = context.get('body_composition_fat_trend', 'insufficient_data')
+        muscle_trend = context.get('body_composition_muscle_trend', 'insufficient_data')
+        recovery = context.get('recovery', {})
+
+        if len(workouts) == 0:
+            insights.append({
+                'type': 'neutral',
+                'headline': 'No workouts logged this week',
+                'detail': 'Start by logging your next gym session with full exercise and set details.',
+                'severity': 'neutral',
+            })
+        elif len(workouts) >= 5:
+            insights.append({
+                'type': 'recovery',
+                'headline': f'High frequency: {len(workouts)} sessions in 7 days',
+                'detail': 'Consider one dedicated rest day to allow full muscle recovery.',
+                'severity': 'warning',
+            })
+        elif len(workouts) >= 3:
+            insights.append({
+                'type': 'neutral',
+                'headline': f'Solid week: {len(workouts)} sessions completed',
+                'detail': 'Consistency is building. Keep the pattern going next week.',
+                'severity': 'positive',
+            })
+
+        score = readiness.get('score', 60)
+        if score < 50:
+            insights.append({
+                'type': 'recovery',
+                'headline': f'Recovery score is low ({score}/100)',
+                'detail': readiness.get('recommendation', 'Prioritize rest and sleep tonight.'),
+                'severity': 'warning',
+            })
+        elif score >= 80:
+            insights.append({
+                'type': 'recovery',
+                'headline': f'Excellent recovery ({score}/100)',
+                'detail': 'All signals are strong. Good day for high-intensity work.',
+                'severity': 'positive',
+            })
+
+        if fat_trend == 'improving':
+            insights.append({
+                'type': 'composition',
+                'headline': 'Body fat trending down',
+                'detail': 'InBody data shows fat percentage is moving in the right direction. Maintain your current nutrition and training pattern.',
+                'severity': 'positive',
+            })
+        elif fat_trend == 'worsening':
+            insights.append({
+                'type': 'composition',
+                'headline': 'Body fat percentage has increased since last scan',
+                'detail': 'Review nutrition consistency. Training volume alone may not offset dietary patterns.',
+                'severity': 'warning',
+            })
+
+        hrv_trend = recovery.get('hrv_trend', 'unknown')
+        if hrv_trend == 'declining' and len(workouts) >= 3:
+            insights.append({
+                'type': 'correlation',
+                'headline': 'HRV declining while training volume is high',
+                'detail': 'This is an early overtraining signal. Add a full rest day and protect sleep.',
+                'severity': 'warning',
+            })
+
+        if not insights:
+            insights.append({
+                'type': 'neutral',
+                'headline': 'Log more data to unlock specific insights',
+                'detail': 'The more workout sessions, InBody scans, and wearable data you log, the more specific the analysis will be.',
+                'severity': 'neutral',
+            })
+
+        session_count = len(workouts)
+        return {
+            'insights': insights[:5],
+            'week_summary': f'Completed {session_count} workout session{"s" if session_count != 1 else ""} this week.',
+            'suggested_focus': 'Maintain consistency and log data after every session to build pattern intelligence.',
+        }
 
     def suggest_next_action(self, *, top_nodes, routine_pct, due_follow_ups_count, profile_context: str = ""):
         """Rule-based next action fallback."""

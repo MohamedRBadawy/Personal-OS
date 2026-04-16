@@ -204,7 +204,32 @@
       "Bash(python manage.py makemigrations schedule --name=\"routinelog_add_adhkar_fields\")",
       "Bash(python -c \"from schedule.gcal_service import get_gcal_events; print\\('import OK'\\)\")",
       "Bash(python manage.py runserver 8000)",
-      "Bash(curl -s http://localhost:8000/api/schedule/gcal-events/?date=2026-04-14)"
+      "Bash(curl -s http://localhost:8000/api/schedule/gcal-events/?date=2026-04-14)",
+      "Bash(curl -s \"https://personal-os-api-xk0z.onrender.com/api/health/logs/?date=2026-04-11\")",
+      "Bash(curl -s \"https://personal-os-api-xk0z.onrender.com/api/schedule/routine-blocks/\")",
+      "Bash(python3 -c ':*)",
+      "Bash(curl -s -X POST https://personal-os-api-xk0z.onrender.com/api/health/logs/ -H 'Content-Type: application/json' -d '{:*)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('OK:', d.get\\('id',''\\), d.get\\('date',''\\), 'ERR:', d.get\\('detail',''\\) or d.get\\('date',''\\)\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('id','ERR'\\), d.get\\('date',''\\), d.get\\('non_field_errors',d.get\\('detail',''\\)\\)\\)\")",
+      "Bash(python3 -c \"import sys,json; print\\(json.dumps\\(json.load\\(sys.stdin\\), indent=2\\)\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('Apr11:', d.get\\('id','ERROR'\\), d.get\\('date',''\\), '|', list\\(d.keys\\(\\)\\) if 'id' not in d else 'OK'\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('Apr12:', d.get\\('id','ERROR'\\), d.get\\('date',''\\)\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('Apr14:', d.get\\('id','ERROR'\\), d.get\\('date',''\\), d.get\\('exercise_type',''\\)\\)\")",
+      "Bash(curl -s \"https://personal-os-api-xk0z.onrender.com/api/health/logs/\")",
+      "Bash(curl -s \"http://127.0.0.1:8000/api/health/logs/\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); logs=d.get\\('results',d\\) if isinstance\\(d,dict\\) else d; print\\(f'Local logs count: {len\\(logs\\)}'\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('Apr14:', d.get\\('id','ERR'\\), d.get\\('date',''\\), d.get\\('exercise_type',''\\) if 'id' in d else d\\)\")",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "mcp__Claude_in_Chrome__tabs_create_mcp",
+      "mcp__Claude_in_Chrome__switch_browser",
+      "Bash(python manage.py makemigrations health --name workout_body_composition_wearable)",
+      "Bash(python -c \"from core.ai_prompts import build_health_week_request, HEALTH_WEEK_SCHEMA; print\\('prompts OK'\\)\")",
+      "Bash(python -c \"from core.ai_providers import AnthropicAIProvider; print\\('providers OK'\\)\")",
+      "Bash(python -c \"from health.analytics import ExerciseAnalyticsService; print\\('analytics OK'\\)\")",
+      "Bash(python -c \"from health.views.ai_health import HealthReadinessAPIView, HealthAIInsightsAPIView; print\\('views OK'\\)\")",
+      "Bash(python manage.py showmigrations health)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8000/api/health/summary/)",
+      "Bash(python manage.py makemigrations health --name workoutexercise_muscles)"
     ]
   }
 }

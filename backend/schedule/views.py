@@ -104,7 +104,7 @@ class RoutineLogSerializer(drf_serializers.ModelSerializer):
             "id", "date", "block_time", "status", "actual_time", "actual_duration_minutes",
             "note", "updated_at",
             "prayed_in_mosque", "first_row", "takbirat_al_ihram", "prayed_sunnah",
-            "morning_adhkar", "evening_adhkar",
+            "morning_adhkar", "evening_adhkar", "salah_adhkar",
         ]
         read_only_fields = ["id", "updated_at"]
 
@@ -410,7 +410,14 @@ class RoutineAnalyticsView(APIView):
         # All logs in window
         logs = list(RoutineLog.objects.filter(
             date__gte=start, date__lte=today,
-        ).values("date", "block_time", "status", "actual_time"))
+        ).values(
+            "date", "block_time", "status", "actual_time",
+            # Prayer detail fields
+            "prayed_in_mosque", "first_row", "takbirat_al_ihram",
+            "prayed_sunnah", "morning_adhkar", "evening_adhkar", "salah_adhkar",
+            # Exercise detail fields
+            "block_time",
+        ))
 
         # ── Daily ─────────────────────────────────────────────
         daily_map: dict = {}
@@ -532,7 +539,91 @@ class RoutineAnalyticsView(APIView):
                 rate = round(100 * counts["done"] / counts["total"]) if counts["total"] else 0
                 by_weekday[t][wd] = rate
 
-        return Response({"days": days, "daily": daily, "by_type": by_type, "block_stats": block_stats, "by_weekday": by_weekday})
+        # ── Prayer quality stats ──────────────────────────────
+        # For each spiritual block, compute rates for all boolean detail fields.
+        prayer_blocks = {t: b for t, b in block_by_time.items() if b["type"] == "spiritual"}
+        prayer_stats = []
+        for t_str, block in prayer_blocks.items():
+            counts = {
+                "block_id": block["id"],
+                "label": block["label"],
+                "time_str": t_str,
+                "logged": 0,
+                "mosque": 0, "first_row": 0, "takbir": 0,
+                "sunnah": 0, "salah_adhkar": 0,
+                "morning_adhkar": 0, "evening_adhkar": 0,
+            }
+            for log in logs:
+                if str(log["block_time"])[:5] != t_str:
+                    continue
+                if log["status"] not in ("done", "partial"):
+                    continue
+                counts["logged"] += 1
+                if log["prayed_in_mosque"] is True:  counts["mosque"] += 1
+                if log["first_row"] is True:          counts["first_row"] += 1
+                if log["takbirat_al_ihram"] is True:  counts["takbir"] += 1
+                if log["prayed_sunnah"] is True:      counts["sunnah"] += 1
+                if log["salah_adhkar"] is True:       counts["salah_adhkar"] += 1
+                if log["morning_adhkar"] is True:     counts["morning_adhkar"] += 1
+                if log["evening_adhkar"] is True:     counts["evening_adhkar"] += 1
+
+            n = counts["logged"] or 1
+            prayer_stats.append({
+                "block_id": counts["block_id"],
+                "label": counts["label"],
+                "time_str": counts["time_str"],
+                "logged": counts["logged"],
+                "mosque_pct":        round(100 * counts["mosque"] / n),
+                "first_row_pct":     round(100 * counts["first_row"] / n),
+                "takbir_pct":        round(100 * counts["takbir"] / n),
+                "sunnah_pct":        round(100 * counts["sunnah"] / n),
+                "salah_adhkar_pct":  round(100 * counts["salah_adhkar"] / n),
+                "morning_adhkar_pct": round(100 * counts["morning_adhkar"] / n),
+                "evening_adhkar_pct": round(100 * counts["evening_adhkar"] / n),
+                # raw counts for tooltip
+                "mosque_n":        counts["mosque"],
+                "first_row_n":     counts["first_row"],
+                "takbir_n":        counts["takbir"],
+                "sunnah_n":        counts["sunnah"],
+                "salah_adhkar_n":  counts["salah_adhkar"],
+                "morning_adhkar_n": counts["morning_adhkar"],
+                "evening_adhkar_n": counts["evening_adhkar"],
+            })
+        prayer_stats.sort(key=lambda x: x["time_str"])
+
+        # ── Exercise quality stats ────────────────────────────
+        exercise_blocks = {t: b for t, b in block_by_time.items() if b["type"] == "health"}
+        exercise_stats_raw: dict[str, dict] = {}
+        for b in RoutineBlock.objects.filter(active=True, type="health").values(
+            "id", "time", "label", "exercise_type", "intensity"
+        ):
+            t_str = str(b["time"])[:5]
+            exercise_stats_raw[t_str] = {
+                "block_id": b["id"], "label": b["label"],
+                "time_str": t_str,
+                "exercise_type": b["exercise_type"] or "",
+                "intensity": b["intensity"] or "",
+                "logged": 0,
+            }
+
+        for log in logs:
+            t_str = str(log["block_time"])[:5]
+            if t_str not in exercise_stats_raw:
+                continue
+            if log["status"] in ("done", "partial"):
+                exercise_stats_raw[t_str]["logged"] += 1
+
+        exercise_stats = sorted(exercise_stats_raw.values(), key=lambda x: x["time_str"])
+
+        return Response({
+            "days": days,
+            "daily": daily,
+            "by_type": by_type,
+            "block_stats": block_stats,
+            "by_weekday": by_weekday,
+            "prayer_stats": prayer_stats,
+            "exercise_stats": exercise_stats,
+        })
 
 
 class RoutineMetricsView(APIView):

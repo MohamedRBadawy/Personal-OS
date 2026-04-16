@@ -146,6 +146,10 @@ export type HealthOverviewPayload = {
   recent_mood_logs: MoodLog[]
   recent_spiritual_logs: SpiritualLog[]
   capacity_signals: string[]
+  readiness: HealthReadinessScore | null
+  body_composition_latest: BodyCompositionLog | null
+  recent_workout_sessions: WorkoutSession[]
+  muscle_activation: MuscleActivation[]
 }
 
 export type MealLog = {
@@ -242,4 +246,176 @@ export type MealTemplate = {
   vitamins: Record<string, number>
   minerals: Record<string, number>
   notes: string
+}
+
+// ── Workout Engine ─────────────────────────────────────────────────────────────
+
+export type SetLog = {
+  id: string
+  exercise: string
+  set_number: number
+  reps: number | null
+  weight_kg: string | null
+  duration_secs: number | null
+  distance_km: string | null
+  notes: string
+}
+
+export type SetLogPayload = {
+  exercise: string
+  set_number: number
+  reps?: number | null
+  weight_kg?: string | null
+  duration_secs?: number | null
+  distance_km?: string | null
+  notes?: string
+}
+
+export type WorkoutExercise = {
+  id: string
+  session: string
+  name: string
+  category: 'compound' | 'isolation' | 'cardio' | 'flexibility'
+  order: number
+  notes: string
+  sets: SetLog[]
+  primary_muscle: string
+  secondary_muscles: string[]
+}
+
+export type WorkoutExercisePayload = {
+  session: string
+  name: string
+  category?: 'compound' | 'isolation' | 'cardio' | 'flexibility'
+  order?: number
+  notes?: string
+  primary_muscle?: string
+  secondary_muscles?: string[]
+}
+
+export type WorkoutSession = {
+  id: string
+  date: string
+  title: string
+  session_type: 'strength' | 'cardio' | 'swimming' | 'yoga' | 'other'
+  duration_mins: number | null
+  notes: string
+  health_log: string | null
+  exercises: WorkoutExercise[]
+  created_at: string
+}
+
+export type WorkoutSessionPayload = {
+  date: string
+  session_type: 'strength' | 'cardio' | 'swimming' | 'yoga' | 'other'
+  title?: string
+  duration_mins?: number | null
+  notes?: string
+  health_log?: string | null
+}
+
+// ── Body Composition ──────────────────────────────────────────────────────────
+
+export type BodyCompositionLog = {
+  id: string
+  date: string
+  weight_kg: string
+  body_fat_pct: string | null
+  muscle_mass_kg: string | null
+  fat_mass_kg: string | null
+  visceral_fat_level: number | null
+  body_water_pct: string | null
+  bmi: string | null
+  metabolic_age: number | null
+  source: 'inbody' | 'manual' | 'estimate'
+  notes: string
+  lean_mass_kg: string | null
+  created_at: string
+}
+
+export type BodyCompositionLogPayload = {
+  date: string
+  weight_kg: string
+  body_fat_pct?: string | null
+  muscle_mass_kg?: string | null
+  fat_mass_kg?: string | null
+  visceral_fat_level?: number | null
+  body_water_pct?: string | null
+  bmi?: string | null
+  metabolic_age?: number | null
+  source?: 'inbody' | 'manual' | 'estimate'
+  notes?: string
+}
+
+// ── Wearable ──────────────────────────────────────────────────────────────────
+
+export type WearableLog = {
+  id: string
+  date: string
+  source: 'garmin' | 'apple_watch' | 'fitbit' | 'manual'
+  steps: number | null
+  active_minutes: number | null
+  calories_burned: number | null
+  resting_heart_rate: number | null
+  avg_heart_rate: number | null
+  hrv_ms: number | null
+  sleep_score: number | null
+  spo2_pct: string | null
+  vo2_max: string | null
+  stress_score: number | null
+  created_at: string
+}
+
+export type WearableLogPayload = Omit<WearableLog, 'id' | 'created_at'>
+
+// ── Analytics types ───────────────────────────────────────────────────────────
+
+export type HealthReadinessComponent = {
+  score: number
+  available: boolean
+}
+
+export type HealthReadinessScore = {
+  score: number
+  label: 'Poor' | 'Moderate' | 'Good' | 'High'
+  components: {
+    hrv: HealthReadinessComponent
+    sleep: HealthReadinessComponent
+    resting_hr: HealthReadinessComponent
+    mood: HealthReadinessComponent
+  }
+  recommendation: string
+  suggested_intensity: 'rest' | 'light' | 'moderate' | 'full'
+  workout_load_7d_kg: number
+  rest_days_streak: number
+  session_count_7d: number
+}
+
+export type HealthAIInsight = {
+  type: 'strength' | 'recovery' | 'composition' | 'correlation' | 'neutral'
+  headline: string
+  detail: string
+  severity: 'positive' | 'neutral' | 'warning'
+}
+
+export type HealthAIInsightsPayload = {
+  insights: HealthAIInsight[]
+  week_summary: string
+  suggested_focus: string
+}
+
+export type MuscleActivation = {
+  muscle: string
+  last_trained: string | null
+  days_since: number | null
+  sets_7d: number
+  sets_14d: number
+  status: 'fresh' | 'recovering' | 'ready' | 'untrained'
+}
+
+export type StrengthHistoryPayload = {
+  exercise_name: string
+  weekly_volume: { week: string; total_kg: number }[]
+  estimated_1rm_over_time: { date: string; e1rm: number }[]
+  all_time_best: { date: string; weight_kg: number; reps: number; e1rm: number } | null
 }

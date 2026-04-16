@@ -31,6 +31,7 @@ import type {
   GoalNodeCreatePayload,
   GoalNodeUpdatePayload,
   GoalTreeNode,
+  Habit,
   HabitLog,
   HabitLogPayload,
   HealthLog,
@@ -90,6 +91,19 @@ import type {
   MealTemplate,
   FoodItem,
   MealIngredient,
+  WorkoutSession,
+  WorkoutSessionPayload,
+  WorkoutExercise,
+  WorkoutExercisePayload,
+  SetLog,
+  SetLogPayload,
+  BodyCompositionLog,
+  BodyCompositionLogPayload,
+  WearableLog,
+  WearableLogPayload,
+  HealthReadinessScore,
+  HealthAIInsightsPayload,
+  StrengthHistoryPayload,
 } from './types'
 
 export function resolveApiBaseUrl(rawValue: string | undefined = import.meta.env.VITE_API_BASE_URL) {
@@ -352,6 +366,14 @@ export function createHabitLog(payload: HabitLogPayload) {
 
 export function updateHabitLog(id: string, payload: Partial<HabitLogPayload>) {
   return updateResource<HabitLog, Partial<HabitLogPayload>>(`/health/habit-logs/${id}/`, payload)
+}
+
+export function createHabit(payload: { name: string; target: string; custom_days?: number }) {
+  return request<Habit>('/health/habits/', { method: 'POST', body: JSON.stringify(payload) })
+}
+
+export function deleteHabit(id: string) {
+  return request<void>(`/health/habits/${id}/`, { method: 'DELETE' })
 }
 
 export function getTodaySchedule() {
@@ -694,6 +716,7 @@ export function saveRoutineLog(entry: {
   prayed_sunnah?: boolean | null;
   morning_adhkar?: boolean | null;
   evening_adhkar?: boolean | null;
+  salah_adhkar?: boolean | null;
 }) {
   return request<RoutineLogEntry>('/schedule/routine-log/', {
     method: 'POST',
@@ -1432,7 +1455,84 @@ export function getHabitHeatmap(): Promise<HabitHeatmapPayload> {
 }
 
 export function getSpiritualHeatmap(): Promise<SpiritualHeatmapPayload> {
-  return request<SpiritualHeatmapPayload>('/health/spiritual-heatmap/')
+  return request<SpiritualHeatmapPayload>('/health/spiritual-heatmap/?days=60')
+}
+
+// ── Workout Sessions ──────────────────────────────────────────────────────────
+
+export function listWorkoutSessions(params?: { date?: string; date_from?: string; date_to?: string }): Promise<WorkoutSession[]> {
+  const qs = params ? '?' + new URLSearchParams(Object.entries(params).filter(([, v]) => v != null) as [string, string][]).toString() : ''
+  return request<WorkoutSession[]>(`/health/workout-sessions/${qs}`)
+}
+
+export function createWorkoutSession(payload: WorkoutSessionPayload): Promise<WorkoutSession> {
+  return request<WorkoutSession>('/health/workout-sessions/', { method: 'POST', body: JSON.stringify(payload) })
+}
+
+export function updateWorkoutSession(id: string, payload: Partial<WorkoutSessionPayload>): Promise<WorkoutSession> {
+  return request<WorkoutSession>(`/health/workout-sessions/${id}/`, { method: 'PATCH', body: JSON.stringify(payload) })
+}
+
+export function deleteWorkoutSession(id: string): Promise<void> {
+  return request<void>(`/health/workout-sessions/${id}/`, { method: 'DELETE' })
+}
+
+export function createWorkoutExercise(payload: WorkoutExercisePayload): Promise<WorkoutExercise> {
+  return request<WorkoutExercise>('/health/workout-exercises/', { method: 'POST', body: JSON.stringify(payload) })
+}
+
+export function deleteWorkoutExercise(id: string): Promise<void> {
+  return request<void>(`/health/workout-exercises/${id}/`, { method: 'DELETE' })
+}
+
+export function createSetLog(payload: SetLogPayload): Promise<SetLog> {
+  return request<SetLog>('/health/set-logs/', { method: 'POST', body: JSON.stringify(payload) })
+}
+
+export function updateSetLog(id: string, payload: Partial<SetLogPayload>): Promise<SetLog> {
+  return request<SetLog>(`/health/set-logs/${id}/`, { method: 'PATCH', body: JSON.stringify(payload) })
+}
+
+export function deleteSetLog(id: string): Promise<void> {
+  return request<void>(`/health/set-logs/${id}/`, { method: 'DELETE' })
+}
+
+export function getStrengthHistory(exerciseName: string, weeks = 8): Promise<StrengthHistoryPayload> {
+  return request<StrengthHistoryPayload>(`/health/workout-sessions/strength-history/?exercise_name=${encodeURIComponent(exerciseName)}&weeks=${weeks}`)
+}
+
+// ── Body Composition ──────────────────────────────────────────────────────────
+
+export function listBodyCompositionLogs(): Promise<BodyCompositionLog[]> {
+  return request<BodyCompositionLog[]>('/health/body-composition/')
+}
+
+export function createBodyCompositionLog(payload: BodyCompositionLogPayload): Promise<BodyCompositionLog> {
+  return request<BodyCompositionLog>('/health/body-composition/', { method: 'POST', body: JSON.stringify(payload) })
+}
+
+// ── Wearable ──────────────────────────────────────────────────────────────────
+
+export function listWearableLogs(): Promise<WearableLog[]> {
+  return request<WearableLog[]>('/health/wearable-logs/')
+}
+
+export function createWearableLog(payload: WearableLogPayload): Promise<WearableLog> {
+  return request<WearableLog>('/health/wearable-logs/', { method: 'POST', body: JSON.stringify(payload) })
+}
+
+export function updateWearableLog(id: string, payload: Partial<WearableLogPayload>): Promise<WearableLog> {
+  return request<WearableLog>(`/health/wearable-logs/${id}/`, { method: 'PATCH', body: JSON.stringify(payload) })
+}
+
+// ── Health AI + Readiness ─────────────────────────────────────────────────────
+
+export function getHealthReadiness(): Promise<HealthReadinessScore> {
+  return request<HealthReadinessScore>('/health/readiness/')
+}
+
+export function getHealthAIInsights(): Promise<HealthAIInsightsPayload> {
+  return request<HealthAIInsightsPayload>('/health/ai-insights/', { method: 'POST' })
 }
 
 // ── Alerts ────────────────────────────────────────────────────────────────────

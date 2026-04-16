@@ -119,6 +119,7 @@ export type RoutineLogEntry = {
   // Adhkar anchored to the prayer block
   morning_adhkar:    boolean | null
   evening_adhkar:    boolean | null
+  salah_adhkar:      boolean | null
 }
 
 export type RoutineBlock = {
@@ -208,12 +209,44 @@ export type RoutineBlockStat = {
   avg_drift_minutes: number | null
 }
 
+export type PrayerBlockStat = {
+  block_id: number
+  label: string
+  time_str: string
+  logged: number
+  mosque_pct: number
+  first_row_pct: number
+  takbir_pct: number
+  sunnah_pct: number
+  salah_adhkar_pct: number
+  morning_adhkar_pct: number
+  evening_adhkar_pct: number
+  mosque_n: number
+  first_row_n: number
+  takbir_n: number
+  sunnah_n: number
+  salah_adhkar_n: number
+  morning_adhkar_n: number
+  evening_adhkar_n: number
+}
+
+export type ExerciseBlockStat = {
+  block_id: number
+  label: string
+  time_str: string
+  exercise_type: string
+  intensity: string
+  logged: number
+}
+
 export type RoutineAnalyticsData = {
   days: number
   daily: RoutineDailyEntry[]
   by_type: Record<string, RoutineTypeStats>
   block_stats: RoutineBlockStat[]
   by_weekday: Record<string, Record<string, number>>  // type -> weekday(1-7) -> rate%
+  prayer_stats: PrayerBlockStat[]
+  exercise_stats: ExerciseBlockStat[]
 }
 
 // ── Scheduled Entries ─────────────────────────────────────────────────────────

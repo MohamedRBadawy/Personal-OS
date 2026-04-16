@@ -61,6 +61,7 @@ type SaveEntry = {
   prayed_sunnah?: boolean | null
   morning_adhkar?: boolean | null
   evening_adhkar?: boolean | null
+  salah_adhkar?: boolean | null
 }
 
 interface BlockRowProps {
@@ -237,6 +238,7 @@ function getLogSummaryBadges(
       if (log.prayed_sunnah     === true) chips.push({ text: 'Sunnah',            variant: 'done' })
       if (log.morning_adhkar    === true) chips.push({ text: '🤲 Morning Adhkar', variant: 'done' })
       if (log.evening_adhkar    === true) chips.push({ text: '🌙 Evening Adhkar', variant: 'done' })
+      if (log.salah_adhkar      === true) chips.push({ text: '📿 Adhkar Al-Salah', variant: 'done' })
       return chips
     }
     case 'sleep': {
@@ -435,6 +437,7 @@ export function BlockRow({
   const [prayedSunnah,    setPrayedSunnah]    = useState<boolean | null>(log?.prayed_sunnah     ?? null)
   const [morningAdhkar,   setMorningAdhkar]   = useState<boolean | null>(log?.morning_adhkar    ?? null)
   const [eveningAdhkar,   setEveningAdhkar]   = useState<boolean | null>(log?.evening_adhkar    ?? null)
+  const [salahAdhkar,     setSalahAdhkar]     = useState<boolean | null>(log?.salah_adhkar      ?? null)
 
   // Sleep state (pre-filled from note)
   const sleepParsed = parseSleepNote(log?.note ?? '')
@@ -566,6 +569,12 @@ export function BlockRow({
     const v = eveningAdhkar !== true
     setEveningAdhkar(v)
     onSave({ block_time: block.time, status: log?.status ?? status ?? 'done', evening_adhkar: v })
+  }
+
+  function toggleSalahAdhkar() {
+    const v = salahAdhkar !== true
+    setSalahAdhkar(v)
+    onSave({ block_time: block.time, status: log?.status ?? status ?? 'done', salah_adhkar: v })
   }
 
   // Quick-log from collapsed row (1 click)
@@ -870,6 +879,14 @@ export function BlockRow({
                   {val === true ? '✓' : '○'} {label}
                 </button>
               ))}
+
+              {/* Adhkar Al-Salah — shown on every prayer block */}
+              <button
+                className={`prayer-chip${salahAdhkar === true ? ' prayer-chip--on' : ''}`}
+                onClick={toggleSalahAdhkar}
+              >
+                {salahAdhkar === true ? '✓' : '○'} Adhkar Al-Salah
+              </button>
 
               {/* Morning / Evening Adhkar — shown only on Fajr / Asr blocks */}
               {prayerName === 'fajr' && (

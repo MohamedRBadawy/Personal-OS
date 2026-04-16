@@ -4,6 +4,7 @@ import logging
 
 from core.ai_base import DeterministicAIProvider
 from core.ai_prompts import (
+    build_health_week_request,
     build_morning_briefing_request,
     build_opportunity_scoring_request,
     build_pattern_analysis_request,
@@ -382,6 +383,40 @@ class AnthropicAIProvider(DeterministicAIProvider):
                 due_follow_ups_count=due_follow_ups_count,
                 profile_context=profile_context,
             ),
+        )
+
+    def analyze_health_week(self, *, context: dict) -> dict:
+        def call_live():
+            request = build_health_week_request(context)
+            payload = self._request_json(
+                system_prompt=request["system"],
+                user_prompt=request["user"],
+                schema=request["schema"],
+                max_tokens=1000,
+            )
+            insights = payload.get("insights", [])
+            if not isinstance(insights, list) or len(insights) == 0:
+                raise ValueError("Expected at least one insight in health week analysis.")
+            cleaned_insights = []
+            for item in insights[:5]:
+                if not isinstance(item, dict):
+                    continue
+                cleaned_insights.append({
+                    "type":     str(item.get("type", "neutral")),
+                    "headline": str(item.get("headline", "")).strip(),
+                    "detail":   str(item.get("detail", "")).strip(),
+                    "severity": str(item.get("severity", "neutral")),
+                })
+            return {
+                "insights":       [i for i in cleaned_insights if i["headline"]],
+                "week_summary":   str(payload.get("week_summary", "")).strip(),
+                "suggested_focus": str(payload.get("suggested_focus", "")).strip(),
+            }
+
+        return self._run_or_fallback(
+            operation_name="analyze_health_week",
+            call_live=call_live,
+            call_fallback=lambda: super(AnthropicAIProvider, self).analyze_health_week(context=context),
         )
 
     def suggest_schedule_blocks(self, *, free_slots, top_nodes, date):

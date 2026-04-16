@@ -2,12 +2,15 @@
  * HabitsPage — dedicated habit tracking with board, metrics, and heatmap.
  */
 
+import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { MetricCard } from '../components/MetricCard'
 import { HabitBoard } from '../components/HabitBoard'
 import { Panel } from '../components/Panel'
 import {
+  createHabit,
   createHabitLog,
+  deleteHabit,
   getHealthToday,
   getHabitHeatmap,
   updateHabitLog,
@@ -88,6 +91,12 @@ function HabitHeatmap({ data }: { data: HabitHeatmapPayload }) {
 
 export function HabitsPage() {
   const queryClient = useQueryClient()
+
+  // ── Add habit form state ─────────────────────────────────────────────────
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [newHabitName, setNewHabitName] = useState('')
+  const [newHabitTarget, setNewHabitTarget] = useState<'daily' | '3x_week' | 'weekly' | 'custom'>('daily')
+
   const todayQuery = useQuery({
     queryKey: ['health-today'],
     queryFn: getHealthToday,
@@ -118,6 +127,29 @@ export function HabitsPage() {
     },
   })
 
+  const createHabitMut = useMutation({
+    mutationFn: () => createHabit({ name: newHabitName.trim(), target: newHabitTarget }),
+    onSuccess: async () => {
+      setNewHabitName('')
+      setNewHabitTarget('daily')
+      setShowAddForm(false)
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['health-today'] }),
+        queryClient.invalidateQueries({ queryKey: ['habit-heatmap'] }),
+      ])
+    },
+  })
+
+  const deleteHabitMut = useMutation({
+    mutationFn: (id: string) => deleteHabit(id),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['health-today'] }),
+        queryClient.invalidateQueries({ queryKey: ['habit-heatmap'] }),
+      ])
+    },
+  })
+
   if (todayQuery.isLoading) {
     return <section className="loading-state">Loading habits...</section>
   }
@@ -136,7 +168,45 @@ export function HabitsPage() {
           <h2>Daily consistency tracker</h2>
           <p>Mark habits done or missed, track streaks and completion rates.</p>
         </div>
+        <button className="btn-ghost-sm" onClick={() => setShowAddForm(v => !v)}>
+          {showAddForm ? 'Cancel' : '+ Add habit'}
+        </button>
       </div>
+
+      {showAddForm && (
+        <div className="adp-add-form" style={{ marginBottom: 16 }}>
+          <input
+            className="adp-add-input"
+            placeholder="Habit name (e.g. Evening walk, Read 10 pages)"
+            value={newHabitName}
+            autoFocus
+            onChange={e => setNewHabitName(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && newHabitName.trim() && createHabitMut.mutate()}
+          />
+          <div className="adp-add-row">
+            <select
+              className="adp-duration-select"
+              value={newHabitTarget}
+              onChange={e => setNewHabitTarget(e.target.value as typeof newHabitTarget)}
+            >
+              <option value="daily">Daily</option>
+              <option value="3x_week">3x per week</option>
+              <option value="weekly">Weekly</option>
+              <option value="custom">Custom</option>
+            </select>
+            <button
+              className="btn-sm"
+              disabled={!newHabitName.trim() || createHabitMut.isPending}
+              onClick={() => createHabitMut.mutate()}
+            >
+              {createHabitMut.isPending ? 'Adding…' : 'Add'}
+            </button>
+          </div>
+          {createHabitMut.isError && (
+            <p className="error-text">Could not create habit. Please try again.</p>
+          )}
+        </div>
+      )}
 
       <div className="metric-grid">
         <MetricCard
@@ -158,7 +228,9 @@ export function HabitsPage() {
         <HabitBoard
           items={todayQuery.data.habit_board}
           pendingHabitId={habitMutation.isPending ? (habitMutation.variables?.item.habit.id ?? null) : null}
+          deletingHabitId={deleteHabitMut.isPending ? (deleteHabitMut.variables ?? null) : null}
           onToggle={(item, done) => habitMutation.mutate({ item, done })}
+          onDelete={(item) => deleteHabitMut.mutate(item.habit.id)}
         />
         {habitMutation.isError ? <p className="error-text">We could not save that habit update.</p> : null}
       </Panel>

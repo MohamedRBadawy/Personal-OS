@@ -405,6 +405,119 @@ def build_timeline_week_request(*, week_start, week_end, today, top_priorities, 
     }
 
 
+HEALTH_WEEK_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "insights": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 5,
+            "items": {
+                "type": "object",
+                "properties": {
+                    "type":     {"type": "string", "enum": ["strength", "recovery", "composition", "correlation", "neutral"]},
+                    "headline": {"type": "string"},
+                    "detail":   {"type": "string"},
+                    "severity": {"type": "string", "enum": ["positive", "neutral", "warning"]},
+                },
+                "required": ["type", "headline", "detail", "severity"],
+                "additionalProperties": False,
+            },
+        },
+        "week_summary":    {"type": "string"},
+        "suggested_focus": {"type": "string"},
+    },
+    "required": ["insights", "week_summary", "suggested_focus"],
+    "additionalProperties": False,
+}
+
+
+def build_health_week_request(context: dict) -> dict:
+    """Build the AI health week analysis prompt from ExerciseAnalyticsService.build_ai_context()."""
+
+    # ── Format workout summary ─────────────────────────────────────────────────
+    workouts_7d = context.get("workouts_7d", [])
+    if workouts_7d:
+        workout_lines = []
+        for w in workouts_7d:
+            ex_list = ", ".join(
+                f"{e['name']} ({e['sets']} sets, {e['total_volume_kg']}kg)"
+                for e in w.get("exercises", [])
+            )
+            workout_lines.append(
+                f"  {w['date']} [{w['session_type']}] {w.get('duration_mins', '?')}min — {ex_list or 'no detail'}"
+            )
+        workouts_text = "\n".join(workout_lines)
+    else:
+        workouts_text = "  No workouts logged this week."
+
+    # ── Format strength PRs ────────────────────────────────────────────────────
+    prs = context.get("strength_prs_this_week", [])
+    prs_text = (
+        "\n".join(f"  {p['exercise']}: {p['weight_kg']}kg x {p['reps']} = {p['e1rm']}kg e1RM" for p in prs)
+        if prs else "  None this week."
+    )
+
+    # ── Format body composition ────────────────────────────────────────────────
+    bc = context.get("body_composition_latest")
+    bc_text = (
+        f"  {bc['date']}: {bc['weight_kg']}kg | Fat {bc.get('body_fat_pct', '?')}% | "
+        f"Muscle {bc.get('muscle_mass_kg', '?')}kg | Visceral {bc.get('visceral_fat_level', '?')}"
+        if bc else "  No InBody data recorded yet."
+    )
+    fat_trend    = context.get("fat_trend", "insufficient_data")
+    muscle_trend = context.get("muscle_trend", "insufficient_data")
+
+    # ── Format recovery signals ────────────────────────────────────────────────
+    rec = context.get("recovery_signals", {})
+    hrv      = rec.get("hrv_ms_7d_avg")
+    rhr      = rec.get("resting_hr_7d_avg")
+    sleep    = rec.get("avg_sleep_7d")
+    mood     = rec.get("avg_mood_7d")
+    readiness_score = context.get("readiness", {}).get("score")
+
+    recovery_text = (
+        f"  HRV (7d avg): {hrv} ms\n"
+        f"  Resting HR (7d avg): {rhr} bpm\n"
+        f"  Sleep (7d avg): {sleep} hrs\n"
+        f"  Mood (7d avg): {mood}/5\n"
+        f"  Readiness score: {readiness_score}/100"
+    )
+
+    # ── Format mood x workout correlation ─────────────────────────────────────
+    corr = context.get("mood_workout_correlation")
+    corr_text = str(corr) if corr else "  Insufficient data for correlation."
+
+    user_prompt = (
+        f"Week ending: {context.get('reference_date', 'today')}\n\n"
+        f"WORKOUTS THIS WEEK ({len(workouts_7d)} sessions):\n{workouts_text}\n\n"
+        f"STRENGTH PRs THIS WEEK:\n{prs_text}\n\n"
+        f"BODY COMPOSITION (latest scan):\n{bc_text}\n"
+        f"  Fat trend: {fat_trend} | Muscle trend: {muscle_trend}\n\n"
+        f"RECOVERY SIGNALS:\n{recovery_text}\n\n"
+        f"MOOD x WORKOUT CORRELATION:\n{corr_text}\n\n"
+        "Analyse this data and return your structured health week insights."
+    )
+
+    system_prompt = (
+        "You are analyzing health and training data for Mohamed Badawy — "
+        "37 years old, INTP, Muslim, 60 kg, 175 cm, gym lifter. "
+        "He is not a beginner and not looking for generic wellness advice. "
+        "He wants to understand his body, track strength progression, and optimize recovery. "
+        "His schedule is demanding: 5 children, runs his own business, prayers 5x daily. "
+        "Be specific, honest, and direct. Reference actual numbers from the data. "
+        "Identify patterns, not just facts. Flag risks early. "
+        "Severity: 'positive' = improving trend, 'neutral' = stable/informational, 'warning' = needs attention. "
+        "Return JSON only."
+    )
+
+    return {
+        "system": system_prompt,
+        "user":   user_prompt,
+        "schema": HEALTH_WEEK_SCHEMA,
+    }
+
+
 def build_outreach_draft_request(*, opportunity, service_offer, channel_instructions, profile_context):
     """Build a rich outreach draft request for a specific pipeline opportunity."""
     rich_context = build_rich_profile_context()
