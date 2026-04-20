@@ -1,3 +1,7 @@
+// [AR] قشرة التطبيق الرئيسية — الشريط الجانبي بالمحاور السبعة والمحتوى الرئيسي
+// [EN] Main app shell — 7-hub flat sidebar + main content wrapper
+// Connects to: AppRoutes (renders children), QuickCaptureModal, BottomNav, ChatPanel
+
 import { useCallback, useEffect, useState, type PropsWithChildren } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
@@ -7,75 +11,51 @@ import { CommandPalette } from '../components/CommandPalette'
 import { AlertPanel } from '../components/AlertPanel'
 import { ExportButton } from '../components/ExportButton'
 import { QuickCaptureModal } from '../components/QuickCaptureModal'
-import {
-  getFinanceOverview,
-  getHealthOverview,
-} from '../lib/api'
+import { getFinanceOverview, getHealthOverview } from '../lib/api'
 import { useTheme } from '../lib/useTheme'
 
-type NavItem = {
+// [AR] طبقات التنقل الثلاث: تنفيذ / وعي / توجيه
+// [EN] Three navigation layers driving hub organisation
+type HubLayer = 'execution' | 'awareness' | 'direction'
+
+type Hub = {
+  id: string
+  label: string
+  layer: HubLayer
+  icon: string
   href: string
-  label: string
+  subRoutes: string[]
 }
 
-type NavGroup = {
-  label: string
-  items: NavItem[]
-}
-
-const navGroups: NavGroup[] = [
-  {
-    label: 'Overview',
-    items: [
-      { href: '/',        label: 'Command Center' },
-      { href: '/profile', label: 'Profile'        },
-    ],
-  },
-  {
-    label: 'Execute',
-    items: [
-      { href: '/daily',    label: 'Daily Check-in' },
-      { href: '/goals',    label: 'Goals'          },
-      { href: '/business', label: 'Business'       },
-      { href: '/schedule', label: 'Schedule'       },
-    ],
-  },
-  {
-    label: 'Life',
-    items: [
-      { href: '/finance',  label: 'Finance'       },
-      { href: '/health',   label: 'Health'        },
-      { href: '/journal',  label: 'Journal'       },
-      { href: '/contacts', label: 'Contacts'      },
-      { href: '/learn',    label: 'Learn & Ideas' },
-    ],
-  },
-  {
-    label: 'Review',
-    items: [
-      { href: '/analytics', label: 'Analytics' },
-      { href: '/profile', label: 'Progress & Stats' },
-    ],
-  },
-  {
-    label: 'Tools',
-    items: [
-      { href: '/data-bridge', label: 'AI Data Bridge' },
-    ],
-  },
+// [AR] المحاور السبعة — مرتبة بحسب مبدأ الطبقات الثلاث
+// [EN] Seven flat hubs — ordered by the three-layer principle (do / see / plan)
+const HUBS: Hub[] = [
+  { id: 'now',          label: 'Now',          layer: 'execution', icon: '⚡', href: '/',          subRoutes: ['/', '/focus', '/daily', '/schedule'] },
+  { id: 'goals',        label: 'Goals',        layer: 'direction', icon: '🎯', href: '/goals',      subRoutes: ['/goals'] },
+  { id: 'build',        label: 'Build',        layer: 'execution', icon: '🏗',  href: '/business',  subRoutes: ['/business'] },
+  { id: 'life',         label: 'Life',         layer: 'awareness', icon: '💚', href: '/health',     subRoutes: ['/health', '/finance', '/journal'] },
+  { id: 'learn',        label: 'Learn',        layer: 'direction', icon: '📚', href: '/learn',      subRoutes: ['/learn'] },
+  { id: 'intelligence', label: 'Intelligence', layer: 'awareness', icon: '🔍', href: '/analytics',  subRoutes: ['/analytics', '/data-bridge'] },
+  { id: 'profile',      label: 'Profile',      layer: 'direction', icon: '👤', href: '/profile',    subRoutes: ['/profile', '/contacts'] },
 ]
 
-// Flat list used for active-item lookup and prefetch
-const allNavItems = navGroups.flatMap((g) => g.items)
-
-const prefetchMap: Partial<Record<string, () => Promise<unknown>>> = {
+// [AR] جلب مسبق للصفحات الثقيلة عند تحريك المؤشر
+// [EN] Prefetch heavy pages on hub hover to reduce perceived latency
+const PREFETCH_FN: Partial<Record<string, () => Promise<unknown>>> = {
   '/finance': getFinanceOverview,
-  '/health': getHealthOverview,
+  '/health':  getHealthOverview,
+}
+const PREFETCH_KEYS: Partial<Record<string, string[]>> = {
+  '/finance': ['finance-overview'],
+  '/health':  ['health-overview'],
 }
 
-const prefetchQueryKeys: Partial<Record<string, string[]>> = {
-  '/finance': ['finance-overview'],
-  '/health': ['health-overview'],
+// [AR] تسميات الطبقات المعروضة بجانب كل محور
+// [EN] Short layer labels shown beside each hub item
+const LAYER_LABELS: Record<HubLayer, string> = {
+  execution: 'do',
+  awareness: 'see',
+  direction: 'plan',
 }
 
 export function AppShell({ children }: PropsWithChildren) {
@@ -85,12 +65,10 @@ export function AppShell({ children }: PropsWithChildren) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [quickCaptureOpen, setQuickCaptureOpen] = useState(false)
   const { theme, toggleTheme } = useTheme()
-  const activeItem = allNavItems.find((item) => item.href === location.pathname)
 
-  // All sections start expanded; clicking the label toggles collapse
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
-  const toggleGroup = (label: string) =>
-    setCollapsed((prev) => ({ ...prev, [label]: !prev[label] }))
+  // [AR] المحور النشط — الذي يحتوي المسار الحالي في قائمة مساراته
+  // [EN] Active hub resolved by matching current pathname against each hub's subRoutes
+  const activeHub = HUBS.find(h => h.subRoutes.includes(location.pathname))
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -104,20 +82,19 @@ export function AppShell({ children }: PropsWithChildren) {
   }, [])
 
   const handlePrefetch = useCallback((href: string) => {
-    const queryFn = prefetchMap[href]
-    const queryKey = prefetchQueryKeys[href]
-    if (queryFn && queryKey) {
-      queryClient.prefetchQuery({ queryKey, queryFn, staleTime: 30_000 })
-    }
+    const fn  = PREFETCH_FN[href]
+    const key = PREFETCH_KEYS[href]
+    if (fn && key) queryClient.prefetchQuery({ queryKey: key, queryFn: fn, staleTime: 30_000 })
   }, [queryClient])
 
   return (
     <div className={`app-shell${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}>
+      {/* Mobile drawer toggle */}
       <button
         aria-expanded={drawerOpen}
         className="sidebar-toggle"
         type="button"
-        onClick={() => setDrawerOpen((current) => !current)}
+        onClick={() => setDrawerOpen(c => !c)}
       >
         {drawerOpen ? 'Close navigation' : 'Open navigation'}
       </button>
@@ -127,7 +104,7 @@ export function AppShell({ children }: PropsWithChildren) {
           className="sidebar-collapse-btn"
           type="button"
           title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          onClick={() => setSidebarCollapsed((c) => !c)}
+          onClick={() => setSidebarCollapsed(c => !c)}
         >
           {sidebarCollapsed ? '›' : '‹'}
         </button>
@@ -135,53 +112,35 @@ export function AppShell({ children }: PropsWithChildren) {
         {!sidebarCollapsed && (
           <>
             <div className="sidebar-brand">
-              <p className="eyebrow">Personal Life OS</p>
-              <h1 className="app-title">Run life from one clear operating surface.</h1>
-              <p className="app-subtitle">
-                Capture, prioritize, edit, and review from the command center without route-hopping.
-              </p>
+              <p className="eyebrow">Personal OS</p>
+              <h1 className="app-title">One clear surface for everything.</h1>
             </div>
 
-            <nav aria-label="Primary" className="sidebar-nav">
-              {navGroups.map((group) => {
-                const isCollapsed = collapsed[group.label] ?? false
-                return (
-                  <div key={group.label} className="nav-group">
-                    <button
-                      type="button"
-                      className="nav-group-toggle"
-                      onClick={() => toggleGroup(group.label)}
-                      aria-expanded={!isCollapsed}
-                    >
-                      <span className="nav-group-label">{group.label}</span>
-                      <span className={`nav-group-chevron${isCollapsed ? ' collapsed' : ''}`}>›</span>
-                    </button>
-                    {!isCollapsed && (
-                      <div className="nav-group-links">
-                        {group.items.map((item) => (
-                          <NavLink
-                            key={item.href}
-                            className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
-                            to={item.href}
-                            onClick={() => setDrawerOpen(false)}
-                            onMouseEnter={() => handlePrefetch(item.href)}
-                          >
-                            {item.label}
-                          </NavLink>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
+            {/* [AR] قائمة المحاور السبعة المسطحة — بلا مجموعات قابلة للطي
+                [EN] Flat 7-hub list — no collapsible groups, no nesting */}
+            <nav aria-label="Primary" className="hub-nav">
+              {HUBS.map(hub => (
+                <NavLink
+                  key={hub.id}
+                  to={hub.href}
+                  className={activeHub?.id === hub.id ? 'hub-item active' : 'hub-item'}
+                  data-layer={hub.layer}
+                  onClick={() => setDrawerOpen(false)}
+                  onMouseEnter={() => handlePrefetch(hub.href)}
+                >
+                  <span className="hub-icon">{hub.icon}</span>
+                  <span className="hub-label">{hub.label}</span>
+                  <span className="hub-layer-badge">{LAYER_LABELS[hub.layer]}</span>
+                </NavLink>
+              ))}
             </nav>
 
             <div className="sidebar-footer">
               <button className="theme-toggle" type="button" onClick={toggleTheme}>
-                <span>{theme === 'dark' ? '☀ Light mode' : '☾ Dark mode'}</span>
+                {theme === 'dark' ? '☀ Light mode' : '☾ Dark mode'}
               </button>
               <ExportButton />
-              <p className="sidebar-shortcut-hint">⌘K — quick search</p>
+              <p className="sidebar-shortcut-hint">⌘K · Ctrl+Shift+I capture</p>
             </div>
           </>
         )}
@@ -190,12 +149,11 @@ export function AppShell({ children }: PropsWithChildren) {
       <div className="app-main">
         <header className="app-header">
           <div>
-            <p className="eyebrow">Home base</p>
-            <h2 className="header-title">{activeItem?.label ?? 'Command Center'}</h2>
+            <p className="eyebrow">{activeHub ? LAYER_LABELS[activeHub.layer] : 'home'}</p>
+            <h2 className="header-title">{activeHub?.label ?? 'Home'}</h2>
           </div>
           <AlertPanel />
         </header>
-
         <main className="page-grid">{children}</main>
       </div>
 
@@ -203,18 +161,17 @@ export function AppShell({ children }: PropsWithChildren) {
       <BottomNav />
       <CommandPalette />
 
-      {/* Quick Idea Capture FAB */}
+      {/* [AR] زر التقاط الأفكار السريع — موجود في كل الصفحات
+          [EN] Quick capture FAB — present on every page, routes automatically */}
       <button
         className="quick-capture-fab"
-        title="Capture idea (Ctrl+Shift+I)"
+        title="Capture (Ctrl+Shift+I)"
         onClick={() => setQuickCaptureOpen(true)}
       >
         💡
       </button>
 
-      {quickCaptureOpen && (
-        <QuickCaptureModal onClose={() => setQuickCaptureOpen(false)} />
-      )}
+      {quickCaptureOpen && <QuickCaptureModal onClose={() => setQuickCaptureOpen(false)} />}
     </div>
   )
 }

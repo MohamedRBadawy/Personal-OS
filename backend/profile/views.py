@@ -1,9 +1,10 @@
-"""API views for the profile app."""
+# [AR] واجهات برمجة الملف الشخصي — جلب وتحديث الملف الشخصي والنجمة الشمالية
+# [EN] Profile API views — retrieve and update profile and north star endpoint
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import ProfileSection, UserProfile
-from .serializers import UserProfileSerializer
+from .serializers import NorthStarSerializer, UserProfileSerializer
 
 
 class ProfileView(APIView):
@@ -45,3 +46,11 @@ class AIContextView(APIView):
         profile = UserProfile.get_or_create_singleton()
         serializer = UserProfileSerializer(profile)
         return Response({"context": serializer.data["ai_context"]})
+
+
+class NorthStarView(APIView):
+    # [AR] نقطة نهاية النجمة الشمالية — الهدف الرئيسي مع نسبة التقدم
+    # [EN] North star endpoint — primary goal metric with live progress
+    def get(self, request):
+        profile = UserProfile.get_or_create_singleton()
+        return Response(NorthStarSerializer(profile).data)

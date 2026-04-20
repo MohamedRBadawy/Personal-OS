@@ -1,3 +1,7 @@
+// [AR] تعريف مسارات التطبيق — كل مسار يُحدد داخل أحد المحاور السبعة
+// [EN] App route definitions — each route belongs to one of the 7 navigation hubs
+// Connects to: AppShell (active hub detection), hub pages
+
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { HomePage } from '../pages/HomePage'
 import { FocusPage } from '../pages/FocusPage'

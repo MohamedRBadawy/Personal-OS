@@ -1,4 +1,5 @@
-"""URL routing for the Analytics domain."""
+# [AR] مسارات URL للتحليلات — الأفكار والإنجازات واقتراح النطاق
+# [EN] Analytics URL routes — ideas, achievements, domain suggestion
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
@@ -14,6 +15,7 @@ from analytics.views import (
     OverwhelmAPIView,
     ProjectRetrospectiveViewSet,
     RelationshipViewSet,
+    SuggestDomainView,
     TimelineOverviewAPIView,
     TimelineAPIView,
     WeeklyReviewGenerateAPIView,
@@ -40,5 +42,6 @@ urlpatterns = [
     path("ideas-overview/", IdeasOverviewAPIView.as_view(), name="analytics-ideas-overview"),
     path("reviews/generate/", WeeklyReviewGenerateAPIView.as_view(), name="weekly-review-generate"),
     path("reviews/preview/", WeeklyReviewPreviewAPIView.as_view(), name="weekly-review-preview"),
+    path("ideas/suggest-domain/", SuggestDomainView.as_view(), name="ideas-suggest-domain"),
     path("", include(router.urls)),
 ]

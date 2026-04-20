@@ -109,6 +109,7 @@ export function SpiritualPage() {
         queryClient.invalidateQueries({ queryKey: ['spiritual-heatmap'] }),
         queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
         queryClient.invalidateQueries({ queryKey: ['command-center'] }),
+        queryClient.invalidateQueries({ queryKey: ['health-overview'] }),
       ])
     },
   })

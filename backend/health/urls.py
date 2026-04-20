@@ -5,6 +5,7 @@ from rest_framework.routers import DefaultRouter
 from health.views import (
     HealthLogViewSet,
     HealthOverviewAPIView,
+    HealthGoalProfileAPIView,
     HabitViewSet,
     HabitLogViewSet,
     HabitHeatmapAPIView,
@@ -47,6 +48,7 @@ router.register("wearable-logs",      WearableLogViewSet,       basename="wearab
 
 urlpatterns = [
     path("overview/", HealthOverviewAPIView.as_view(), name="health-overview"),
+    path("goals/", HealthGoalProfileAPIView.as_view(), name="health-goals"),
     path("summary/", HealthSummaryAPIView.as_view(), name="health-summary"),
     path("today/", HealthTodayAPIView.as_view(), name="health-today"),
     path("habit-heatmap/", HabitHeatmapAPIView.as_view(), name="habit-heatmap"),

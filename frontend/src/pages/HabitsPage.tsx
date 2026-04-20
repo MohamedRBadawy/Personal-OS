@@ -96,6 +96,7 @@ export function HabitsPage() {
   const [showAddForm, setShowAddForm] = useState(false)
   const [newHabitName, setNewHabitName] = useState('')
   const [newHabitTarget, setNewHabitTarget] = useState<'daily' | '3x_week' | 'weekly' | 'custom'>('daily')
+  const [newHabitDomain, setNewHabitDomain] = useState<'sleep' | 'movement' | 'nutrition' | 'recovery' | 'mental' | 'general'>('general')
 
   const todayQuery = useQuery({
     queryKey: ['health-today'],
@@ -128,14 +129,16 @@ export function HabitsPage() {
   })
 
   const createHabitMut = useMutation({
-    mutationFn: () => createHabit({ name: newHabitName.trim(), target: newHabitTarget }),
+    mutationFn: () => createHabit({ name: newHabitName.trim(), target: newHabitTarget, health_domain: newHabitDomain }),
     onSuccess: async () => {
       setNewHabitName('')
       setNewHabitTarget('daily')
+      setNewHabitDomain('general')
       setShowAddForm(false)
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['health-today'] }),
         queryClient.invalidateQueries({ queryKey: ['habit-heatmap'] }),
+        queryClient.invalidateQueries({ queryKey: ['health-overview'] }),
       ])
     },
   })
@@ -146,6 +149,7 @@ export function HabitsPage() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['health-today'] }),
         queryClient.invalidateQueries({ queryKey: ['habit-heatmap'] }),
+        queryClient.invalidateQueries({ queryKey: ['health-overview'] }),
       ])
     },
   })
@@ -159,6 +163,26 @@ export function HabitsPage() {
   }
 
   const summary = todayQuery.data.summary
+
+  // Domain grouping: compute per-domain completion from today's habit board
+  const habitBoard = todayQuery.data.habit_board ?? []
+  type HabitDomain = 'sleep' | 'movement' | 'nutrition' | 'recovery' | 'mental' | 'general'
+  const DOMAIN_LABELS: Record<HabitDomain, string> = {
+    sleep: 'Sleep', movement: 'Movement', nutrition: 'Nutrition',
+    recovery: 'Recovery', mental: 'Mental', general: 'General',
+  }
+  const domainMap = new Map<HabitDomain, { done: number; total: number }>()
+  for (const item of habitBoard) {
+    const domain = (item.habit.health_domain ?? 'general') as HabitDomain
+    if (domain === 'general') continue // skip untagged in pills
+    const existing = domainMap.get(domain) ?? { done: 0, total: 0 }
+    domainMap.set(domain, {
+      done: existing.done + (item.today_log?.done ? 1 : 0),
+      total: existing.total + 1,
+    })
+  }
+  const domainPills = Array.from(domainMap.entries())
+  const hasTaggedHabits = domainPills.length > 0
 
   return (
     <section className="page">
@@ -194,6 +218,18 @@ export function HabitsPage() {
               <option value="weekly">Weekly</option>
               <option value="custom">Custom</option>
             </select>
+            <select
+              className="adp-duration-select"
+              value={newHabitDomain}
+              onChange={e => setNewHabitDomain(e.target.value as typeof newHabitDomain)}
+            >
+              <option value="general">General</option>
+              <option value="sleep">Sleep</option>
+              <option value="movement">Movement</option>
+              <option value="nutrition">Nutrition</option>
+              <option value="recovery">Recovery</option>
+              <option value="mental">Mental</option>
+            </select>
             <button
               className="btn-sm"
               disabled={!newHabitName.trim() || createHabitMut.isPending}
@@ -219,6 +255,29 @@ export function HabitsPage() {
           tone="success"
         />
       </div>
+
+      {/* Domain completion pills */}
+      {hasTaggedHabits ? (
+        <div className="habit-domains-row">
+          {domainPills.map(([domain, { done, total }]) => {
+            const pct = Math.round((done / total) * 100)
+            const tone = pct >= 80 ? 'green' : pct >= 50 ? 'amber' : 'red'
+            return (
+              <span
+                key={domain}
+                className={`habit-domain-pill habit-domain-pill--${tone}`}
+                title={`${done}/${total} done today`}
+              >
+                {DOMAIN_LABELS[domain]}: {pct}%
+              </span>
+            )
+          })}
+        </div>
+      ) : (
+        <p className="muted" style={{ fontSize: 13, marginBottom: 4 }}>
+          Tip: tag your habits with a health domain (sleep, movement, nutrition…) to see domain-level progress here.
+        </p>
+      )}
 
       <Panel
         aside={`${summary.habits_completed_today}/${summary.active_habits_count} done today`}

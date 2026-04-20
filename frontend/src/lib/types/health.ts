@@ -68,6 +68,7 @@ export type Habit = {
   target: 'daily' | '3x_week' | 'weekly' | 'custom'
   custom_days: number | null
   goal: string | null
+  health_domain: 'sleep' | 'movement' | 'nutrition' | 'recovery' | 'mental' | 'general'
 }
 
 export type HabitLog = {
@@ -142,6 +143,8 @@ export type HealthOverviewPayload = {
   date: string
   summary: HealthSummary
   today: HealthTodayPayload
+  goals: HealthGoalProfile
+  direction: HealthDirection
   recent_health_logs: HealthLog[]
   recent_mood_logs: MoodLog[]
   recent_spiritual_logs: SpiritualLog[]
@@ -373,6 +376,81 @@ export type WearableLogPayload = Omit<WearableLog, 'id' | 'created_at'>
 export type HealthReadinessComponent = {
   score: number
   available: boolean
+}
+
+export type HealthPrimaryGoal =
+  | 'sleep_energy'
+  | 'strength'
+  | 'body_composition'
+  | 'nutrition'
+  | 'mood_stability'
+  | 'consistency'
+  | 'spiritual_consistency'
+
+export type HealthBodyGoal = 'lose_fat' | 'maintain' | 'gain_muscle'
+
+export type HealthGoalProfile = {
+  id: string
+  primary_goals: HealthPrimaryGoal[]
+  sleep_hours_target: string
+  weekly_workouts_target: number
+  protein_g_target: number
+  body_goal: HealthBodyGoal
+  created_at: string
+  updated_at: string
+}
+
+export type HealthGoalProfilePayload = Partial<{
+  primary_goals: HealthPrimaryGoal[]
+  sleep_hours_target: string
+  weekly_workouts_target: number
+  protein_g_target: number
+  body_goal: HealthBodyGoal
+}>
+
+export type HealthDirectionStatus = 'strong' | 'steady' | 'attention'
+export type HealthDirectionTrend = 'improving' | 'stable' | 'declining'
+export type HealthDirectionPillarId =
+  | 'recovery'
+  | 'performance_body'
+  | 'nutrition'
+  | 'mood'
+  | 'habits'
+  | 'spiritual'
+
+export type HealthDirectionPillar = {
+  id: HealthDirectionPillarId
+  label: string
+  score: number
+  delta: number
+  trend: HealthDirectionTrend
+  status: HealthDirectionStatus
+  confidence: number
+  drivers: string[]
+  recommended_action: string
+  weight: number
+  weighted_score: number
+  details: Record<string, unknown>
+}
+
+export type HealthDirection = {
+  overall_score: number
+  trend: HealthDirectionTrend
+  status: HealthDirectionStatus
+  confidence: number
+  headline: string
+  strengths: string[]
+  watchouts: string[]
+  next_actions: string[]
+  pillars: HealthDirectionPillar[]
+  cross_domain_insights: string[]
+  score_delta: number
+  window: {
+    current_start: string
+    current_end: string
+    previous_start: string
+    previous_end: string
+  }
 }
 
 export type HealthReadinessScore = {

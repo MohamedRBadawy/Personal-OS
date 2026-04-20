@@ -430,11 +430,11 @@ class ExerciseAnalyticsService:
             date__gte=seven_days_ago, date__lte=today
         )
         session_ids = list(recent_sessions.values_list('id', flat=True))
-        total_volume = (
+        recent_sets = (
             SetLog.objects
             .filter(exercise__session_id__in=session_ids, weight_kg__isnull=False, reps__isnull=False)
-            .aggregate(total=Sum('weight_kg'))['total'] or 0
         )
+        total_volume = sum(float(item.weight_kg) * (item.reps or 0) for item in recent_sets)
 
         # Consecutive rest days (days without a workout)
         rest_days_streak = 0
@@ -458,6 +458,7 @@ class ExerciseAnalyticsService:
         from health.models.workout import WorkoutSession, SetLog
         from health.models.mood_log import MoodLog
         from health.serializers.workout import WorkoutSessionSerializer
+        from health.direction import HealthDirectionService
 
         today = reference_date or timezone.localdate()
         seven_days_ago = today - datetime.timedelta(days=7)
@@ -570,6 +571,8 @@ class ExerciseAnalyticsService:
         return {
             'period_start': seven_days_ago.isoformat(),
             'period_end': today.isoformat(),
+            'health_goals': HealthDirectionService.goals_payload(),
+            'health_direction': HealthDirectionService.payload(today),
             'workouts_7d': workouts_7d,
             'strength_prs': strength_prs,
             'body_composition_latest': body_comp['latest'],

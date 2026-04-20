@@ -1,4 +1,6 @@
-"""Shared analytics services."""
+# [AR] حزمة خدمات التحليلات — تُعيد تصدير جميع الخدمات
+# [EN] Analytics services package — re-exports all service functions
+from analytics.services.domain import suggest_domain
 from analytics.services.overwhelm import OverwhelmService
 from analytics.services.closure import ProjectRetrospectiveService
 from analytics.services.read_models import (
@@ -20,4 +22,5 @@ __all__ = [
     "TimelineOverviewService",
     "TimelineService",
     "WeeklyReviewService",
+    "suggest_domain",
 ]

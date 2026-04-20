@@ -24,7 +24,7 @@ const PAGE_MAP: Record<string, PageContext> = {
   },
   '/finance': {
     domain: 'Finance',
-    placeholder: 'Ask about your financial situation, Kyrgyzstan timeline, income gaps...',
+    placeholder: 'Ask about your financial situation, income target, gaps, or progress...',
     contextHint: '[Context: Finance page]',
   },
   '/health': {

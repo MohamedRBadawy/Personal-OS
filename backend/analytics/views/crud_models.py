@@ -1,7 +1,9 @@
-"""CRUD analytics views for supporting domain records."""
+# [AR] واجهات CRUD لسجلات التحليلات — الأفكار والإنجازات والسجلات المختلفة
+# [EN] CRUD analytics views — ideas, achievements, and supporting domain records
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from analytics.models.achievement import Achievement
 from analytics.models.decision_log import DecisionLog
@@ -19,6 +21,7 @@ from analytics.serializers.crud_models import (
     ProjectRetrospectiveSerializer,
     RelationshipSerializer,
 )
+from analytics.services import suggest_domain
 
 
 class RelationshipViewSet(viewsets.ModelViewSet):
@@ -57,10 +60,29 @@ class AchievementViewSet(viewsets.ModelViewSet):
 
 
 class IdeaViewSet(viewsets.ModelViewSet):
-    """CRUD API for idea records."""
-
+    # [AR] واجهة الأفكار — يقبل العناوين الفارغة ويقترح النطاق تلقائياً
+    # [EN] Idea viewset — accepts empty titles and auto-suggests domain
     queryset = Idea.objects.all()
     serializer_class = IdeaSerializer
+
+    def create(self, request, *args, **kwargs):
+        data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
+        title = data.get('title', '') or ''
+        domain_hint = data.get('domain_hint') or None
+
+        suggestion = suggest_domain(title)
+        if not domain_hint and suggestion['suggested_domain']:
+            domain_hint = suggestion['suggested_domain']
+            data['domain_hint'] = domain_hint
+
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+
+        response_data = serializer.data
+        response_data['suggested_domain'] = suggestion['suggested_domain']
+        response_data['domain_confidence'] = suggestion['confidence']
+        return Response(response_data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"])
     def convert_to_node(self, request, pk=None):
@@ -102,3 +124,11 @@ class ProjectRetrospectiveViewSet(viewsets.ModelViewSet):
 
     queryset = ProjectRetrospective.objects.all()
     serializer_class = ProjectRetrospectiveSerializer
+
+
+class SuggestDomainView(APIView):
+    # [AR] اقتراح نطاق الفكرة — يعيد النطاق المقترح بناءً على العنوان
+    # [EN] Suggest domain endpoint — returns suggested hub domain from title keywords
+    def get(self, request):
+        title = request.query_params.get('title', '')
+        return Response(suggest_domain(title))

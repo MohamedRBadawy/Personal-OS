@@ -4,6 +4,7 @@ from health.views.habit import HabitViewSet, HabitLogViewSet, HabitHeatmapAPIVie
 from health.views.mood_log import MoodLogViewSet
 from health.views.overview import HealthOverviewAPIView
 from health.views.spiritual_log import SpiritualLogViewSet, SpiritualHeatmapAPIView
+from health.views.goal_profile import HealthGoalProfileAPIView
 from health.views.summary import HealthSummaryAPIView
 from health.views.today import HealthTodayAPIView
 from health.views.meal import MealPlanViewSet, MealLogViewSet, MealTemplateViewSet, FoodItemViewSet, MealIngredientViewSet
@@ -20,6 +21,7 @@ __all__ = [
     "MoodLogViewSet",
     "SpiritualLogViewSet",
     "SpiritualHeatmapAPIView",
+    "HealthGoalProfileAPIView",
     "HealthSummaryAPIView",
     "HealthTodayAPIView",
     "HealthOverviewAPIView",

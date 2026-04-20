@@ -21,6 +21,14 @@ class Habit(BaseModel):
         WEEKLY = "weekly", "Weekly"
         CUSTOM = "custom", "Custom"
 
+    class HealthDomain(models.TextChoices):
+        SLEEP = "sleep", "Sleep"
+        MOVEMENT = "movement", "Movement"
+        NUTRITION = "nutrition", "Nutrition"
+        RECOVERY = "recovery", "Recovery"
+        MENTAL = "mental", "Mental"
+        GENERAL = "general", "General"
+
     name = models.CharField(max_length=255)
     target = models.CharField(max_length=20, choices=Target.choices)
     custom_days = models.PositiveIntegerField(
@@ -30,6 +38,12 @@ class Habit(BaseModel):
     goal = models.ForeignKey(
         "goals.Node", on_delete=models.SET_NULL, null=True, blank=True,
         related_name="habits", help_text="Optional linked goal node.",
+    )
+    health_domain = models.CharField(
+        max_length=20,
+        choices=HealthDomain.choices,
+        default=HealthDomain.GENERAL,
+        help_text="Which health pillar this habit supports, if any.",
     )
     created_at = models.DateTimeField(auto_now_add=True)
 

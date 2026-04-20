@@ -1,4 +1,5 @@
-"""Analytics views package re-exporting CRUD and read-model views."""
+# [AR] حزمة مشاهدات التحليلات — تُعيد تصدير جميع الواجهات
+# [EN] Analytics views package — re-exports all CRUD and read-model views
 from analytics.views.ai_suggestion import AISuggestionViewSet
 from analytics.views.crud_models import (
     AchievementViewSet,
@@ -8,6 +9,7 @@ from analytics.views.crud_models import (
     LearningViewSet,
     ProjectRetrospectiveViewSet,
     RelationshipViewSet,
+    SuggestDomainView,
 )
 from analytics.views.insights import (
     AnalyticsOverviewAPIView,
@@ -30,6 +32,7 @@ __all__ = [
     "AchievementViewSet",
     "IdeaViewSet",
     "ProjectRetrospectiveViewSet",
+    "SuggestDomainView",
     "OverwhelmAPIView",
     "TimelineAPIView",
     "TimelineOverviewAPIView",

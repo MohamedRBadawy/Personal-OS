@@ -398,3 +398,9 @@ Mohamed spent most of his adult life operating on instinct, hope, and trial-and-
 Consequences: failed business (Expack, 2018–2022), significant financial damage still being repaid in 2026, 33,150 EGP debt across five creditors, no financial buffer, single income source, five children including a 3-month-old.
 
 He is not in crisis. He has stable income, a clear goal, a structured schedule, a defined service offering, and a system he is building to manage all of it. But the recovery is real and ongoing.
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+at specs/001-navigation-redesign/plan.md
+<!-- SPECKIT END -->

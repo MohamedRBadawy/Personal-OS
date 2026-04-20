@@ -1,4 +1,5 @@
-"""Models for the About Me / Self Profile feature."""
+# [AR] نماذج الملف الشخصي — الملف الشخصي الفردي وأقسامه القابلة للتعديل
+# [EN] Profile models — singleton user profile and editable profile sections
 from django.db import models
 
 
@@ -41,6 +42,25 @@ class UserProfile(models.Model):
         max_digits=10, decimal_places=2, null=True, blank=True,
     )
     debt_currency = models.CharField(max_length=3, default="EGP")
+
+    # [AR] إعدادات النجمة الشمالية — الهدف المحوري القابل للتخصيص
+    # [EN] North star config — user-configurable primary goal metric
+    north_star_label = models.CharField(
+        max_length=100, blank=True,
+        help_text="Display label for the north star metric (e.g. 'Monthly independent income')",
+    )
+    north_star_target_amount = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        help_text="Target amount (falls back to financial_target_monthly if null)",
+    )
+    north_star_currency = models.CharField(
+        max_length=10, default="EUR",
+        help_text="Currency symbol or code for north star display",
+    )
+    north_star_unit = models.CharField(
+        max_length=50, default="per month",
+        help_text="Unit label shown after the amount (e.g. 'per month')",
+    )
 
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -179,6 +179,83 @@ h3 {
 }
 
 /* ─────────────────────────────────────────────────────────────
+   Hub Navigation — 7 flat hubs replacing collapsible groups
+   Layer colours: execution=accent, awareness=green, direction=purple
+   ───────────────────────────────────────────────────────────── */
+
+.hub-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 0;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.hub-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 7px;
+  text-decoration: none;
+  color: var(--text-secondary, #666);
+  transition: background 0.14s, color 0.14s;
+  position: relative;
+}
+
+.hub-item:hover {
+  background: var(--surface-muted);
+  color: var(--text, #1a1a1a);
+}
+
+.hub-item.active {
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+
+/* Layer-specific active/hover colours */
+.hub-item[data-layer="execution"].active,
+.hub-item[data-layer="execution"]:hover {
+  color: var(--accent);
+}
+
+.hub-item[data-layer="awareness"].active,
+.hub-item[data-layer="awareness"]:hover {
+  color: #059669;
+}
+
+.hub-item[data-layer="direction"].active,
+.hub-item[data-layer="direction"]:hover {
+  color: #7c3aed;
+}
+
+.hub-icon {
+  font-size: 15px;
+  min-width: 20px;
+  text-align: center;
+  line-height: 1;
+}
+
+.hub-label {
+  font-size: 13px;
+  font-weight: 500;
+  flex: 1;
+}
+
+.hub-layer-badge {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  opacity: 0.4;
+  font-family: var(--mono, monospace);
+}
+
+.hub-item.active .hub-layer-badge {
+  opacity: 0.6;
+}
+
+/* ─────────────────────────────────────────────────────────────
    Bottom Navigation (mobile only)
    ───────────────────────────────────────────────────────────── */
 

@@ -4,6 +4,57 @@ from django.db import models
 from config.base_model import BaseModel
 
 
+class ServiceOffering(BaseModel):
+    """A named service that Mohamed offers to clients.
+
+    The foundation of the freelancing system — every opportunity, campaign,
+    and finance entry can trace back to a specific offering with defined
+    pricing, deliverables, and target client.
+    """
+
+    class PricingModel(models.TextChoices):
+        FIXED     = "fixed",     "Fixed price"
+        HOURLY    = "hourly",    "Hourly rate"
+        RETAINER  = "retainer",  "Monthly retainer"
+        DISCOVERY = "discovery", "Discovery call → custom quote"
+
+    class Status(models.TextChoices):
+        DRAFT    = "draft",    "Draft"
+        ACTIVE   = "active",   "Active"
+        PAUSED   = "paused",   "Paused"
+        ARCHIVED = "archived", "Archived"
+
+    name           = models.CharField(max_length=200)
+    tagline        = models.CharField(max_length=300, blank=True,
+                                      help_text="One-line sell: what it does and for whom.")
+    description    = models.TextField(blank=True)
+    target_client  = models.CharField(max_length=200, blank=True,
+                                      help_text="Who is this for? e.g. 'Small logistics companies'")
+    pricing_model  = models.CharField(max_length=20, choices=PricingModel.choices,
+                                      default=PricingModel.FIXED)
+    price          = models.DecimalField(max_digits=10, decimal_places=2,
+                                         null=True, blank=True)
+    currency       = models.CharField(max_length=5, default="EUR")
+    delivery_days  = models.PositiveIntegerField(null=True, blank=True,
+                                                 help_text="Typical engagement length in days.")
+    deliverables   = models.JSONField(default=list, blank=True,
+                                      help_text="List of strings — what the client receives.")
+    status         = models.CharField(max_length=20, choices=Status.choices,
+                                      default=Status.DRAFT)
+    linked_goal    = models.ForeignKey(
+        "goals.Node", null=True, blank=True,
+        on_delete=models.SET_NULL, related_name="service_offerings",
+    )
+    created_at     = models.DateTimeField(auto_now_add=True)
+    updated_at     = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["status", "name"]
+
+    def __str__(self):
+        return self.name
+
+
 class MarketingChannel(BaseModel):
     """A platform or channel where Mohamed maintains a marketing presence."""
 
@@ -121,6 +172,11 @@ class Opportunity(BaseModel):
 
     name = models.CharField(max_length=255)
     platform = models.CharField(max_length=20, choices=Platform.choices)
+    service_offering = models.ForeignKey(
+        ServiceOffering, null=True, blank=True,
+        on_delete=models.SET_NULL, related_name="opportunities",
+        help_text="Which service this opportunity is for.",
+    )
     description = models.TextField(blank=True)
     budget = models.DecimalField(
         max_digits=12, decimal_places=2, null=True, blank=True,

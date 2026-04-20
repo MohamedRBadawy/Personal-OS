@@ -5,6 +5,8 @@ import { PageSkeleton } from '../components/PageSkeleton'
 import { Panel } from '../components/Panel'
 import { CollapsibleSection } from '../components/CollapsibleSection'
 import { HealthLogForm } from '../components/HealthLogForm'
+import { HealthGoalSettingsCard } from '../components/health/HealthGoalSettingsCard'
+import { HealthSignalsPanel } from '../components/health/HealthSignalsPanel'
 import {
   createHealthLog,
   createBodyCompositionLog,
@@ -19,6 +21,7 @@ import {
   getStrengthHistory,
   listBodyCompositionLogs,
   updateHealthLog,
+  updateHealthGoals,
 } from '../lib/api'
 import type {
   BodyCompositionLog,
@@ -274,12 +277,12 @@ const STATUS_COLOR: Record<MuscleActivation['status'], string> = {
   fresh:     '#16a34a',
   recovering:'#f59e0b',
   ready:     '#3b82f6',
-  untrained: '#d1d5db',
+  untrained: '#94a3b8',
 }
 
 // ── Section B-extra: Muscle Map ───────────────────────────────────────────────
 
-function MuscleMapSection({ activation }: { activation: MuscleActivation[] }) {
+export function MuscleMapSection({ activation }: { activation: MuscleActivation[] }) {
   const [hovered, setHovered] = useState<string | null>(null)
   const byMuscle: Record<string, MuscleActivation> = {}
   for (const a of activation) byMuscle[a.muscle] = a
@@ -293,12 +296,14 @@ function MuscleMapSection({ activation }: { activation: MuscleActivation[] }) {
 
   // Helper: returns common props for every muscle <path>
   function rg(muscle: string) {
+    const color = getColor(muscle)
+    const isUntrained = !byMuscle[muscle]
     return {
-      fill: getColor(muscle),
-      fillOpacity: 0.88 as number,
-      stroke: getColor(muscle),
-      strokeOpacity: 0.45 as number,
-      strokeWidth: 0.6 as number,
+      fill: color,
+      fillOpacity: isUntrained ? 0.55 : 0.88,
+      stroke: isUntrained ? '#64748b' : color,
+      strokeOpacity: isUntrained ? 0.7 : 0.45,
+      strokeWidth: isUntrained ? 1.0 : 0.6,
       className: 'muscle-region',
       onMouseEnter: () => setHovered(muscle),
       onMouseLeave: () => setHovered(null),
@@ -511,6 +516,7 @@ function WorkoutLogger({ sessions, today, onSessionCreated }: {
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ['health-overview'] })
+    qc.invalidateQueries({ queryKey: ['workout-sessions'] })
     onSessionCreated()
   }
 
@@ -981,11 +987,19 @@ export function HealthBodyPage() {
 
   const [showEditForm, setShowEditForm] = useState(false)
 
+  const updateGoalsMut = useMutation({
+    mutationFn: updateHealthGoals,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['health-overview'] })
+    },
+  })
+
   const createMut = useMutation({
     mutationFn: createHealthLog,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['health-overview'] })
       qc.invalidateQueries({ queryKey: ['health-today'] })
+      qc.invalidateQueries({ queryKey: ['health-logs'] })
     },
   })
 
@@ -994,6 +1008,7 @@ export function HealthBodyPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['health-overview'] })
       qc.invalidateQueries({ queryKey: ['health-today'] })
+      qc.invalidateQueries({ queryKey: ['health-logs'] })
       setShowEditForm(false)
     },
   })
@@ -1010,7 +1025,6 @@ export function HealthBodyPage() {
   const readiness = data.readiness ?? null
   const bodyCompLatest = data.body_composition_latest ?? null
   const workoutSessions = data.recent_workout_sessions ?? []
-  const muscleActivation = data.muscle_activation ?? []
 
   const lastExercise = recentLogs.find(l => l.exercise_done)
   const exerciseLabel = s.exercise_streak > 0 ? `${s.exercise_streak} days 🔥` : lastExercise ? `Last: ${lastExercise.date}` : 'None yet'
@@ -1020,6 +1034,9 @@ export function HealthBodyPage() {
 
   return (
     <section className="page">
+      {/* ── Health Signals — plain-English overview ── */}
+      <HealthSignalsPanel direction={data.direction} />
+
       {/* ── Metric cards ── */}
       <div className="metric-grid">
         <MetricCard label="Avg sleep (7d)" value={`${s.avg_sleep_7d ?? 0} h`} />
@@ -1041,7 +1058,8 @@ export function HealthBodyPage() {
           <SevenDayAverages s={s} logs={recentLogs} />
         </Panel>
 
-        <Panel title="Today's body log" description="Stay honest about what has been captured already.">
+        <div id="body-log-panel">
+          <Panel title="Today's body log" description="Stay honest about what has been captured already.">
           {showForm ? (
             <>
               {showEditForm && s.health_logged_today && (
@@ -1084,7 +1102,8 @@ export function HealthBodyPage() {
               ))}
             </div>
           )}
-        </Panel>
+          </Panel>
+        </div>
       </div>
 
       {/* ── Section B: Readiness ── */}
@@ -1093,18 +1112,20 @@ export function HealthBodyPage() {
       </Panel>
 
       {/* ── Muscle map ── */}
-      <Panel title="Muscle map" description="Which muscles have you trained and when. Hover each region for details.">
-        <MuscleMapSection activation={muscleActivation} />
+      <Panel title="Muscle map" description="Hover a region to see training status. Green = trained this week, blue = ready, amber = recovering.">
+        <MuscleMapSection activation={data.muscle_activation ?? []} />
       </Panel>
 
       {/* ── Section C: Workout Logger ── */}
-      <Panel title="Workout logger" description="Log sessions with exercises and sets. Volume and e1RM are tracked automatically.">
-        <WorkoutLogger
-          sessions={workoutSessions}
-          today={today}
-          onSessionCreated={() => qc.invalidateQueries({ queryKey: ['health-overview'] })}
-        />
-      </Panel>
+      <div id="workout-logger-panel">
+        <Panel title="Workout logger" description="Log sessions with exercises and sets. Volume and e1RM are tracked automatically.">
+          <WorkoutLogger
+            sessions={workoutSessions}
+            today={today}
+            onSessionCreated={() => qc.invalidateQueries({ queryKey: ['health-overview'] })}
+          />
+        </Panel>
+      </div>
 
       {/* ── Section D: Body Composition ── */}
       <Panel title="Body composition" description="InBody scan data — fat %, muscle mass, visceral fat, metabolic age.">
@@ -1148,6 +1169,15 @@ export function HealthBodyPage() {
       <Panel title="AI health insights" description="Claude analyses your last 7 days of training, recovery, and body composition.">
         <HealthAIInsights />
       </Panel>
+
+      {/* ── Health goal settings — collapsed by default ── */}
+      <CollapsibleSection title="Health goals & targets" storageKey="health-goals-settings" defaultOpen={false}>
+        <HealthGoalSettingsCard
+          goals={data.goals}
+          isSaving={updateGoalsMut.isPending}
+          onSave={(payload) => updateGoalsMut.mutate(payload)}
+        />
+      </CollapsibleSection>
     </section>
   )
 }

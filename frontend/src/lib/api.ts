@@ -32,6 +32,8 @@ import type {
   GoalNodeUpdatePayload,
   GoalTreeNode,
   Habit,
+  HealthGoalProfile,
+  HealthGoalProfilePayload,
   HabitLog,
   HabitLogPayload,
   HealthLog,
@@ -324,12 +326,24 @@ export function getHealthOverview() {
   return request<HealthOverviewPayload>('/health/overview/')
 }
 
+export function getHealthGoals() {
+  return request<HealthGoalProfile>('/health/goals/')
+}
+
+export function updateHealthGoals(payload: HealthGoalProfilePayload) {
+  return request<HealthGoalProfile>('/health/goals/', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
+}
+
 export function getHealthToday() {
   return request<HealthTodayPayload>('/health/today/')
 }
 
-export function listHealthLogs() {
-  return listResource<HealthLog>('/health/logs/')
+export function listHealthLogs(params?: { page?: number; page_size?: number }) {
+  const qs = params ? '?' + new URLSearchParams(Object.entries(params).filter(([, value]) => value != null).map(([key, value]) => [key, String(value)])).toString() : ''
+  return listResource<HealthLog>(`/health/logs/${qs}`)
 }
 
 export function createHealthLog(payload: HealthLogPayload) {
@@ -368,7 +382,7 @@ export function updateHabitLog(id: string, payload: Partial<HabitLogPayload>) {
   return updateResource<HabitLog, Partial<HabitLogPayload>>(`/health/habit-logs/${id}/`, payload)
 }
 
-export function createHabit(payload: { name: string; target: string; custom_days?: number }) {
+export function createHabit(payload: { name: string; target: string; custom_days?: number; health_domain?: Habit['health_domain'] }) {
   return request<Habit>('/health/habits/', { method: 'POST', body: JSON.stringify(payload) })
 }
 
@@ -1116,6 +1130,34 @@ export function updateProfile(data: Partial<import('./types').UserProfile>): Pro
 
 export function getAIContext(): Promise<{ context: string }> {
   return request<{ context: string }>('/profile/ai-context/')
+}
+
+// [AR] بيانات النجمة الشمالية — الهدف الرئيسي مع نسبة التقدم
+// [EN] North star data — primary goal metric with computed progress
+export type NorthStarData = {
+  label: string
+  target_amount: string | null
+  currency: string
+  unit: string
+  current_amount: string
+  progress_percent: number
+  configured: boolean
+}
+
+export function getNorthStar(): Promise<NorthStarData> {
+  return request<NorthStarData>('/profile/north-star/')
+}
+
+// [AR] اقتراح نطاق الفكرة — يعيد النطاق المقترح بناءً على الكلمات الرئيسية
+// [EN] Suggest domain — returns keyword-matched hub domain for a capture title
+export type SuggestDomainResponse = {
+  suggested_domain: string | null
+  confidence: 'high' | 'low' | 'none'
+  matched_keywords: string[]
+}
+
+export function suggestDomain(title: string): Promise<SuggestDomainResponse> {
+  return request<SuggestDomainResponse>(`/analytics/ideas/suggest-domain/?title=${encodeURIComponent(title)}`)
 }
 
 // ── Exchange Rates ────────────────────────────────────────────────────────────

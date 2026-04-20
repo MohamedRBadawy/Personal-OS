@@ -2,6 +2,17 @@
    Hub tab bar — shared by all merged hub pages
    ───────────────────────────────────────────────────────────── */
 
+/* [AR] حاوية شريط تبويبات المحور (HubTabBar — NavLink-based cross-route nav) */
+/* [EN] Hub tab bar container — wraps cross-route NavLink tabs */
+.hub-tab-bar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 0;
+}
+
 .hub-tabs {
   display: flex;
   gap: 4px;
@@ -30,7 +41,8 @@
   border-color: var(--border);
 }
 
-.hub-tab--active {
+.hub-tab--active,
+.hub-tab.active {
   background: var(--accent);
   color: #fff;
   border-color: var(--accent);

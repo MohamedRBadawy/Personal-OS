@@ -1,4 +1,7 @@
-"""Serializers for the profile app."""
+# [AR] محولات بيانات الملف الشخصي — تحويل البيانات بين النماذج وJSON
+# [EN] Profile serializers — convert between model instances and JSON
+from decimal import Decimal
+
 from rest_framework import serializers
 
 from .models import ProfileSection, UserProfile
@@ -100,3 +103,40 @@ class UserProfileSerializer(serializers.ModelSerializer):
                 )
 
         return instance
+
+
+class NorthStarSerializer(serializers.ModelSerializer):
+    # [AR] تسلسل بيانات النجمة الشمالية — الهدف المحوري مع نسبة التقدم
+    # [EN] North star serializer — primary goal metric with computed progress
+    label = serializers.SerializerMethodField()
+    target_amount = serializers.SerializerMethodField()
+    currency = serializers.SerializerMethodField()
+    unit = serializers.CharField(source="north_star_unit")
+    current_amount = serializers.DecimalField(
+        source="monthly_independent_income", max_digits=10, decimal_places=2, read_only=True
+    )
+    progress_percent = serializers.SerializerMethodField()
+    configured = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserProfile
+        fields = ["label", "target_amount", "currency", "unit", "current_amount", "progress_percent", "configured"]
+
+    def get_label(self, obj) -> str:
+        return obj.north_star_label or "Monthly independent income"
+
+    def get_target_amount(self, obj):
+        return obj.north_star_target_amount or obj.financial_target_monthly
+
+    def get_currency(self, obj) -> str:
+        return obj.north_star_currency or obj.financial_target_currency or "EUR"
+
+    def get_progress_percent(self, obj) -> float:
+        target = obj.north_star_target_amount or obj.financial_target_monthly
+        current = obj.monthly_independent_income or Decimal("0")
+        if not target or target == 0:
+            return 0.0
+        return round(float(current / target * 100), 1)
+
+    def get_configured(self, obj) -> bool:
+        return bool(obj.north_star_label or obj.north_star_target_amount)

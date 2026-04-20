@@ -21,7 +21,7 @@ export function HealthPage() {
   })
   const logsQuery = useQuery({
     queryKey: ['health-logs'],
-    queryFn: listHealthLogs,
+    queryFn: () => listHealthLogs(),
   })
   const moodLogsQuery = useQuery({
     queryKey: ['health-moods'],

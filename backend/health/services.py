@@ -15,6 +15,7 @@ from health.serializers import (
     MoodLogSerializer,
     SpiritualLogSerializer,
 )
+from health.direction import HealthDirectionService
 
 
 class HealthSummaryService:
@@ -207,12 +208,36 @@ class HealthSummaryService:
             ],
         }
 
+    @staticmethod
+    def _build_capacity_signals(summary, direction):
+        signals = []
+        if summary["low_energy_today"]:
+            signals.append("Energy is low today, so lighter execution is more realistic.")
+        if summary["low_sleep_today"]:
+            signals.append("Sleep is below the healthy threshold today.")
+        if summary["low_mood_today"]:
+            signals.append("Mood is low today, so protect scope and reduce friction.")
+        if summary["prayer_gap_streak"] >= 2:
+            signals.append("Spiritual consistency has slipped for multiple days in a row.")
+        if direction:
+            for message in direction.get("watchouts", [])[:2]:
+                if message not in signals:
+                    signals.append(message)
+            for message in direction.get("next_actions", [])[:1]:
+                if message not in signals:
+                    signals.append(message)
+        if not signals:
+            signals.append("Health signals are stable enough for a normal day.")
+        return signals[:4]
+
     @classmethod
     def overview_payload(cls, reference_date=None):
         """Return the grouped health and body workspace payload."""
         reference_date = reference_date or timezone.localdate()
         summary = cls.summary(reference_date)
         today = cls.today_workspace(reference_date)
+        goals = HealthDirectionService.goals_payload()
+        direction = HealthDirectionService.payload(reference_date)
         recent_health_logs = [
             HealthLogSerializer(item).data
             for item in HealthLog.objects.order_by("-date")[:7]
@@ -225,17 +250,7 @@ class HealthSummaryService:
             SpiritualLogSerializer(item).data
             for item in SpiritualLog.objects.order_by("-date")[:7]
         ]
-        capacity_signals = []
-        if summary["low_energy_today"]:
-            capacity_signals.append("Energy is low today, so lighter execution is more realistic.")
-        if summary["low_sleep_today"]:
-            capacity_signals.append("Sleep is below the healthy threshold today.")
-        if summary["low_mood_today"]:
-            capacity_signals.append("Mood is low today, so protect scope and reduce friction.")
-        if summary["prayer_gap_streak"] >= 2:
-            capacity_signals.append("Spiritual consistency has slipped for multiple days in a row.")
-        if not capacity_signals:
-            capacity_signals.append("Health signals are stable enough for a normal day.")
+        capacity_signals = cls._build_capacity_signals(summary, direction)
         # ── New: workout, body composition, readiness ──────────────────────────
         from health.analytics import ExerciseAnalyticsService
         from health.models.workout import WorkoutSession
@@ -263,6 +278,8 @@ class HealthSummaryService:
             "date": reference_date.isoformat(),
             "summary": summary,
             "today": today,
+            "goals": goals,
+            "direction": direction,
             "recent_health_logs": recent_health_logs,
             "recent_mood_logs": recent_mood_logs,
             "recent_spiritual_logs": recent_spiritual_logs,
