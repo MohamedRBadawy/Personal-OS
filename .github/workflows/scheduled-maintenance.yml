@@ -1,0 +1,92 @@
+name: Scheduled Maintenance
+
+on:
+  schedule:
+    - cron: "20 3 * * *"
+    - cron: "45 3 * * *"
+    - cron: "0 4 * * *"
+    - cron: "30 18 * * *"
+    - cron: "15 18 * * 0"
+    - cron: "0 * * * *"
+  workflow_dispatch:
+    inputs:
+      task:
+        description: Optional task override
+        required: false
+        type: choice
+        options:
+          - send_morning_brief
+          - generate_suggestions
+          - compute_readiness
+          - send_eod_summary
+          - generate_weekly_pattern
+          - generate_alerts
+
+jobs:
+  run-task:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      ALLOWED_HOSTS: ${{ secrets.ALLOWED_HOSTS }}
+      CORS_ALLOWED_ORIGINS: ${{ secrets.CORS_ALLOWED_ORIGINS }}
+      DEBUG: "false"
+      TIME_ZONE: Africa/Cairo
+      AI_PROVIDER: ${{ secrets.AI_PROVIDER }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      ANTHROPIC_MODEL: ${{ secrets.ANTHROPIC_MODEL }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_MODEL: ${{ secrets.GEMINI_MODEL }}
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+      GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+      GOOGLE_REFRESH_TOKEN: ${{ secrets.GOOGLE_REFRESH_TOKEN }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: backend
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Choose scheduled command
+        id: choose-command
+        run: |
+          EVENT_NAME="${{ github.event_name }}"
+          INPUT_TASK="${{ github.event.inputs.task }}"
+          SCHEDULE="${{ github.event.schedule }}"
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ -n "$INPUT_TASK" ]; then
+            TASK="$INPUT_TASK"
+          else
+            case "$SCHEDULE" in
+              "20 3 * * *") TASK="send_morning_brief" ;;
+              "45 3 * * *") TASK="generate_suggestions" ;;
+              "0 4 * * *") TASK="compute_readiness" ;;
+              "30 18 * * *") TASK="send_eod_summary" ;;
+              "15 18 * * 0") TASK="generate_weekly_pattern" ;;
+              "0 * * * *") TASK="generate_alerts" ;;
+              *)
+                echo "Unsupported schedule: $SCHEDULE"
+                exit 1
+                ;;
+            esac
+          fi
+
+          echo "task=$TASK" >> "$GITHUB_OUTPUT"
+          echo "Selected task: $TASK"
+
+      - name: Run Django command
+        run: python manage.py "${{ steps.choose-command.outputs.task }}"

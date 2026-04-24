@@ -9,7 +9,12 @@ import {
   createPartnershipAction,
   completePartnershipAction,
 } from '../lib/api'
-import type { EquityPartnership, EquityPartnershipPayload, PartnershipActionPayload } from '../lib/types/pipeline'
+import type {
+  EquityPartnership,
+  EquityPartnershipPayload,
+  PartnershipActionPayload,
+  PartnershipStatus,
+} from '../lib/types/pipeline'
 
 const STATUS_LABELS: Record<string, string> = {
   negotiating: '🤝 Negotiating',
@@ -121,7 +126,7 @@ export default function EquityPartnershipsPanel() {
   const [businessName, setBusinessName] = useState('')
   const [businessType, setBusinessType] = useState('')
   const [equityPct, setEquityPct] = useState('')
-  const [status, setStatus] = useState('negotiating')
+  const [status, setStatus] = useState<PartnershipStatus>('negotiating')
 
   const createMutation = useMutation({
     mutationFn: (payload: EquityPartnershipPayload) => createPartnership(payload),
@@ -145,7 +150,13 @@ export default function EquityPartnershipsPanel() {
           className="form-grid"
           onSubmit={e => {
             e.preventDefault()
-            createMutation.mutate({ partner_name: partnerName, business_name: businessName, business_type: businessType, equity_pct: equityPct, status })
+            createMutation.mutate({
+              partner_name: partnerName,
+              business_name: businessName,
+              business_type: businessType,
+              equity_pct: Number(equityPct || 0),
+              status,
+            })
           }}
           style={{ marginTop: '0.75rem' }}
         >
@@ -167,7 +178,7 @@ export default function EquityPartnershipsPanel() {
           </div>
           <div className="field span-2">
             <label>Status</label>
-            <select value={status} onChange={e => setStatus(e.target.value)}>
+            <select value={status} onChange={e => setStatus(e.target.value as PartnershipStatus)}>
               {STATUS_OPTIONS.map(s => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
             </select>
           </div>

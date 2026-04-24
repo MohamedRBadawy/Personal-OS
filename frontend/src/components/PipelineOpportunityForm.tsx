@@ -35,7 +35,7 @@ export function PipelineOpportunityForm({
   const [dateApplied, setDateApplied] = useState(initialValue?.date_applied ?? '')
   const [outcomeNotes, setOutcomeNotes] = useState(initialValue?.outcome_notes ?? '')
   const [prospectContext, setProspectContext] = useState(initialValue?.prospect_context ?? '')
-  const [monthlyValueEur, setMonthlyValueEur] = useState(initialValue?.monthly_value_eur ?? '0')
+  const [monthlyValueEur, setMonthlyValueEur] = useState(String(initialValue?.monthly_value_eur ?? '0'))
   const [isRecurring, setIsRecurring] = useState(initialValue?.is_recurring ?? true)
   const [expectedCloseDate, setExpectedCloseDate] = useState(initialValue?.expected_close_date ?? '')
 
@@ -53,7 +53,7 @@ export function PipelineOpportunityForm({
       date_applied: dateApplied || null,
       outcome_notes: outcomeNotes,
       prospect_context: prospectContext || undefined,
-      monthly_value_eur: monthlyValueEur || '0',
+      monthly_value_eur: Number(monthlyValueEur || 0),
       is_recurring: isRecurring,
       expected_close_date: expectedCloseDate || null,
     })

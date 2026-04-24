@@ -438,6 +438,11 @@ export function PipelinePage() {
                                 next_followup_date: null,
                                 prospect_context: '',
                                 ai_draft: '',
+                                monthly_value_eur: opportunity.monthly_value_eur,
+                                is_recurring: opportunity.is_recurring,
+                                expected_close_date: opportunity.expected_close_date,
+                                is_overdue: opportunity.is_overdue,
+                                latest_step_date: opportunity.latest_step_date,
                                 created_at: '',
                                 updated_at: '',
                               })
