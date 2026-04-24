@@ -4,7 +4,7 @@ services:
     runtime: python
     rootDir: backend
     buildCommand: pip install -r requirements.txt && SECRET_KEY=build-only python manage.py collectstatic --noinput
-    startCommand: python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2
+    startCommand: python manage.py migrate --noinput && python manage.py seed_initial_data && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2
     plan: free
     envVars:
       - key: DATABASE_URL
