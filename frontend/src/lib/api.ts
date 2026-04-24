@@ -134,6 +134,11 @@ export function resolveApiBaseUrl(rawValue: string | undefined = import.meta.env
   return parsed.toString().replace(/\/+$/, '')
 }
 
+export function resolveServiceBaseUrl(rawValue: string | undefined = import.meta.env.VITE_API_BASE_URL) {
+  const apiBaseUrl = resolveApiBaseUrl(rawValue)
+  return apiBaseUrl.replace(/\/api$/, '')
+}
+
 async function request<T>(path: string, init?: RequestInit) {
   const apiBaseUrl = resolveApiBaseUrl()
   let response: Response
@@ -169,6 +174,29 @@ async function request<T>(path: string, init?: RequestInit) {
   }
 
   return (await response.json()) as T
+}
+
+export type SystemHealth = {
+  status: 'ok'
+  service: string
+  timestamp: string
+}
+
+export async function pingSystemHealth(): Promise<SystemHealth> {
+  const serviceBaseUrl = resolveServiceBaseUrl()
+  let response: Response
+
+  try {
+    response = await fetch(`${serviceBaseUrl}/api/system/health/`)
+  } catch {
+    throw new Error('Backend is still unreachable. Render may still be waking it up.')
+  }
+
+  if (!response.ok) {
+    throw new Error(`Backend responded with ${response.status} while waking up.`)
+  }
+
+  return response.json() as Promise<SystemHealth>
 }
 
 function listResource<T>(path: string) {

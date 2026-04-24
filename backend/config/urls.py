@@ -17,6 +17,7 @@ urlpatterns = [
     path("", ServiceHealthView.as_view(), name="service-root"),
     path("admin/", admin.site.urls),
     path("api/health/", ServiceHealthView.as_view(), name="api-health"),
+    path("api/system/health/", ServiceHealthView.as_view(), name="system-health"),
     path("api/dashboard/", DashboardV2View.as_view(), name="dashboard-v2"),
     path("api/", include(nodes_router.urls)),
     path("api/checkin/", DailyCheckInView.as_view(), name="daily-checkin"),

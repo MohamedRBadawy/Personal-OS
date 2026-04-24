@@ -209,8 +209,9 @@ class CoreFlowTests(TestCase):
         root_response = self.client.get("/")
         api_response = self.client.get("/api/health/")
         core_response = self.client.get("/api/core/health/")
+        system_response = self.client.get("/api/system/health/")
 
-        for response in [root_response, api_response, core_response]:
+        for response in [root_response, api_response, core_response, system_response]:
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.data["status"], "ok")
             self.assertEqual(response.data["service"], "personal-os-api")
