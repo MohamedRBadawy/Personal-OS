@@ -166,12 +166,13 @@ class DashboardV2View(APIView):
             for row in Node.objects.values("status").annotate(cnt=Count("id"))
         }
 
-        # Top 3 P1 tasks (priority=1, type=task, status=available)
+        # Top 3 P1 tasks for the home page. "Active" work should still surface here,
+        # not only tasks that happen to be marked "available".
         top_tasks_qs = (
             Node.objects.filter(
                 type=Node.NodeType.TASK,
-                status=Node.Status.AVAILABLE,
                 priority=1,
+                status__in=[Node.Status.AVAILABLE, Node.Status.ACTIVE],
             )
             .prefetch_related("deps")
             .order_by("target_date", "created_at")[:3]
