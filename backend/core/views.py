@@ -1,4 +1,5 @@
 """Core endpoints for profile/settings and daily check-ins."""
+from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -14,6 +15,23 @@ from core.serializers import (
     ProfileSerializer,
 )
 from core.services import CheckInService, CommandCenterService, DashboardService
+
+
+class ServiceHealthView(APIView):
+    """Lightweight health endpoint for uptime checks and cold-start validation."""
+
+    permission_classes = []
+    authentication_classes = []
+
+    def get(self, request):
+        return Response(
+            {
+                "status": "ok",
+                "service": "personal-os-api",
+                "timestamp": timezone.now().isoformat(),
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class ProfileViewSet(viewsets.ModelViewSet):

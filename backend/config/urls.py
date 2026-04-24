@@ -4,7 +4,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from analytics.views import IdeasOverviewAPIView, TimelineOverviewAPIView
-from core.views import DailyCheckInView
+from core.views import DailyCheckInView, ServiceHealthView
 from core.report_views import FinancialReportView, PersonalReviewReportView, ProgressReportView
 from core.dashboard_v2 import DashboardV2View
 from goals.views import NodeViewSet
@@ -14,7 +14,9 @@ nodes_router = DefaultRouter()
 nodes_router.register("nodes", NodeViewSet, basename="nodes-v2")
 
 urlpatterns = [
+    path("", ServiceHealthView.as_view(), name="service-root"),
     path("admin/", admin.site.urls),
+    path("api/health/", ServiceHealthView.as_view(), name="api-health"),
     path("api/dashboard/", DashboardV2View.as_view(), name="dashboard-v2"),
     path("api/", include(nodes_router.urls)),
     path("api/checkin/", DailyCheckInView.as_view(), name="daily-checkin"),

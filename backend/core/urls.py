@@ -4,13 +4,14 @@ from rest_framework.routers import DefaultRouter
 
 from core.chat_views import ChatView
 from core.export import DomainExportView, DomainImportView, FullExportView
-from core.views import AlertCountView, AlertDetailView, AlertReadAllView, AlertsView, AppSettingsViewSet, CommandCenterView, DailyCheckInStatusView, DashboardView, FocusView, NextActionView, ProfileViewSet, ReadinessView, TelegramWebhookView
+from core.views import AlertCountView, AlertDetailView, AlertReadAllView, AlertsView, AppSettingsViewSet, CommandCenterView, DailyCheckInStatusView, DashboardView, FocusView, NextActionView, ProfileViewSet, ReadinessView, ServiceHealthView, TelegramWebhookView
 
 router = DefaultRouter()
 router.register("profiles", ProfileViewSet, basename="profile")
 router.register("settings", AppSettingsViewSet, basename="app-settings")
 
 urlpatterns = [
+    path("health/", ServiceHealthView.as_view(), name="service-health"),
     path("command-center/", CommandCenterView.as_view(), name="command-center"),
     path("dashboard/", DashboardView.as_view(), name="dashboard"),
     path("export/", FullExportView.as_view(), name="full-export"),

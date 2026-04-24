@@ -205,6 +205,17 @@ class CoreFlowTests(TestCase):
         self.assertTrue(response.data["health_summary"]["low_energy_today"])
         self.assertTrue(any("Energy" in signal or "energy" in signal for signal in response.data["key_signals"]))
 
+    def test_health_endpoints_return_ok_payload(self):
+        root_response = self.client.get("/")
+        api_response = self.client.get("/api/health/")
+        core_response = self.client.get("/api/core/health/")
+
+        for response in [root_response, api_response, core_response]:
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data["status"], "ok")
+            self.assertEqual(response.data["service"], "personal-os-api")
+            self.assertIn("timestamp", response.data)
+
 
 class ConfigHardeningTests(TestCase):
     """Coverage for config parsing and AppSettings bootstrap behavior."""
