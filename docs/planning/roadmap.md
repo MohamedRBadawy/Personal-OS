@@ -9,7 +9,7 @@
 - Every feature ships into daily use on the day it lands — no "finish building first" phase
 - Never add a new top-level page without removing or merging an existing one
 - AI and agents are not optional layers — every phase must advance the agent infrastructure
-- The north star (€1,000/mo → Kyrgyzstan) must become more visible with each phase
+- The north star metric must become more visible with each phase
 
 ---
 
@@ -20,18 +20,27 @@
 **Outcome:** Mohamed opens the app and immediately knows where he is, what to do, and how to capture anything. 35+ pages collapses into 5–7 hubs with a clear principle.
 
 ### Navigation redesign
-- [ ] Define the three-layer navigation principle (Execution / Awareness / Direction)
-- [ ] Map all 35+ existing pages to the three layers
-- [ ] Design the hub structure (5–7 top-level destinations)
-- [ ] Identify pages to merge, remove, or demote to tabs
-- [ ] Implement new navigation shell — sidebar + mobile nav rebuilt from scratch
-- [ ] Migrate all existing pages into the new hub structure
+- [X] Define the three-layer navigation principle (Execution / Awareness / Direction)
+- [X] Map all existing pages to the three layers (research.md)
+- [X] Design the hub structure — 7 hubs confirmed and implemented
+- [X] Identify pages to merge, remove, or demote to tabs — done via HubTabBar sub-tabs
+- [X] Implement new navigation shell — AppShell rebuilt with flat 7-hub sidebar + layer badges
+- [X] Migrate all existing pages into the new hub structure — all pages reachable via hub tabs
 
 ### Interaction model redesign
-- [ ] Define the capture model — one gesture from anywhere, system routes automatically
-- [ ] Redesign Quick Capture: voice input support, auto-categorization, no required fields
+- [X] Define the capture model — one gesture from anywhere, system routes automatically
+- [X] Redesign Quick Capture: auto-categorization + domain suggestion + no required fields (voice deferred)
 - [ ] Define the "surfaces come to Mohamed" principle — what gets pushed vs. what is pulled
-- [ ] Implement context-aware home surface: content changes based on time of day and what is active
+- [X] Implement context-aware home surface: HomePage split into sub-components, north star reads from API
+- [X] Time-aware home surface: morning/afternoon/evening ordering — most relevant section rises to top
+- [X] Top priority card: highest-leverage goal surfaced prominently with inline status popover
+- [X] Empty state CTAs: no dead ends — every empty state links to the action that fills it
+
+### Interaction quality pass (branch 002-ui-ux-redesign)
+- [X] Progressive disclosure: secondary panels on all Life hub pages wrapped in CollapsibleSection
+- [X] Expand-in-place audit: HabitBoard rows, MoodPage history, EntryCard all use expand-in-place
+- [X] Focused view pattern: JournalPage has ← Daily breadcrumb; pattern defined for future pages
+- [X] Cross-page consistency: all 15+ hub pages verified against the 3-pattern interaction contract
 
 ### Proposed hub structure (to be validated)
 | Hub | Layer | What lives here |
@@ -92,13 +101,13 @@
 - [ ] Resource bookmarks with notes
 - [ ] Progress tracking: what has been learned, when, how it connects to goals
 
-### Business Development (depth)
-- [ ] Equity partnership tracking (perfumes, laptops — % stake, status, next actions)
-- [ ] Revenue tracking per client / deal value
-- [ ] Outreach sequence tracking (sent → replied → meeting → proposal → closed)
-- [ ] AI-drafted outreach messages given a prospect's context
+### Business Development (depth) ✅ Complete (spec 003-biz-dev-depth)
+- [x] Equity partnership tracking (perfumes, laptops — % stake, status, next actions)
+- [x] Revenue tracking per client / deal value (monthly_value_eur, is_recurring, stage weights)
+- [x] Outreach sequence tracking (sent → replied → meeting → proposal → closed)
+- [x] AI-drafted outreach messages → saved as OutreachStep automatically
 - [ ] Clarity Dash portfolio link and case study tracking
-- [ ] Direct connection: pipeline value → €1,000/mo progress bar
+- [x] Direct connection: pipeline value → €1,000/mo progress bar (weighted projection segment)
 
 ### Self-Knowledge & Patterns
 - [ ] Weekly pattern summary: what got done, what was avoided, what energy levels looked like

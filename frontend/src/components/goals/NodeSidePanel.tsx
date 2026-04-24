@@ -7,6 +7,7 @@ import { AttachmentsSection } from './AttachmentsSection'
 import { TimerSection } from './TimerSection'
 import { DecomposeSection } from './DecomposeSection'
 import { ConnectionsSection } from './ConnectionsSection'
+import { SidePanel } from '../SidePanel'
 
 export function NodeSidePanel({
   node, allNodes, onClose, onSaved, onDeleted,
@@ -78,12 +79,10 @@ export function NodeSidePanel({
   const enabledNodes = allNodes.filter(n => (n.deps || []).includes(node.id))
 
   return (
-    <div className="side-panel-overlay" onClick={onClose}>
-      <div className="side-panel" onClick={e => e.stopPropagation()}>
+    <SidePanel isOpen onClose={onClose} width={420}>
         <div className="side-panel-header">
           <span className="side-panel-icon">{TYPE_ICONS[node.type] || '·'}</span>
           <h3 className="side-panel-title">{node.title}</h3>
-          <button className="side-panel-close" onClick={onClose}>✕</button>
         </div>
 
         <div className="side-panel-body">
@@ -255,7 +254,7 @@ export function NodeSidePanel({
             </>
           ) : (
             <>
-              <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>Delete this node and all children?</span>
+              <span style={{ fontSize: 14, color: 'var(--color-text-secondary)' }}>Delete this node and all children?</span>
               <button className="btn-ghost" onClick={() => setConfirmDelete(false)}>Cancel</button>
               <button className="btn-danger" disabled={deleteMut.isPending} onClick={() => deleteMut.mutate()}>
                 {deleteMut.isPending ? '…' : 'Yes, delete'}
@@ -263,7 +262,6 @@ export function NodeSidePanel({
             </>
           )}
         </div>
-      </div>
-    </div>
+    </SidePanel>
   )
 }

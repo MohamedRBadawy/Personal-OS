@@ -39,14 +39,16 @@ import type {
 } from '../lib/types'
 import { formatPercent } from '../lib/formatters'
 
+const mix = (v: string, a: number) => `color-mix(in srgb, ${v} ${Math.round(a * 100)}%, transparent)`
+
 // ── Alert chip helpers ────────────────────────────────────────────────────────
 
 type AlertLevel = 'warn' | 'danger' | 'ok'
 
 function AlertChip({ level, text }: { level: AlertLevel; text: string }) {
-  const color = level === 'danger' ? '#dc2626' : level === 'warn' ? '#f59e0b' : '#16a34a'
+  const color = level === 'danger' ? 'var(--color-error)' : level === 'warn' ? 'var(--color-warning)' : 'var(--color-success)'
   return (
-    <span className="health-alert-chip" style={{ background: color + '1a', color, border: `1px solid ${color}40` }}>
+    <span className="health-alert-chip" style={{ background: mix(color, 0.10), color, border: `1px solid ${mix(color, 0.25)}` }}>
       {text}
     </span>
   )
@@ -98,7 +100,7 @@ function MiniSparkline({ logs, field, max, color }: {
         const isLow = field === 'sleep_hours' ? val < 6 : field === 'energy_level' ? val < 3 : false
         return (
           <div key={i} className="health-sparkline-bar" title={`${val}`}>
-            <div className="health-sparkline-fill" style={{ height: `${Math.max(pct, 4)}%`, background: isLow ? '#dc2626' : color }} />
+            <div className="health-sparkline-fill" style={{ height: `${Math.max(pct, 4)}%`, background: isLow ? 'var(--color-error)' : color }} />
           </div>
         )
       })}
@@ -113,9 +115,9 @@ function SevenDayAverages({ s, logs }: { s: HealthSummary; logs: HealthLog[] }) 
   const hasWeight = logs.some(l => l.weight_kg != null)
   type SparkField = 'sleep_hours' | 'energy_level' | 'weight_kg'
   const rows: { label: string; value: string; sparkField: SparkField; max: number; color: string }[] = [
-    { label: 'Sleep', value: s.avg_sleep_7d != null ? `${s.avg_sleep_7d.toFixed(1)}h` : '—', sparkField: 'sleep_hours', max: 10, color: '#6366f1' },
-    { label: 'Energy', value: s.avg_energy_7d != null ? `${s.avg_energy_7d.toFixed(1)}/5` : '—', sparkField: 'energy_level', max: 5, color: '#f59e0b' },
-    ...(hasWeight ? [{ label: 'Weight', value: latestWeight ? `${latestWeight} kg` : '—', sparkField: 'weight_kg' as SparkField, max: 120, color: '#a78bfa' }] : []),
+    { label: 'Sleep', value: s.avg_sleep_7d != null ? `${s.avg_sleep_7d.toFixed(1)}h` : '—', sparkField: 'sleep_hours', max: 10, color: 'var(--color-hub-intelligence)' },
+    { label: 'Energy', value: s.avg_energy_7d != null ? `${s.avg_energy_7d.toFixed(1)}/5` : '—', sparkField: 'energy_level', max: 5, color: 'var(--color-warning)' },
+    ...(hasWeight ? [{ label: 'Weight', value: latestWeight ? `${latestWeight} kg` : '—', sparkField: 'weight_kg' as SparkField, max: 120, color: 'var(--color-hub-goals)' }] : []),
   ]
   return (
     <div className="health-avg-row">
@@ -144,13 +146,13 @@ function ReadinessWidget({ readiness }: { readiness: HealthReadinessScore | null
     )
   }
 
-  const scoreColor = readiness.score >= 80 ? '#3b82f6'
-    : readiness.score >= 60 ? '#16a34a'
-    : readiness.score >= 40 ? '#f59e0b'
-    : '#dc2626'
+  const scoreColor = readiness.score >= 80 ? 'var(--color-accent)'
+    : readiness.score >= 60 ? 'var(--color-success)'
+    : readiness.score >= 40 ? 'var(--color-warning)'
+    : 'var(--color-error)'
 
   const intensityColor = {
-    rest: '#dc2626', light: '#f59e0b', moderate: '#16a34a', full: '#3b82f6',
+    rest: 'var(--color-error)', light: 'var(--color-warning)', moderate: 'var(--color-success)', full: 'var(--color-accent)',
   }[readiness.suggested_intensity]
 
   const components: { key: keyof HealthReadinessScore['components']; label: string }[] = [
@@ -170,7 +172,7 @@ function ReadinessWidget({ readiness }: { readiness: HealthReadinessScore | null
         <div className="readiness-score-info">
           <div className="readiness-label" style={{ color: scoreColor }}>{readiness.label}</div>
           <div className="readiness-intensity">
-            <span className="readiness-intensity-badge" style={{ background: intensityColor + '22', color: intensityColor, border: `1px solid ${intensityColor}44` }}>
+            <span className="readiness-intensity-badge" style={{ background: mix(intensityColor, 0.13), color: intensityColor, border: `1px solid ${mix(intensityColor, 0.27)}` }}>
               {readiness.suggested_intensity} intensity
             </span>
           </div>
@@ -189,12 +191,12 @@ function ReadinessWidget({ readiness }: { readiness: HealthReadinessScore | null
                   className="readiness-component-bar-fill"
                   style={{
                     width: comp.available ? `${comp.score}%` : '40%',
-                    background: comp.available ? scoreColor : '#9ca3af',
+                    background: comp.available ? scoreColor : 'var(--color-text-tertiary)',
                     opacity: comp.available ? 1 : 0.4,
                   }}
                 />
               </div>
-              <span className="readiness-component-score" style={{ color: comp.available ? 'inherit' : '#9ca3af' }}>
+              <span className="readiness-component-score" style={{ color: comp.available ? 'inherit' : 'var(--color-text-tertiary)' }}>
                 {comp.available ? comp.score : '—'}
               </span>
             </div>
@@ -274,10 +276,10 @@ function inferMuscles(name: string): { primary: string; secondary: string[] } {
 }
 
 const STATUS_COLOR: Record<MuscleActivation['status'], string> = {
-  fresh:     '#16a34a',
-  recovering:'#f59e0b',
-  ready:     '#3b82f6',
-  untrained: '#94a3b8',
+  fresh:     'var(--color-success)',
+  recovering:'var(--color-warning)',
+  ready:     'var(--color-accent)',
+  untrained: 'var(--color-text-tertiary)',
 }
 
 // ── Section B-extra: Muscle Map ───────────────────────────────────────────────
@@ -301,7 +303,7 @@ export function MuscleMapSection({ activation }: { activation: MuscleActivation[
     return {
       fill: color,
       fillOpacity: isUntrained ? 0.55 : 0.88,
-      stroke: isUntrained ? '#64748b' : color,
+      stroke: isUntrained ? 'var(--color-text-tertiary)' : color,
       strokeOpacity: isUntrained ? 0.7 : 0.45,
       strokeWidth: isUntrained ? 1.0 : 0.6,
       className: 'muscle-region',
@@ -311,7 +313,7 @@ export function MuscleMapSection({ activation }: { activation: MuscleActivation[
   }
 
   // Shared silhouette style — warm-toned to match the app palette
-  const SIL = { fill: '#e2d9cc', stroke: '#c8bfb2', strokeWidth: 0.8 as number }
+  const SIL = { fill: 'var(--color-bg-overlay)', stroke: 'var(--color-border)', strokeWidth: 0.8 as number }
 
   // ── Front view ─────────────────────────────────────────────────────────────
   // viewBox "0 0 160 340" — anatomical paths, center x=80
@@ -374,7 +376,7 @@ export function MuscleMapSection({ activation }: { activation: MuscleActivation[
         {/* Quads — right */}
         <path d="M 132,167 C 136,185 138,220 136,249 C 134,261 126,267 116,265 C 106,263 102,253 100,241 L 98,167 Z" {...rg('quads')}/>
 
-        <text x="80" y="336" textAnchor="middle" fontSize="9" fill="#9ca3af" fontFamily="system-ui, sans-serif" letterSpacing="1">FRONT</text>
+        <text x="80" y="336" textAnchor="middle" fontSize="9" fill="var(--color-text-tertiary)" fontFamily="system-ui, sans-serif" letterSpacing="1">FRONT</text>
       </svg>
     )
   }
@@ -425,7 +427,7 @@ export function MuscleMapSection({ activation }: { activation: MuscleActivation[
         {/* Calves — right */}
         <path d="M 136,272 C 140,284 138,303 134,315 C 130,323 122,326 112,324 C 104,322 100,314 102,302 L 102,268 Z" {...rg('calves')}/>
 
-        <text x="80" y="336" textAnchor="middle" fontSize="9" fill="#9ca3af" fontFamily="system-ui, sans-serif" letterSpacing="1">BACK</text>
+        <text x="80" y="336" textAnchor="middle" fontSize="9" fill="var(--color-text-tertiary)" fontFamily="system-ui, sans-serif" letterSpacing="1">BACK</text>
       </svg>
     )
   }
@@ -438,9 +440,9 @@ export function MuscleMapSection({ activation }: { activation: MuscleActivation[
           <div className="muscle-info-content">
             <span className="muscle-info-name">{MUSCLE_LABELS[hovered]}</span>
             <span className="muscle-status-badge" style={{
-              background: STATUS_COLOR[hoveredData?.status ?? 'untrained'] + '22',
+              background: mix(STATUS_COLOR[hoveredData?.status ?? 'untrained'], 0.13),
               color: STATUS_COLOR[hoveredData?.status ?? 'untrained'],
-              border: `1px solid ${STATUS_COLOR[hoveredData?.status ?? 'untrained']}55`,
+              border: `1px solid ${mix(STATUS_COLOR[hoveredData?.status ?? 'untrained'], 0.33)}`,
             }}>
               {hoveredData?.status ?? 'untrained'}
             </span>
@@ -471,7 +473,7 @@ export function MuscleMapSection({ activation }: { activation: MuscleActivation[
       <div className="muscle-legend">
         <div className="muscle-legend-key-row">
           {(['fresh', 'recovering', 'ready', 'untrained'] as const).map(s => (
-            <span key={s} className="muscle-status-badge" style={{ background: STATUS_COLOR[s] + '22', color: STATUS_COLOR[s], border: `1px solid ${STATUS_COLOR[s]}55` }}>
+            <span key={s} className="muscle-status-badge" style={{ background: mix(STATUS_COLOR[s], 0.13), color: STATUS_COLOR[s], border: `1px solid ${mix(STATUS_COLOR[s], 0.33)}` }}>
               {s === 'fresh' ? '● Trained (0–3d)' : s === 'recovering' ? '● Recovering (4–7d)' : s === 'ready' ? '● Ready (8–14d)' : '● Untrained'}
             </span>
           ))}
@@ -569,7 +571,7 @@ function WorkoutLogger({ sessions, today, onSessionCreated }: {
                         <div className="workout-exercise-header">
                           <span className="workout-exercise-name">{ex.name}</span>
                           <span className="workout-exercise-cat muted" style={{ fontSize: 11 }}>{ex.category}</span>
-                          <button className="btn-ghost-sm" style={{ color: '#dc2626', fontSize: 11 }} onClick={() => deleteExerciseMut.mutate(ex.id)}>✕</button>
+                          <button className="btn-ghost-sm" style={{ color: 'var(--color-error)', fontSize: 11 }} onClick={() => deleteExerciseMut.mutate(ex.id)}>✕</button>
                         </div>
                         {ex.sets.length > 0 && (
                           <table className="workout-sets-table">
@@ -580,7 +582,7 @@ function WorkoutLogger({ sessions, today, onSessionCreated }: {
                                   <td className="muted">{set.set_number}</td>
                                   <td>{set.reps ?? '—'}</td>
                                   <td>{set.weight_kg ?? '—'}</td>
-                                  <td><button className="btn-ghost-sm" style={{ color: '#dc2626', fontSize: 11 }} onClick={() => deleteSetMut.mutate(set.id)}>✕</button></td>
+                                  <td><button className="btn-ghost-sm" style={{ color: 'var(--color-error)', fontSize: 11 }} onClick={() => deleteSetMut.mutate(set.id)}>✕</button></td>
                                 </tr>
                               ))}
                             </tbody>
@@ -639,7 +641,7 @@ function WorkoutLogger({ sessions, today, onSessionCreated }: {
                               {ALL_MUSCLES.map(m => <option key={m} value={m}>{MUSCLE_LABELS[m]}</option>)}
                             </select>
                             {exerciseForm.primary_muscle && (
-                              <span className="muscle-auto-badge" style={{ background: STATUS_COLOR.untrained + '44', fontSize: 11, padding: '2px 7px', borderRadius: 99 }}>
+                              <span className="muscle-auto-badge" style={{ background: mix(STATUS_COLOR.untrained, 0.27), fontSize: 11, padding: '2px 7px', borderRadius: 99 }}>
                                 {exerciseForm.name && inferMuscles(exerciseForm.name).primary === exerciseForm.primary_muscle ? '✓ auto' : 'manual'}
                               </span>
                             )}
@@ -662,7 +664,7 @@ function WorkoutLogger({ sessions, today, onSessionCreated }: {
                     )}
 
                     <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
-                      <button className="btn-ghost-sm" style={{ color: '#dc2626' }} onClick={() => { if (confirm('Delete this session?')) deleteSessionMut.mutate(session.id) }}>Delete session</button>
+                      <button className="btn-ghost-sm" style={{ color: 'var(--color-error)' }} onClick={() => { if (confirm('Delete this session?')) deleteSessionMut.mutate(session.id) }}>Delete session</button>
                     </div>
                   </div>
                 )}
@@ -748,9 +750,9 @@ function BodyCompositionSection({ latest }: { latest: BodyCompositionLog | null 
   // Fat/muscle trend arrows
   function trendArrow(trend?: string) {
     if (!trend || trend === 'insufficient_data') return null
-    if (trend === 'improving') return <span style={{ color: '#16a34a' }}>↑</span>
-    if (trend === 'worsening') return <span style={{ color: '#dc2626' }}>↑</span>
-    return <span style={{ color: '#f59e0b' }}>→</span>
+    if (trend === 'improving') return <span style={{ color: 'var(--color-success)' }}>↑</span>
+    if (trend === 'worsening') return <span style={{ color: 'var(--color-error)' }}>↑</span>
+    return <span style={{ color: 'var(--color-warning)' }}>→</span>
   }
 
   return (
@@ -773,13 +775,13 @@ function BodyCompositionSection({ latest }: { latest: BodyCompositionLog | null 
           {hasFatData && (
             <div className="body-comp-trend-item">
               <span className="muted" style={{ fontSize: 12 }}>Fat % trend {trendArrow('improving')}</span>
-              <MiniLine values={fatVals} color="#f59e0b" max={40} />
+              <MiniLine values={fatVals} color="var(--color-warning)" max={40} />
             </div>
           )}
           {hasMuscleData && (
             <div className="body-comp-trend-item">
               <span className="muted" style={{ fontSize: 12 }}>Muscle kg trend</span>
-              <MiniLine values={muscleVals} color="#3b82f6" max={80} />
+              <MiniLine values={muscleVals} color="var(--color-accent)" max={80} />
             </div>
           )}
         </div>
@@ -837,14 +839,14 @@ function StrengthTrends({ sessions }: { sessions: WorkoutSession[] }) {
     const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${scaleX(i)} ${scaleY(p.e1rm)}`).join(' ')
     return (
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', maxWidth: W, height: H }}>
-        <path d={pathD} fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={pathD} fill="none" stroke="var(--color-accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         {pts.map((p, i) => (
           <g key={i}>
-            <circle cx={scaleX(i)} cy={scaleY(p.e1rm)} r="3" fill="#6366f1" />
+            <circle cx={scaleX(i)} cy={scaleY(p.e1rm)} r="3" fill="var(--color-accent)" />
             <title>{p.date}: {p.e1rm.toFixed(1)} kg e1RM</title>
           </g>
         ))}
-        <text x={PAD} y={PAD} fontSize="9" fill="#9ca3af">{maxE1rm.toFixed(0)} kg</text>
+        <text x={PAD} y={PAD} fontSize="9" fill="var(--color-text-tertiary)">{maxE1rm.toFixed(0)} kg</text>
       </svg>
     )
   }
@@ -863,13 +865,13 @@ function StrengthTrends({ sessions }: { sessions: WorkoutSession[] }) {
           const y = H - PAD - barH
           return (
             <g key={i}>
-              <rect x={x} y={y} width={barW} height={barH} fill="#6366f1" rx="2" opacity="0.7">
+              <rect x={x} y={y} width={barW} height={barH} fill="var(--color-accent)" rx="2" opacity="0.7">
                 <title>{v.week}: {v.total_kg.toFixed(0)} kg</title>
               </rect>
             </g>
           )
         })}
-        <text x={PAD} y={10} fontSize="9" fill="#9ca3af">{maxVol.toFixed(0)} kg</text>
+        <text x={PAD} y={10} fontSize="9" fill="var(--color-text-tertiary)">{maxVol.toFixed(0)} kg</text>
       </svg>
     )
   }
@@ -925,9 +927,9 @@ function HealthAIInsights() {
   })
 
   const severityColor: Record<HealthAIInsight['severity'], string> = {
-    positive: '#16a34a',
-    neutral: '#6366f1',
-    warning: '#dc2626',
+    positive: 'var(--color-success)',
+    neutral: 'var(--color-accent)',
+    warning: 'var(--color-error)',
   }
 
   return (
@@ -939,7 +941,7 @@ function HealthAIInsights() {
         {analysisMut.isPending && <span className="muted" style={{ fontSize: 13 }}>Claude is reading your last 7 days…</span>}
       </div>
 
-      {error && <p style={{ color: '#dc2626', fontSize: 13 }}>{error}</p>}
+      {error && <p style={{ color: 'var(--color-error)', fontSize: 13 }}>{error}</p>}
 
       {result && (
         <>
@@ -947,7 +949,7 @@ function HealthAIInsights() {
             {result.insights.map((insight, i) => (
               <div key={i} className="ai-insight-card" style={{ borderLeft: `3px solid ${severityColor[insight.severity]}` }}>
                 <div className="ai-insight-header">
-                  <span className="ai-insight-type-badge" style={{ background: severityColor[insight.severity] + '22', color: severityColor[insight.severity] }}>{insight.type}</span>
+                  <span className="ai-insight-type-badge" style={{ background: mix(severityColor[insight.severity], 0.13), color: severityColor[insight.severity] }}>{insight.type}</span>
                   <span className="ai-insight-headline">{insight.headline}</span>
                 </div>
                 <p className="ai-insight-detail muted">{insight.detail}</p>

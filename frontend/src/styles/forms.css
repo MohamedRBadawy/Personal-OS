@@ -1,3 +1,5 @@
+/* [AR] أنماط النماذج — حقول الإدخال والأزرار وشبكة التخطيط، جميعها تستخدم رموز التصميم */
+/* [EN] Form styles — inputs, buttons, and layout grid, all consuming design tokens */
 .form-grid {
   display: grid;
   gap: 12px;
@@ -27,8 +29,8 @@ input,
 select,
 textarea,
 button {
-  border-radius: 14px;
-  border: 1px solid rgba(17, 50, 62, 0.14);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
 }
 
 input,
@@ -37,8 +39,8 @@ textarea {
   width: 100%;
   padding: 12px 14px;
   font-size: var(--text-base);   /* ≥ 16px — prevents iOS zoom */
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.8);
+  color: var(--color-text-primary);
+  background: var(--input-bg);
 }
 
 textarea {
@@ -51,8 +53,8 @@ button {
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
   cursor: pointer;
-  color: #fffaf3;
-  background: linear-gradient(120deg, var(--accent), var(--accent-strong));
+  color: var(--button-primary-color);
+  background: var(--button-primary-bg);
   transition: transform 160ms ease, opacity 160ms ease;
 }
 
@@ -66,13 +68,13 @@ button:hover {
   justify-content: center;
   width: fit-content;
   padding: 12px 16px;
-  border-radius: 14px;
-  border: 1px solid rgba(17, 50, 62, 0.14);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
-  color: #fffaf3;
+  color: var(--button-primary-color);
   text-decoration: none;
-  background: linear-gradient(120deg, var(--accent), var(--accent-strong));
+  background: var(--button-primary-bg);
   transition: transform 160ms ease, opacity 160ms ease;
 }
 
@@ -88,17 +90,17 @@ button:disabled {
 
 .button-muted,
 .button-ghost {
-  color: var(--text);
-  background: rgba(17, 50, 62, 0.08);
+  color: var(--color-text-primary);
+  background: var(--color-bg-subtle);
 }
 
 .button-muted.active {
-  color: #fffaf3;
-  background: linear-gradient(120deg, var(--accent), var(--accent-strong));
+  color: var(--button-primary-color);
+  background: var(--button-primary-bg);
 }
 
 .button-ghost {
-  border-color: rgba(17, 50, 62, 0.18);
+  border-color: var(--color-border-strong);
 }
 
 .checkbox-row {

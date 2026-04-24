@@ -48,6 +48,57 @@ function PriorityStatusPopover({ item, onClose }: { item: CommandCenterPriorityI
   )
 }
 
+// [AR] بطاقة الأولوية الأولى — العنصر البصري الأبرز في القسم
+// [EN] Top priority card — the most visually dominant element in the section
+function TopPriorityCard({ item, isActive, onToggle }: {
+  item: CommandCenterPriorityItem; isActive: boolean; onToggle: () => void
+}) {
+  return (
+    <div
+      className="top-priority-card"
+      style={{ position: 'relative' }}
+      onClick={e => { e.stopPropagation(); onToggle() }}
+    >
+      <p className="top-priority-eyebrow">Most important right now</p>
+      <p className="top-priority-title">{item.title}</p>
+      {item.notes && (
+        <p className="top-priority-notes">
+          {item.notes.slice(0, 150)}{item.notes.length > 150 ? '…' : ''}
+        </p>
+      )}
+      <div className="top-priority-meta">
+        {item.dependency_unblock_count > 0 && (
+          <span className="cc-unblock-badge" title={`Unlocks ${item.dependency_unblock_count} other goal${item.dependency_unblock_count !== 1 ? 's' : ''}`}>
+            ↗{item.dependency_unblock_count}
+          </span>
+        )}
+        {item.is_overdue && <span className="overdue-badge">OVERDUE</span>}
+        {item.due_date && !item.is_overdue && (
+          <span className="task-date">{item.due_date}</span>
+        )}
+        <span
+          className="task-status-chip"
+          style={{
+            background: `color-mix(in srgb, ${NODE_STATUS_COLORS[item.status as NodeStatus] ?? '#6b7280'} 15%, transparent)`,
+            color: NODE_STATUS_COLORS[item.status as NodeStatus] ?? '#6b7280',
+          }}
+        >
+          {item.status}
+        </span>
+        <Link
+          className="task-goto-btn"
+          style={{ opacity: 1 }}
+          to={`/goals?node=${item.id}`}
+          onClick={e => e.stopPropagation()}
+        >
+          Open →
+        </Link>
+      </div>
+      {isActive && <PriorityStatusPopover item={item} onClose={onToggle} />}
+    </div>
+  )
+}
+
 // [AR] صف الأولوية الواحدة — يعرض العنوان والحالة وشارة الإلغاء
 // [EN] Single priority row — shows title, status, unblock badge, due date
 function PriorityRow({ item, isActive, onToggle }: {
@@ -154,17 +205,29 @@ export function HomePrioritiesSection({ priorities, blockedGoals, tomorrowFocus 
             <Link to="/journal" className="focus-note-link">Edit →</Link>
           </div>
         )}
-        {priorities.length === 0
-          ? <p className="empty-hint">No priorities. <Link to="/goals">Go to Goals to add.</Link></p>
-          : (
-            <div className="task-list">
-              {priorities.slice(0, 8).map(item => (
-                <PriorityRow key={item.id} item={item}
-                  isActive={activePopover === item.id}
-                  onToggle={() => setActivePopover(p => p === item.id ? null : item.id)} />
-              ))}
-            </div>
-          )}
+        {priorities.length === 0 ? (
+          <div className="home-empty-priorities">
+            <p className="home-empty-message">No priorities set yet</p>
+            <Link to="/goals" className="home-empty-cta">Add your first priority →</Link>
+          </div>
+        ) : (
+          <>
+            <TopPriorityCard
+              item={priorities[0]}
+              isActive={activePopover === priorities[0].id}
+              onToggle={() => setActivePopover(p => p === priorities[0].id ? null : priorities[0].id)}
+            />
+            {priorities.length > 1 && (
+              <div className="task-list">
+                {priorities.slice(1, 8).map(item => (
+                  <PriorityRow key={item.id} item={item}
+                    isActive={activePopover === item.id}
+                    onToggle={() => setActivePopover(p => p === item.id ? null : item.id)} />
+                ))}
+              </div>
+            )}
+          </>
+        )}
         {blockedGoals.length > 0 && (
           <div className="blocked-panel" style={{ marginTop: 8 }}>
             <p className="section-title" style={{ marginBottom: 6 }}>⚠ Blocked goals</p>

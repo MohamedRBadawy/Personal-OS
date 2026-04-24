@@ -400,7 +400,9 @@ Consequences: failed business (Expack, 2018–2022), significant financial damag
 He is not in crisis. He has stable income, a clear goal, a structured schedule, a defined service offering, and a system he is building to manage all of it. But the recovery is real and ongoing.
 
 <!-- SPECKIT START -->
-For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan
-at specs/001-navigation-redesign/plan.md
+## Active Feature Plan
+
+**Current feature**: Business Development Depth (`003-biz-dev-depth`)  
+**Plan**: [specs/003-biz-dev-depth/plan.md](specs/003-biz-dev-depth/plan.md)  
+**Spec**: [specs/003-biz-dev-depth/spec.md](specs/003-biz-dev-depth/spec.md)
 <!-- SPECKIT END -->

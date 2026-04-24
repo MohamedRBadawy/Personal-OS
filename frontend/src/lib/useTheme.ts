@@ -1,49 +1,44 @@
+// [AR] خطاف السمة — يُزامن تفضيل السمة المخزن مع حالة React ويتابع تغييرات إعدادات النظام
+// [EN] Theme hook — syncs stored theme preference with React state and tracks system preference changes
 import { useCallback, useEffect, useState } from 'react'
-
-export type Theme = 'light' | 'dark'
-
-const STORAGE_KEY = 'theme'
-
-function getStoredTheme(): Theme | null {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored === 'light' || stored === 'dark') return stored
-  } catch {
-    // localStorage unavailable
-  }
-  return null
-}
-
-function applyTheme(theme: Theme) {
-  document.documentElement.setAttribute('data-theme', theme)
-  try {
-    localStorage.setItem(STORAGE_KEY, theme)
-  } catch {
-    // ignore
-  }
-}
+import { getEffectiveTheme, getStoredTheme, setTheme, type EffectiveTheme, type ThemePreference } from './theme'
 
 export function useTheme() {
-  const [theme, setThemeState] = useState<Theme>(() => getStoredTheme() ?? 'light')
+  const [theme, setThemeState] = useState<ThemePreference>(() => getStoredTheme())
+  const [effectiveTheme, setEffectiveThemeState] = useState<EffectiveTheme>(() => getEffectiveTheme(getStoredTheme()))
 
   useEffect(() => {
-    applyTheme(theme)
+    const resolvedTheme = getEffectiveTheme(theme)
+    setEffectiveThemeState(resolvedTheme)
+    setTheme(theme)
   }, [theme])
 
-  // Apply on mount in case localStorage was set in a previous session
   useEffect(() => {
-    const initial = getStoredTheme() ?? 'light'
-    applyTheme(initial)
-    setThemeState(initial)
+    if (theme !== 'system') {
+      return undefined
+    }
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    const handleChange = () => {
+      const resolvedTheme = getEffectiveTheme('system')
+      setEffectiveThemeState(resolvedTheme)
+      setTheme('system')
+    }
+
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
+  }, [theme])
+
+  const updateTheme = useCallback((nextTheme: ThemePreference) => {
+    setThemeState(nextTheme)
   }, [])
 
   const toggleTheme = useCallback(() => {
     setThemeState((current) => {
-      const next = current === 'light' ? 'dark' : 'light'
-      applyTheme(next)
-      return next
+      const currentEffectiveTheme = getEffectiveTheme(current)
+      return currentEffectiveTheme === 'dark' ? 'light' : 'dark'
     })
   }, [])
 
-  return { theme, toggleTheme }
+  return { theme, effectiveTheme, setTheme: updateTheme, toggleTheme }
 }

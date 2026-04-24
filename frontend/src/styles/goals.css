@@ -151,16 +151,6 @@
 .node-children { margin-left: 0; }
 
 /* Side panel */
-.side-panel-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,.35);
-  display: flex; justify-content: flex-end; z-index: 900;
-}
-.side-panel {
-  width: 380px; max-width: 90vw;
-  background: var(--surface); border-left: 1px solid var(--border);
-  display: flex; flex-direction: column;
-  height: 100%; overflow: hidden;
-}
 .side-panel-header {
   display: flex; align-items: center; gap: 10px;
   padding: 20px 24px 16px; border-bottom: 1px solid var(--border);

@@ -1,5 +1,35 @@
+/* [AR] تخطيط التطبيق — قشرة الصفحة والشريط الجانبي والتنقل الرئيسي، تستخدم رموز التصميم */
+/* [EN] App layout — page shell, sidebar, and primary navigation, consuming design tokens */
+
+/* [AR] الفكرة: الخلفية تعكس النظام — ألوان المحاور السبعة تنبثق كتدرجات لطيفة */
+/* [EN] The idea: the background IS the system — all 7 domains glow softly in the backdrop */
+
+/* Prevent horizontal scrollbars from overflowing content or absolute elements */
+html, body {
+  overflow-x: hidden;
+}
+
+/* Dark mode mesh — stronger contrast against the near-black base */
 body {
   min-height: 100vh;
+  background:
+    radial-gradient(ellipse 80% 60% at 5%  15%, color-mix(in srgb, var(--color-hub-now)          14%, transparent) 0%, transparent 55%),
+    radial-gradient(ellipse 55% 75% at 95% 85%, color-mix(in srgb, var(--color-hub-goals)        12%, transparent) 0%, transparent 55%),
+    radial-gradient(ellipse 65% 45% at 88% 8%,  color-mix(in srgb, var(--color-hub-life)         10%, transparent) 0%, transparent 45%),
+    radial-gradient(ellipse 45% 65% at 20% 92%, color-mix(in srgb, var(--color-hub-build)         9%, transparent) 0%, transparent 45%),
+    radial-gradient(ellipse 55% 55% at 55% 48%, color-mix(in srgb, var(--color-hub-intelligence)  8%, transparent) 0%, transparent 50%),
+    var(--color-bg-base);
+}
+
+/* Light mode mesh — bumped percentages because white base makes tints more visible */
+[data-theme="light"] body {
+  background:
+    radial-gradient(ellipse 80% 60% at 5%  15%, color-mix(in srgb, var(--color-hub-now)          18%, transparent) 0%, transparent 55%),
+    radial-gradient(ellipse 55% 75% at 95% 85%, color-mix(in srgb, var(--color-hub-goals)        14%, transparent) 0%, transparent 55%),
+    radial-gradient(ellipse 65% 45% at 88% 8%,  color-mix(in srgb, var(--color-hub-life)         13%, transparent) 0%, transparent 45%),
+    radial-gradient(ellipse 45% 65% at 20% 92%, color-mix(in srgb, var(--color-hub-build)        11%, transparent) 0%, transparent 45%),
+    radial-gradient(ellipse 55% 55% at 55% 48%, color-mix(in srgb, var(--color-hub-intelligence) 10%, transparent) 0%, transparent 50%),
+    var(--color-bg-base);
 }
 
 #root {
@@ -8,64 +38,63 @@ body {
 
 .app-shell {
   display: grid;
-  grid-template-columns: minmax(240px, 290px) minmax(0, 1fr);
-  gap: 24px;
+  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+  gap: 12px;
   width: min(1520px, calc(100% - 28px));
   margin: 14px auto;
   min-height: calc(100vh - 28px);
-  transition: grid-template-columns 0.25s ease;
 }
 
-.app-shell.sidebar-collapsed {
-  grid-template-columns: 48px minmax(0, 1fr);
+/* min-width: 0 prevents grid children from overflowing their column */
+.app-sidebar,
+.app-main {
+  min-width: 0;
 }
 
-.sidebar-toggle {
+/* Mobile nav toggle — hidden on desktop, shown on small screens */
+.nav-toggle {
   display: none;
 }
 
-/* ── Sidebar collapse toggle button ── */
-.sidebar-collapse-btn {
-  position: absolute;
-  top: 18px;
-  right: -14px;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text-muted);
-  font-size: var(--text-sm);
-  line-height: 1;
-  cursor: pointer;
-  display: flex;
+/* ── Back button — appears in header when on a detail/sub-page ── */
+.header-back-btn {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  box-shadow: var(--shadow-sm, 0 1px 4px rgba(0,0,0,.12));
-  transition: background 0.15s, color 0.15s;
-  z-index: 10;
+  gap: 4px;
+  padding: 3px 8px 3px 4px;
+  margin-bottom: 6px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  font-family: var(--font-sans);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
 }
 
-.sidebar-collapse-btn:hover {
-  background: var(--accent);
-  color: #fff;
-  border-color: var(--accent);
+.header-back-btn:hover {
+  background: var(--color-accent-subtle);
+  color: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
 .app-sidebar,
 .app-main {
-  border: 1px solid var(--border);
+  border: 1px solid var(--card-border);
   border-radius: calc(var(--radius) + 6px);
-  background: rgba(255, 248, 239, 0.82);
-  box-shadow: var(--shadow);
+  background: var(--card-bg);
+  box-shadow: var(--shadow-elevated);
   backdrop-filter: blur(10px);
 }
 
 .app-sidebar {
-  display: grid;
-  gap: 28px;
-  align-content: start;
-  padding: 24px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px 16px;
   position: sticky;
   top: 14px;
   max-height: calc(100vh - 28px);
@@ -75,7 +104,9 @@ body {
 
 .sidebar-brand {
   display: grid;
-  gap: 12px;
+  gap: 4px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .app-title,
@@ -87,9 +118,11 @@ h3 {
 }
 
 .app-title {
-  max-width: 10ch;
-  font-size: clamp(2rem, 3.8vw, 3.3rem);
-  line-height: 0.98;
+  max-width: none;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
 }
 
 .app-subtitle {
@@ -129,8 +162,8 @@ h3 {
 .nav-group-label,
 .eyebrow {
   margin: 0;
-  color: var(--accent-strong);
-  font: var(--weight-semibold) var(--text-xs)/1 var(--mono);
+  color: var(--color-text-tertiary);
+  font: var(--font-semibold) var(--text-xs)/1 var(--font-mono);
   letter-spacing: var(--tracking-widest);
   text-transform: uppercase;
 }
@@ -186,7 +219,7 @@ h3 {
 .hub-nav {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 10px;
   padding: 4px 0;
   flex: 1;
   overflow-y: auto;
@@ -214,28 +247,7 @@ h3 {
   font-weight: 600;
 }
 
-/* Layer-specific active/hover colours */
-.hub-item[data-layer="execution"].active,
-.hub-item[data-layer="execution"]:hover {
-  color: var(--accent);
-}
-
-.hub-item[data-layer="awareness"].active,
-.hub-item[data-layer="awareness"]:hover {
-  color: #059669;
-}
-
-.hub-item[data-layer="direction"].active,
-.hub-item[data-layer="direction"]:hover {
-  color: #7c3aed;
-}
-
-.hub-icon {
-  font-size: 15px;
-  min-width: 20px;
-  text-align: center;
-  line-height: 1;
-}
+/* Layer-specific colours removed — hub-specific --hub-color CSS var handles this now */
 
 .hub-label {
   font-size: 13px;
@@ -267,8 +279,8 @@ h3 {
   right: 0;
   z-index: 150;
   height: 60px;
-  background: rgba(255, 248, 239, 0.96);
-  border-top: 1px solid var(--border);
+  background: var(--nav-bg);
+  border-top: 1px solid var(--color-border);
   backdrop-filter: blur(12px);
   padding: 0 4px env(safe-area-inset-bottom, 0);
   align-items: stretch;
@@ -337,33 +349,6 @@ h3 {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Theme Toggle Button
-   ───────────────────────────────────────────────────────────── */
-
-.theme-toggle {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 10px 14px;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text-muted);
-  font-size: var(--text-sm);
-  font-family: var(--sans);
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-}
-
-.theme-toggle:hover {
-  background: rgba(17, 50, 62, 0.06);
-  color: var(--text);
-  transform: none;
-}
-
-/* ─────────────────────────────────────────────────────────────
    Mobile overrides
    ───────────────────────────────────────────────────────────── */
 
@@ -402,14 +387,10 @@ h3 {
     border-radius: 0;
   }
 
-  /* Sidebar toggle — compact icon-style pill */
-  .sidebar-toggle {
-    font-size: var(--text-sm);
-    padding: 10px 16px;
-    border-radius: 0;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text-muted);
+  /* Nav toggle on phones — slightly larger touch target */
+  .nav-toggle {
+    width: 40px;
+    height: 40px;
   }
 
   /* Main content — tighter padding on phones */
@@ -496,7 +477,7 @@ h3 {
   .chat-toggle,
   .chat-panel,
   .bottom-nav,
-  .sidebar-toggle,
+  .nav-toggle,
   .button-row,
   .form-actions,
   .workspace-tabbar,
@@ -581,8 +562,17 @@ h3 {
   display: flex;
   justify-content: space-between;
   gap: 18px;
-  align-items: end;
+  align-items: flex-end;
   padding: 4px 0 24px;
+}
+
+/* Identity column: holds back-btn + eyebrow + title, stacks vertically */
+.app-header__identity {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  flex: 1;
+  min-width: 0;
 }
 
 .header-title {
@@ -602,6 +592,17 @@ h3 {
   display: grid;
   gap: 20px;
 }
+
+.focused-view-back {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  margin-bottom: var(--space-3);
+  transition: color 0.12s;
+}
+.focused-view-back:hover { color: var(--color-accent); }
 
 .page {
   display: grid;
@@ -644,11 +645,27 @@ h3 {
     gap: 12px;
   }
 
-  .sidebar-toggle {
+  /* Show the hamburger button inside the header on narrow screens */
+  .nav-toggle {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 100%;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    flex-shrink: 0;
+    align-self: center;
+    transition: background 0.15s, color 0.15s;
+    margin-bottom: 2px;
+  }
+
+  .nav-toggle:hover {
+    background: var(--color-accent-subtle);
+    color: var(--color-text-primary);
   }
 
   .app-sidebar {
@@ -656,7 +673,7 @@ h3 {
   }
 
   .app-sidebar.open {
-    display: grid;
+    display: flex;
   }
 }
 
@@ -831,4 +848,225 @@ h3 {
   font-family: var(--heading);
   font-size: 1.8rem;
   line-height: 1;
+}
+
+/* [AR] تجاوزات إعادة التصميم — الزجاج والألوان المحورية ومطابقة الرموز الجديدة */
+/* [EN] Redesign overrides — glass panels, hub color system, new token mapping */
+
+/* Hub accent propagation — sets --hub-accent on the shell; all children inherit it */
+.app-shell[data-hub="now"]          { --hub-accent: var(--color-hub-now); }
+.app-shell[data-hub="goals"]        { --hub-accent: var(--color-hub-goals); }
+.app-shell[data-hub="build"]        { --hub-accent: var(--color-hub-build); }
+.app-shell[data-hub="life"]         { --hub-accent: var(--color-hub-life); }
+.app-shell[data-hub="learn"]        { --hub-accent: var(--color-hub-learn); }
+.app-shell[data-hub="intelligence"] { --hub-accent: var(--color-hub-intelligence); }
+.app-shell[data-hub="profile"]      { --hub-accent: var(--color-hub-profile); }
+
+/* Glass panels — semi-transparent so the mesh gradient bleeds through */
+.app-sidebar {
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-bg-raised) 88%, transparent);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow: var(--shadow-elevated);
+}
+
+.app-main {
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-bg-raised) 92%, transparent);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow: var(--shadow-elevated);
+}
+
+[data-theme="light"] .app-sidebar {
+  background: color-mix(in srgb,
+    var(--hub-accent, var(--color-hub-now)) 14%,
+    color-mix(in srgb, var(--color-bg-subtle) 82%, transparent));
+  border-color: var(--color-border);
+}
+
+[data-theme="light"] .app-main {
+  background: color-mix(in srgb,
+    var(--hub-accent, var(--color-hub-now)) 8%,
+    color-mix(in srgb, var(--color-bg-raised) 88%, transparent));
+}
+
+/* Sidebar footer — compact chip row, pushed to bottom */
+.sidebar-footer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  margin-top: auto;
+}
+
+/* ── Hub nav — color bar replaces icon ── */
+.hub-item {
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  padding-left: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Colored left accent bar */
+.hub-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--hub-color, var(--color-accent));
+  opacity: 0.3;
+  transition: opacity 0.15s ease, height 0.15s ease, width 0.15s ease;
+}
+
+.hub-item:hover::before {
+  opacity: 0.7;
+  height: 20px;
+}
+
+.hub-item.active::before {
+  opacity: 1;
+  height: 28px;
+  width: 4px;
+}
+
+.hub-item:hover {
+  background: color-mix(in srgb, var(--hub-color, var(--color-accent)) 10%, transparent);
+  color: var(--hub-color, var(--color-text-primary));
+}
+
+.hub-item.active {
+  background: color-mix(in srgb, var(--hub-color, var(--color-accent)) 12%, var(--color-bg-raised));
+  color: var(--hub-color, var(--color-text-primary));
+  font-weight: 600;
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--hub-color, var(--color-accent)) 20%, transparent);
+}
+
+/* Hub icon — inherits color from parent .hub-item */
+.hub-icon {
+  flex-shrink: 0;
+}
+
+/* ── App header — hub accent underline + colored title ── */
+.app-header {
+  border-bottom: 2px solid color-mix(in srgb, var(--hub-accent, var(--color-accent)) 40%, transparent);
+}
+
+.header-title {
+  color: var(--hub-accent, var(--color-text-primary));
+}
+
+.eyebrow {
+  color: color-mix(in srgb, var(--hub-accent, var(--color-accent)) 80%, var(--color-text-tertiary));
+}
+
+/* ── Quick capture FAB ── */
+.quick-capture-fab {
+  background: var(--hub-color, var(--color-accent));
+  border: none;
+  color: #fff;
+  font-size: 1.6rem;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.quick-capture-fab:hover {
+  background: color-mix(in srgb, var(--hub-color, var(--color-accent)) 85%, #fff);
+  transform: scale(1.08);
+}
+
+/* ── Bottom nav ── */
+.bottom-nav {
+  background: var(--nav-bg);
+  border-top: 1px solid var(--color-border);
+}
+
+.bottom-nav__item {
+  color: var(--color-text-secondary);
+}
+
+.bottom-nav__item.active {
+  color: var(--hub-color, var(--color-accent));
+}
+
+.bottom-nav__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--hub-color, var(--color-accent));
+  opacity: 0.3;
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.bottom-nav__item.active .bottom-nav__dot {
+  opacity: 1;
+  transform: scale(1.4);
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.theme-toggle:hover {
+  background: var(--color-accent-subtle);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-strong);
+}
+
+.theme-toggle__icon {
+  font-size: 12px;
+  line-height: 1;
+  color: inherit;
+}
+
+.theme-toggle__label {
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+}
+
+/* Compact export button — matches theme-toggle pill style */
+.sidebar-export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.sidebar-export-btn:hover {
+  background: var(--color-accent-subtle);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-strong);
+}
+.sidebar-export-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }

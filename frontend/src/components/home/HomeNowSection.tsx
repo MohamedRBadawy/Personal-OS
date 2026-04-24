@@ -79,10 +79,11 @@ export function HomeNowSection({
   onToggleBadDay, badDayMutating, pipelineSummary, pipelineActiveCount,
   journalStatus, healthPulse, healthAlerts, contactsDue,
 }: NowSectionProps) {
-  const [routineExpanded, setRoutineExpanded] = useState(false)
+  const nowHour = new Date().getHours()
+  const isMorning = nowHour >= 5 && nowHour < 12
+  const [routineExpanded, setRoutineExpanded] = useState(isMorning)
   const hp = healthPulse
   const js = journalStatus
-  const nowHour = new Date().getHours()
   const showMorningNudge = nowHour < 9 && checkinStatus && !checkinStatus.morning_done && !badDayMode
   const showEveningNudge = nowHour >= 20 && checkinStatus && !checkinStatus.evening_done && !badDayMode
 

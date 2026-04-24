@@ -35,6 +35,9 @@ export function PipelineOpportunityForm({
   const [dateApplied, setDateApplied] = useState(initialValue?.date_applied ?? '')
   const [outcomeNotes, setOutcomeNotes] = useState(initialValue?.outcome_notes ?? '')
   const [prospectContext, setProspectContext] = useState(initialValue?.prospect_context ?? '')
+  const [monthlyValueEur, setMonthlyValueEur] = useState(initialValue?.monthly_value_eur ?? '0')
+  const [isRecurring, setIsRecurring] = useState(initialValue?.is_recurring ?? true)
+  const [expectedCloseDate, setExpectedCloseDate] = useState(initialValue?.expected_close_date ?? '')
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -50,6 +53,9 @@ export function PipelineOpportunityForm({
       date_applied: dateApplied || null,
       outcome_notes: outcomeNotes,
       prospect_context: prospectContext || undefined,
+      monthly_value_eur: monthlyValueEur || '0',
+      is_recurring: isRecurring,
+      expected_close_date: expectedCloseDate || null,
     })
   }
 
@@ -146,6 +152,36 @@ export function PipelineOpportunityForm({
           value={description}
           onChange={(event) => setDescription(event.target.value)}
         />
+      </div>
+      <div className="field">
+        <label htmlFor="pipeline-monthly-value">Monthly value (EUR)</label>
+        <input
+          id="pipeline-monthly-value"
+          min="0"
+          step="0.01"
+          type="number"
+          value={monthlyValueEur}
+          onChange={(e) => setMonthlyValueEur(e.target.value)}
+        />
+      </div>
+      <div className="field">
+        <label htmlFor="pipeline-close-date">Expected close date</label>
+        <input
+          id="pipeline-close-date"
+          type="date"
+          value={expectedCloseDate}
+          onChange={(e) => setExpectedCloseDate(e.target.value)}
+        />
+      </div>
+      <div className="field span-2">
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={isRecurring}
+            onChange={(e) => setIsRecurring(e.target.checked)}
+          />
+          Recurring monthly engagement
+        </label>
       </div>
       <div className="field span-2">
         <label htmlFor="pipeline-outcome-notes">Outcome notes</label>

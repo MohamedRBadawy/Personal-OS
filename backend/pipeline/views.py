@@ -7,13 +7,19 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from pipeline.models import Client, MarketingAction, MarketingCampaign, MarketingChannel, Opportunity
+from pipeline.models import (
+    Client, EquityPartnership, MarketingAction, MarketingCampaign,
+    MarketingChannel, Opportunity, OutreachStep, PartnershipAction,
+)
 from pipeline.serializers import (
     ClientSerializer,
+    EquityPartnershipSerializer,
     MarketingActionSerializer,
     MarketingCampaignSerializer,
     MarketingChannelSerializer,
     OpportunitySerializer,
+    OutreachStepSerializer,
+    PartnershipActionSerializer,
 )
 from pipeline.services import OpportunityLifecycleService, PipelineWorkspaceService, WorkOverviewService
 
@@ -141,6 +147,49 @@ class OpportunityViewSet(viewsets.ModelViewSet):
             "next_followup_date": opp.next_followup_date,
         })
 
+    # [AR] حفظ المسودة المولَّدة بالذكاء الاصطناعي كخطوة تواصل تلقائياً
+    # [EN] Save an AI-generated draft as an outreach step automatically
+    @action(detail=True, methods=["post"], url_path="steps/from-draft")
+    def steps_from_draft(self, request, pk=None):
+        opp = self.get_object()
+        channel = request.data.get("channel", "linkedin")
+        draft_text = request.data.get("draft_text", "")
+
+        # If no pre-generated draft text supplied, generate one via existing logic
+        if not draft_text:
+            from django.test import RequestFactory  # noqa: PLC0415
+            import json  # noqa: PLC0415
+            fake_request = RequestFactory().post("/", data=json.dumps({"channel": channel}), content_type="application/json")
+            fake_request.user = request.user
+            response = self.draft_message(fake_request, pk=pk)
+            if response.status_code != 200:
+                return response
+            draft_text = response.data.get("draft", "")
+
+        step = OutreachStep.objects.create(
+            opportunity=opp,
+            user=request.user if request.user.is_authenticated else None,
+            step_type=OutreachStep.StepType.FIRST_MESSAGE,
+            draft_message=draft_text,
+        )
+        return Response(
+            {"step": OutreachStepSerializer(step).data, "draft_message": draft_text},
+            status=status.HTTP_201_CREATED,
+        )
+
+    # [AR] قائمة خطوات التواصل وإنشاؤها لكل فرصة
+    # [EN] List and create outreach steps per opportunity
+    @action(detail=True, methods=["get", "post"], url_path="steps")
+    def steps(self, request, pk=None):
+        opp = self.get_object()
+        if request.method == "GET":
+            qs = OutreachStep.objects.filter(opportunity=opp).order_by("-date", "-created_at")
+            return Response(OutreachStepSerializer(qs, many=True).data)
+        serializer = OutreachStepSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(opportunity=opp, user=request.user if request.user.is_authenticated else None)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
     @action(detail=False, methods=["get"])
     def due_followups(self, request):
         """Opportunities where next_followup_date <= today."""
@@ -152,6 +201,41 @@ class OpportunityViewSet(viewsets.ModelViewSet):
             status__in=["new", "reviewing", "applied", "interview", "proposal_sent"],
         ).order_by("next_followup_date")
         return Response(OpportunitySerializer(overdue, many=True).data)
+
+
+# [AR] واجهات برمجة الشراكات الرأسمالية — إنشاء وتحديث وإدارة الإجراءات
+# [EN] Equity partnership API views — create, update, and manage actions
+class EquityPartnershipViewSet(viewsets.ModelViewSet):
+    """CRUD API for equity partnerships."""
+
+    serializer_class = EquityPartnershipSerializer
+
+    def get_queryset(self):
+        return EquityPartnership.objects.prefetch_related("actions").all()
+
+    @action(detail=True, methods=["get", "post"], url_path="actions")
+    def actions_list(self, request, pk=None):
+        partnership = self.get_object()
+        if request.method == "GET":
+            qs = partnership.actions.all()
+            return Response(PartnershipActionSerializer(qs, many=True).data)
+        serializer = PartnershipActionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(
+            partnership=partnership,
+            user=request.user if request.user.is_authenticated else None,
+        )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["patch"], url_path=r"actions/(?P<action_pk>[^/.]+)/complete")
+    def complete_action(self, request, pk=None, action_pk=None):
+        from django.utils import timezone as tz  # noqa: PLC0415
+
+        action_obj = PartnershipAction.objects.get(pk=action_pk, partnership_id=pk)
+        action_obj.completed_at = tz.now()
+        action_obj.is_current_next_action = False
+        action_obj.save(update_fields=["completed_at", "is_current_next_action"])
+        return Response(PartnershipActionSerializer(action_obj).data)
 
 
 class MarketingChannelViewSet(viewsets.ModelViewSet):

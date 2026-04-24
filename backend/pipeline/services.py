@@ -1,5 +1,11 @@
-"""Pipeline lifecycle rules, summaries, and workspace read models."""
+# [AR] خدمات خط الأنابيب — قواعد دورة الحياة وملخصات الفرص ونماذج القراءة
+# [EN] Pipeline services — lifecycle rules, opportunity summaries, and workspace read models
+
+from datetime import timedelta
+from decimal import Decimal
 from django.db import transaction
+from django.db.models import DecimalField, OuterRef, Subquery, Sum
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from analytics.models.achievement import Achievement
@@ -9,7 +15,7 @@ from core.ai import get_ai_provider
 from finance.models import FinanceEntry
 from finance.services import FinanceMetricsService
 from goals.models import Node
-from pipeline.models import Client, MarketingAction, Opportunity
+from pipeline.models import Client, MarketingAction, Opportunity, OutreachStep
 
 
 class OpportunityLifecycleService:
@@ -127,8 +133,31 @@ class OpportunityLifecycleService:
 class PipelineWorkspaceService:
     """Build the frontend workspace payload for pipeline and follow-ups."""
 
-    @staticmethod
-    def _serialize_opportunity(opportunity):
+    # [AR] أوزان مراحل خط الأنابيب — تُستخدم لحساب قيمة خط الأنابيب المرجَّحة
+    # [EN] Stage weights for weighted pipeline value — applied to monthly_value_eur per opportunity
+    STAGE_WEIGHTS = {
+        Opportunity.Status.WON:           Decimal("1.0"),
+        Opportunity.Status.PROPOSAL_SENT: Decimal("0.6"),
+        Opportunity.Status.INTERVIEW:     Decimal("0.3"),
+        Opportunity.Status.APPLIED:       Decimal("0.1"),
+        Opportunity.Status.REVIEWING:     Decimal("0.05"),
+        Opportunity.Status.NEW:           Decimal("0.05"),
+        Opportunity.Status.LOST:          Decimal("0.0"),
+        Opportunity.Status.REJECTED:      Decimal("0.0"),
+    }
+
+    @classmethod
+    def _serialize_opportunity(cls, opportunity, overdue_threshold=None):
+        # [AR] تحديد ما إذا كانت الفرصة متأخرة بناءً على آخر خطوة تواصل
+        # [EN] Determine overdue status based on latest outreach step date
+        latest_step_date = getattr(opportunity, "latest_step_date", None)
+        terminal = {Opportunity.Status.WON, Opportunity.Status.LOST, Opportunity.Status.REJECTED}
+        is_overdue = bool(
+            latest_step_date
+            and overdue_threshold
+            and latest_step_date < overdue_threshold
+            and opportunity.status not in terminal
+        )
         return {
             "id": str(opportunity.id),
             "name": opportunity.name,
@@ -143,6 +172,13 @@ class PipelineWorkspaceService:
             "date_applied": opportunity.date_applied.isoformat() if opportunity.date_applied else None,
             "date_closed": opportunity.date_closed.isoformat() if opportunity.date_closed else None,
             "outcome_notes": opportunity.outcome_notes,
+            # Deal value fields
+            "monthly_value_eur": str(opportunity.monthly_value_eur),
+            "is_recurring": opportunity.is_recurring,
+            "expected_close_date": opportunity.expected_close_date.isoformat() if opportunity.expected_close_date else None,
+            # Computed outreach fields
+            "is_overdue": is_overdue,
+            "latest_step_date": latest_step_date.isoformat() if latest_step_date else None,
         }
 
     @staticmethod
@@ -172,6 +208,7 @@ class PipelineWorkspaceService:
     def payload(cls, reference_date=None):
         """Return a richer pipeline workspace payload."""
         reference_date = reference_date or timezone.localdate()
+        overdue_threshold = reference_date - timedelta(days=3)
         active_statuses = [
             Opportunity.Status.NEW,
             Opportunity.Status.REVIEWING,
@@ -182,11 +219,23 @@ class PipelineWorkspaceService:
             Opportunity.Status.LOST,
             Opportunity.Status.REJECTED,
         ]
+
+        # [AR] حساب تاريخ آخر خطوة تواصل لكل فرصة باستخدام Subquery لتجنب N+1
+        # [EN] Annotate each opportunity with latest outreach step date using Subquery to avoid N+1
+        latest_step_subquery = Subquery(
+            OutreachStep.objects.filter(
+                opportunity=OuterRef("pk"),
+            ).order_by("-date").values("date")[:1],
+        )
         active_opportunities = list(
-            Opportunity.objects.filter(status__in=active_statuses).order_by("-date_found", "name"),
+            Opportunity.objects.filter(status__in=active_statuses)
+            .annotate(latest_step_date=latest_step_subquery)
+            .order_by("-date_found", "name"),
         )
         recent_outcomes = list(
-            Opportunity.objects.filter(status__in=recent_outcome_statuses).order_by("-date_closed", "-date_found")[:6],
+            Opportunity.objects.filter(status__in=recent_outcome_statuses)
+            .annotate(latest_step_date=latest_step_subquery)
+            .order_by("-date_closed", "-date_found")[:6],
         )
         due_follow_ups = list(
             MarketingAction.objects.filter(
@@ -195,13 +244,34 @@ class PipelineWorkspaceService:
             ).order_by("follow_up_date", "-date")[:8],
         )
         recent_clients = list(Client.objects.order_by("-created_at")[:5])
+
+        # [AR] حساب قيمة خط الأنابيب المرجَّحة والمؤكدة للنجمة الشمالية
+        # [EN] Compute weighted and confirmed pipeline values for north star
+        weighted_pipeline_eur = sum(
+            opp.monthly_value_eur * cls.STAGE_WEIGHTS.get(opp.status, Decimal("0"))
+            for opp in active_opportunities
+        )
+        confirmed_monthly_eur = sum(
+            opp.monthly_value_eur
+            for opp in active_opportunities
+            if opp.status == Opportunity.Status.WON and opp.is_recurring
+        )
+
         return {
             "date": reference_date.isoformat(),
             "summary": OpportunityLifecycleService.summary(),
-            "active_opportunities": [cls._serialize_opportunity(item) for item in active_opportunities],
+            "active_opportunities": [
+                cls._serialize_opportunity(item, overdue_threshold) for item in active_opportunities
+            ],
             "recent_outcomes": [cls._serialize_opportunity(item) for item in recent_outcomes],
             "due_follow_ups": [cls._serialize_marketing(item) for item in due_follow_ups],
             "recent_clients": [cls._serialize_client(item) for item in recent_clients],
+            "weighted_pipeline_eur": str(weighted_pipeline_eur),
+            "confirmed_monthly_eur": str(confirmed_monthly_eur),
+            "pipeline_north_star": {
+                "confirmed_eur": str(confirmed_monthly_eur),
+                "weighted_pipeline_eur": str(weighted_pipeline_eur),
+            },
         }
 
 

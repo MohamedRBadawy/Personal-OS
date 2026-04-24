@@ -1,3 +1,6 @@
+/* [AR] أنماط الصحة — تتبع الحالة والعادات والروحانيات، تستخدم رموز التصميم */
+/* [EN] Health styles — mood, habit, spiritual tracking, all consuming design tokens */
+
 /* ─────────────────────────────────────────────────────────────
    Health
    health-*, habit-*, spiritual-* (type badges shared with routine)
@@ -84,14 +87,105 @@
 .schedule-list,
 .habit-board {
   display: grid;
-  gap: 16px;
+  gap: 4px;
+}
+
+/* ── Habit board: compact expand-in-place rows (T026) ───────────────────────── */
+.habit-row-item {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.habit-row-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  background: var(--color-bg-raised);
+  transition: background 0.12s;
+}
+.habit-row-header:hover { background: var(--color-bg-overlay); }
+.habit-row-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+.habit-row-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--color-border-strong);
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.habit-row-dot.done    { background: var(--color-success); }
+.habit-row-dot.missed  { background: var(--color-error); }
+.habit-row-name {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.habit-row-target {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.habit-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.habit-log-btn {
+  font-size: var(--text-sm);
+  padding: 2px 8px;
+  border-radius: 99px;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  transition: all 0.12s;
+  line-height: 1.5;
+}
+.habit-log-btn:hover { border-color: var(--color-accent); color: var(--color-accent); }
+.habit-log-btn.active-done   { background: color-mix(in srgb, var(--color-success) 15%, transparent); color: var(--color-success); border-color: color-mix(in srgb, var(--color-success) 40%, transparent); }
+.habit-log-btn.active-missed { background: color-mix(in srgb, var(--color-error) 15%, transparent);   color: var(--color-error);   border-color: color-mix(in srgb, var(--color-error)   40%, transparent); }
+.habit-log-btn--delete { color: var(--color-text-tertiary); font-size: var(--text-base); }
+.habit-log-btn--delete:hover { color: var(--color-error); border-color: var(--color-error); }
+.habit-row-chevron {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  margin-left: 2px;
+}
+.habit-row-stats {
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--color-bg-subtle);
+  border-top: 1px solid var(--color-border);
+}
+.habit-stat-chip {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+}
+.habit-stat-chip em {
+  color: var(--color-text-tertiary);
+  font-style: normal;
+  margin-left: 2px;
 }
 
 .schedule-card,
 .habit-card,
 .timeline-day {
   padding: 18px;
-  background: rgba(255, 255, 255, 0.68);
+  background: var(--color-bg-raised);
 }
 
 .schedule-time {
@@ -104,7 +198,7 @@
 .schedule-suggestion {
   padding: 14px 16px;
   border-radius: var(--radius-sm);
-  background: rgba(17, 50, 62, 0.05);
+  background: var(--color-bg-subtle);
 }
 
 .schedule-reason p,
@@ -1469,6 +1563,49 @@
   font-size: 13px;
   line-height: 1.55;
   color: var(--text-primary, inherit);
+}
+
+/* ── Mood history: expand-in-place rows (T027) ──────────────────────────────── */
+.mood-history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.mood-entry-row {
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  background: var(--color-bg-raised);
+  transition: background 0.12s;
+}
+.mood-entry-row:hover,
+.mood-entry-row.open { background: var(--color-bg-overlay); }
+.mood-entry-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.mood-entry-date { font-size: var(--text-sm); }
+.mood-entry-score {
+  font-size: var(--text-sm);
+  font-family: var(--font-mono);
+  color: var(--color-text-secondary);
+  margin-left: auto;
+}
+.mood-entry-chevron {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+.mood-entry-notes {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin: 6px 0 0;
+  line-height: var(--line-normal);
 }
 
 /* ── Habit domain pills ──────────────────────────────────────────────────────── */

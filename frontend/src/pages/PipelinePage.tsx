@@ -2,12 +2,16 @@ import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { EmptyState } from '../components/EmptyState'
 import { MetricCard } from '../components/MetricCard'
+import OutreachStepForm from '../components/OutreachStepForm'
+import OutreachTimeline from '../components/OutreachTimeline'
 import { Panel } from '../components/Panel'
 import { PipelineOpportunityForm } from '../components/PipelineOpportunityForm'
 import { StatusPill } from '../components/StatusPill'
 import {
   createOpportunity,
   getPipelineWorkspace,
+  listOutreachSteps,
+  saveDraftAsStep,
   updateMarketingAction,
   updateOpportunity,
   getDuePipelineFollowups,
@@ -16,6 +20,23 @@ import {
 } from '../lib/api'
 import { formatDate } from '../lib/formatters'
 import type { Opportunity, OpportunityPayload, OpportunityStatus, PipelineWorkspaceOpportunity } from '../lib/types'
+
+// [EN] Expand panel that fetches and renders outreach steps for one opportunity
+function OutreachPanel({ opportunityId }: { opportunityId: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['outreach-steps', opportunityId],
+    queryFn: () => listOutreachSteps(opportunityId),
+  })
+  return (
+    <div style={{ borderTop: '1px solid var(--border)', marginTop: '0.5rem', paddingTop: '0.5rem' }}>
+      <p style={{ fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--text-secondary)' }}>
+        Outreach Timeline
+      </p>
+      <OutreachTimeline steps={data ?? []} loading={isLoading} />
+      <OutreachStepForm opportunityId={opportunityId} />
+    </div>
+  )
+}
 
 // ── Kanban column statuses ─────────────────────────────────────────────────────
 const KANBAN_COLS: { status: OpportunityStatus; label: string; color: string }[] = [
@@ -39,6 +60,7 @@ type DraftChannel = 'linkedin' | 'email' | 'upwork'
 export function PipelinePage() {
   const queryClient = useQueryClient()
   const [editingOpportunity, setEditingOpportunity] = useState<Opportunity | null>(null)
+  const [expandedOppId, setExpandedOppId] = useState<string | null>(null)
   const draggingId = useRef<string | null>(null)
   const [dragOverStatus, setDragOverStatus] = useState<string | null>(null)
 
@@ -106,6 +128,14 @@ export function PipelinePage() {
     },
   })
 
+  const saveAsStepMutation = useMutation({
+    mutationFn: ({ id, draftText }: { id: string; draftText: string }) =>
+      saveDraftAsStep(id, { draft_text: draftText }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['outreach-steps', variables.id] })
+    },
+  })
+
   if (workspaceQuery.isLoading) {
     return <section className="loading-state">Loading pipeline workspace...</section>
   }
@@ -127,12 +157,20 @@ export function PipelinePage() {
         </div>
       </div>
 
-      <div className="metric-grid">
-        <MetricCard label="New / reviewing" value={`${workspace.summary.new_or_reviewing_count}`} />
-        <MetricCard label="Applied" value={`${workspace.summary.applied_count}`} />
-        <MetricCard label="Won" value={`${workspace.summary.won_count}`} tone="success" />
-        <MetricCard label="Due follow-ups" value={`${workspace.summary.due_follow_ups_count}`} tone="warning" />
-      </div>
+      {(() => {
+        const overdueCount = workspace.active_opportunities.filter(o => o.is_overdue).length
+        return (
+          <div className="metric-grid">
+            <MetricCard label="New / reviewing" value={`${workspace.summary.new_or_reviewing_count}`} />
+            <MetricCard label="Applied" value={`${workspace.summary.applied_count}`} />
+            <MetricCard label="Won" value={`${workspace.summary.won_count}`} tone="success" />
+            <MetricCard label="Due follow-ups" value={`${workspace.summary.due_follow_ups_count}`} tone="warning" />
+            {overdueCount > 0 && (
+              <MetricCard label="Overdue outreach" value={`${overdueCount}`} tone="warning" />
+            )}
+          </div>
+        )
+      })()}
 
       {/* ── Outreach follow-up banner ─────────────────────────────────────────── */}
       {dueFollowups.length > 0 && (
@@ -252,13 +290,28 @@ export function PipelinePage() {
                         onDragStart={() => { draggingId.current = opportunity.id }}
                         onDragEnd={() => { draggingId.current = null; setDragOverStatus(null) }}
                       >
-                        <p className="kanban-card-name">{opportunity.name}</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <p className="kanban-card-name" style={{ flex: 1, margin: 0 }}>{opportunity.name}</p>
+                          {opportunity.is_overdue && (
+                            <span title="Outreach overdue" style={{ color: '#f59e0b', fontSize: '0.7rem', fontWeight: 600 }}>
+                              ⚠ Follow up
+                            </span>
+                          )}
+                        </div>
                         {opportunity.client_name && (
                           <p className="kanban-card-client">{opportunity.client_name}</p>
                         )}
                         <div className="list-inline" style={{ marginBottom: 6 }}>
                           <span className="record-meta-chip">{opportunity.platform}</span>
                           {opportunity.budget && <span className="record-meta-chip">{opportunity.budget}</span>}
+                          {parseFloat(opportunity.monthly_value_eur) > 0 && (
+                            <span className="record-meta-chip" style={{ color: '#16a34a', fontWeight: 600 }}>
+                              €{parseFloat(opportunity.monthly_value_eur).toFixed(0)}/mo
+                            </span>
+                          )}
+                          {opportunity.expected_close_date && (
+                            <span className="record-meta-chip dim-text">→ {opportunity.expected_close_date}</span>
+                          )}
                           {opportunity.job_url && (
                             <a
                               href={opportunity.job_url}
@@ -323,6 +376,15 @@ export function PipelinePage() {
                                 {copiedId === opportunity.id ? '✓ Copied' : 'Copy'}
                               </button>
                               <button
+                                className="button-muted"
+                                style={{ fontSize: 13 }}
+                                type="button"
+                                disabled={saveAsStepMutation.isPending}
+                                onClick={() => saveAsStepMutation.mutate({ id: opportunity.id, draftText: activeDraft.text })}
+                              >
+                                {saveAsStepMutation.isPending ? 'Saving…' : '📋 Save as step'}
+                              </button>
+                              <button
                                 style={{ fontSize: 13 }}
                                 type="button"
                                 disabled={markSentMutation.isPending}
@@ -334,7 +396,21 @@ export function PipelinePage() {
                           </div>
                         )}
 
+                        {expandedOppId === opportunity.id && (
+                          <OutreachPanel opportunityId={opportunity.id} />
+                        )}
+
                         <div className="button-row" style={{ marginTop: 8 }}>
+                          <button
+                            className="button-muted"
+                            style={{ fontSize: 14, padding: '2px 8px' }}
+                            type="button"
+                            onClick={() =>
+                              setExpandedOppId(expandedOppId === opportunity.id ? null : opportunity.id)
+                            }
+                          >
+                            {expandedOppId === opportunity.id ? '▲ Steps' : '▼ Steps'}
+                          </button>
                           <button
                             className="button-muted"
                             style={{ fontSize: 14, padding: '2px 8px' }}

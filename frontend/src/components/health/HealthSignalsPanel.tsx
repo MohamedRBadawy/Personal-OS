@@ -121,14 +121,14 @@ function pillarSignal(pillar: HealthDirectionPillar): Signal | null {
 // ── Styling constants ─────────────────────────────────────────────────────────
 
 const LEVEL_BG: Record<SignalLevel, string> = {
-  green: 'rgba(22,163,74,0.08)',
-  amber: 'rgba(217,119,6,0.08)',
-  red:   'rgba(220,38,38,0.08)',
+  green: 'color-mix(in srgb, var(--color-success) 10%, transparent)',
+  amber: 'color-mix(in srgb, var(--color-warning) 10%, transparent)',
+  red:   'color-mix(in srgb, var(--color-error) 10%, transparent)',
 }
 const LEVEL_COLOR: Record<SignalLevel, string> = {
-  green: '#15803d',
-  amber: '#b45309',
-  red:   '#b91c1c',
+  green: 'var(--color-success)',
+  amber: 'var(--color-warning)',
+  red:   'var(--color-error)',
 }
 const TREND_LABEL: Record<string, string> = {
   improving: '↑ Improving',

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { CollapsibleSection } from '../components/CollapsibleSection'
 import { HealthLogForm } from '../components/HealthLogForm'
 import { MetricCard } from '../components/MetricCard'
 import { Panel } from '../components/Panel'
@@ -130,40 +131,38 @@ export function HealthPage() {
         </Panel>
       </div>
 
-      <div className="two-column">
-        <Panel title="Related pages" description="Mood, habits, and spiritual tracking are now full pages.">
-          <div className="stack">
-            <Link className="button-link" to="/health?tab=mood">Mood and mental state</Link>
-            <Link className="button-link" to="/health?tab=habits">Habit board</Link>
-            <Link className="button-link" to="/health?tab=spiritual">Prayer and spiritual</Link>
-          </div>
-        </Panel>
+      <CollapsibleSection title="Related pages" storageKey="health-related-pages" defaultOpen={false}>
+        <div className="stack">
+          <Link className="button-link" to="/health?tab=mood">Mood and mental state</Link>
+          <Link className="button-link" to="/health?tab=habits">Habit board</Link>
+          <Link className="button-link" to="/health?tab=spiritual">Prayer and spiritual</Link>
+        </div>
+      </CollapsibleSection>
 
-        <Panel title="Recent health logs" description="Latest seven body logs for quick review.">
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Sleep</th>
-                  <th>Energy</th>
-                  <th>Exercise</th>
+      <CollapsibleSection title="Recent health logs" storageKey="health-recent-logs" defaultOpen={false}>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Sleep</th>
+                <th>Energy</th>
+                <th>Exercise</th>
+              </tr>
+            </thead>
+            <tbody>
+              {logsQuery.data.results.slice(0, 7).map((log) => (
+                <tr key={log.id}>
+                  <td>{formatDate(log.date)}</td>
+                  <td>{log.sleep_hours} h</td>
+                  <td>{log.energy_level} / 5</td>
+                  <td>{log.exercise_done ? log.exercise_type || 'Yes' : 'No'}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {logsQuery.data.results.slice(0, 7).map((log) => (
-                  <tr key={log.id}>
-                    <td>{formatDate(log.date)}</td>
-                    <td>{log.sleep_hours} h</td>
-                    <td>{log.energy_level} / 5</td>
-                    <td>{log.exercise_done ? log.exercise_type || 'Yes' : 'No'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Panel>
-      </div>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </CollapsibleSection>
     </section>
   )
 }

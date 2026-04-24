@@ -270,7 +270,24 @@
       "Bash(python manage.py makemigrations profile --name add_north_star_fields)",
       "Bash(python manage.py migrate profile)",
       "Bash(python manage.py makemigrations analytics --name add_domain_hint_to_idea)",
-      "Bash(python manage.py migrate analytics)"
+      "Bash(python manage.py migrate analytics)",
+      "Bash(start cmd *)",
+      "Bash(powershell -File \".specify/scripts/powershell/setup-plan.ps1\" -Json)",
+      "Bash(powershell -ExecutionPolicy Bypass -File 'F:\\\\Personal OS\\\\.specify\\\\scripts\\\\powershell\\\\setup-plan.ps1' -Json)",
+      "Bash(powershell -ExecutionPolicy Bypass -File 'F:\\\\Personal OS\\\\.specify\\\\scripts\\\\powershell\\\\check-prerequisites.ps1' -Json)",
+      "Bash(grep -rn \"hardcoded\\\\|#[0-9a-fA-F]\\\\{3,6\\\\}\" 'F:\\\\Personal OS\\\\frontend\\\\src\\\\styles\\\\health.css')",
+      "Bash(grep -n \"rgba\\\\|#[0-9a-fA-F]\\\\{3,6\\\\}\" 'F:\\\\Personal OS\\\\frontend\\\\src\\\\styles\\\\goals.css')",
+      "Bash(git -C \"F:/Personal OS\" status --short .claude/skills/)",
+      "Bash(git -C \"F:/Personal OS\" show HEAD:.claude/skills/speckit-specify/SKILL.md)",
+      "Bash(git -C \"F:/Personal OS\" restore .claude/skills/speckit-analyze/ .claude/skills/speckit-checklist/ .claude/skills/speckit-clarify/ .claude/skills/speckit-constitution/ .claude/skills/speckit-implement/ .claude/skills/speckit-plan/ .claude/skills/speckit-specify/ .claude/skills/speckit-tasks/ .claude/skills/speckit-taskstoissues/)",
+      "Bash(python manage.py makemigrations pipeline --name opportunity_deal_fields)",
+      "Bash(python manage.py makemigrations pipeline --name add_outreach_step_equity_partnership)",
+      "Bash(python manage.py migrate --run-syncdb)",
+      "Bash(python -c \"from pipeline.models import Opportunity, OutreachStep, EquityPartnership, PartnershipAction, MarketingAction, Client, ServiceOffering; print\\('All imports OK'\\)\")",
+      "Bash(python manage.py shell -c \"from pipeline.models import Opportunity, OutreachStep, EquityPartnership, PartnershipAction, MarketingAction, Client, ServiceOffering; print\\('All imports OK'\\)\")",
+      "Bash(python manage.py shell -c \"from django.contrib.auth import get_user_model; U = get_user_model\\(\\); print\\(U, U.objects.count\\(\\)\\)\")",
+      "Bash(python manage.py migrate pipeline)",
+      "Bash(node -e \"require\\('lucide-react'\\)\")"
     ]
   }
 }

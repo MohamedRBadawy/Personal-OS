@@ -55,6 +55,12 @@ import type {
   MoodLogPayload,
   Opportunity,
   OpportunityPayload,
+  OutreachStep,
+  OutreachStepPayload,
+  EquityPartnership,
+  EquityPartnershipPayload,
+  PartnershipAction,
+  PartnershipActionPayload,
   PaginatedResponse,
   PipelineWorkspacePayload,
   ProjectRetrospective,
@@ -475,6 +481,56 @@ export function updateOpportunity(id: string, payload: Partial<OpportunityPayloa
 
 export function deleteOpportunity(id: string) {
   return deleteResource(`/pipeline/opportunities/${id}/`)
+}
+
+export function saveDraftAsStep(opportunityId: string, payload: { channel?: string; draft_text?: string }) {
+  return request<{ step: OutreachStep; draft_message: string }>(
+    `/pipeline/opportunities/${opportunityId}/steps/from-draft/`,
+    { method: 'POST', body: JSON.stringify(payload) },
+  )
+}
+
+export function listOutreachSteps(opportunityId: string) {
+  return request<OutreachStep[]>(`/pipeline/opportunities/${opportunityId}/steps/`)
+}
+
+export function createOutreachStep(opportunityId: string, payload: OutreachStepPayload) {
+  return request<OutreachStep>(`/pipeline/opportunities/${opportunityId}/steps/`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function listPartnerships() {
+  return request<EquityPartnership[]>('/pipeline/partnerships/')
+}
+
+export function createPartnership(payload: EquityPartnershipPayload) {
+  return request<EquityPartnership>('/pipeline/partnerships/', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updatePartnership(id: string, payload: Partial<EquityPartnershipPayload>) {
+  return request<EquityPartnership>(`/pipeline/partnerships/${id}/`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function createPartnershipAction(partnershipId: string, payload: PartnershipActionPayload) {
+  return request<PartnershipAction>(`/pipeline/partnerships/${partnershipId}/actions/`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function completePartnershipAction(partnershipId: string, actionId: string) {
+  return request<PartnershipAction>(`/pipeline/partnerships/${partnershipId}/actions/${actionId}/complete/`, {
+    method: 'PATCH',
+    body: JSON.stringify({}),
+  })
 }
 
 export function listMarketingActions() {
@@ -1142,6 +1198,8 @@ export type NorthStarData = {
   current_amount: string
   progress_percent: number
   configured: boolean
+  weighted_pipeline_eur: string
+  pipeline_progress_percent: number
 }
 
 export function getNorthStar(): Promise<NorthStarData> {

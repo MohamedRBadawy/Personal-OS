@@ -53,6 +53,73 @@ export type MarketingWorkspacePayload = {
   due_follow_ups: MarketingAction[]
 }
 
+// [AR] أنواع خطوات التواصل والشراكات الرأسمالية — مضافة في ميزة عمق التطوير التجاري
+// [EN] Outreach step and equity partnership types — added in biz-dev-depth feature
+
+export type OutreachStepType = 'first_message' | 'reply_received' | 'meeting_booked' | 'proposal_sent' | 'won' | 'lost'
+
+export type OutreachStep = {
+  id: string
+  opportunity: string
+  step_type: OutreachStepType
+  date: string
+  notes: string
+  draft_message: string
+  created_at: string
+}
+
+export type OutreachStepPayload = {
+  step_type: OutreachStepType
+  date: string
+  notes?: string
+  draft_message?: string
+}
+
+export type PartnershipStatus = 'negotiating' | 'active' | 'on_hold' | 'exited'
+
+export type PartnershipAction = {
+  id: string
+  description: string
+  completed_at: string | null
+  is_current_next_action: boolean
+  created_at: string
+}
+
+export type PartnershipActionPayload = {
+  description: string
+  is_current_next_action?: boolean
+}
+
+export type EquityPartnership = {
+  id: string
+  partner_name: string
+  business_name: string
+  business_type: string
+  equity_pct: string
+  status: PartnershipStatus
+  terms_notes: string
+  current_next_action: PartnershipAction | null
+  created_at: string
+  updated_at: string
+}
+
+export type EquityPartnershipPayload = {
+  partner_name: string
+  business_name: string
+  business_type?: string
+  equity_pct: number
+  status?: PartnershipStatus
+  terms_notes?: string
+}
+
+export type PipelineNorthStar = {
+  confirmed_eur: string
+  weighted_pipeline_eur: string
+  target_eur: string
+  confirmed_pct: number
+  pipeline_pct: number
+}
+
 export type Opportunity = {
   id: string
   name: string
@@ -76,6 +143,13 @@ export type Opportunity = {
   next_followup_date: string | null
   prospect_context: string
   ai_draft: string
+  // Deal value fields
+  monthly_value_eur: string
+  is_recurring: boolean
+  expected_close_date: string | null
+  // Computed
+  is_overdue: boolean
+  latest_step_date: string | null
   created_at: string
   updated_at: string
 }
@@ -97,6 +171,9 @@ export type OpportunityPayload = {
   proposal_draft?: string
   outcome_notes?: string
   prospect_context?: string
+  monthly_value_eur?: number
+  is_recurring?: boolean
+  expected_close_date?: string | null
 }
 
 export type Client = {
@@ -166,6 +243,14 @@ export type PipelineWorkspaceOpportunity = {
   date_applied: string | null
   date_closed?: string | null
   outcome_notes: string
+  // Deal value fields
+  monthly_value_eur: string
+  is_recurring: boolean
+  expected_close_date: string | null
+  // Computed
+  is_overdue: boolean
+  latest_step_date: string | null
+  outreach_steps: OutreachStep[]
 }
 
 export type PipelineWorkspaceMarketingAction = {
@@ -193,6 +278,9 @@ export type PipelineWorkspacePayload = {
   recent_outcomes: PipelineWorkspaceOpportunity[]
   due_follow_ups: PipelineWorkspaceMarketingAction[]
   recent_clients: PipelineWorkspaceClient[]
+  weighted_pipeline_eur: string
+  confirmed_monthly_eur: string
+  pipeline_north_star: PipelineNorthStar
 }
 
 export type ProjectRetrospective = {

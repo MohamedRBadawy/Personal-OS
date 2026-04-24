@@ -1,0 +1,55 @@
+/* [AR] أنماط عامة — تحمل الرموز أولاً ثم توحّد أساس الصفحة لكل الشاشات */
+/* [EN] Global styles — load tokens first, then normalize the app shell foundation */
+@import './tokens.css';
+@import './theme.css';
+@import './layout.css';
+@import './components.css';
+@import './forms.css';
+
+html {
+  color-scheme: dark;
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  /* [AR] الخلفية تُدار من layout.css — لا تُضَف هنا لتجنب التعارض مع التدرج الشبكي */
+  /* [EN] Background managed in layout.css — do not add here to avoid overriding the mesh gradient */
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--line-normal);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}

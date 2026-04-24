@@ -1,3 +1,6 @@
+// [AR] لوحة العادات — صفوف مدمجة مع إحصاءات قابلة للتوسيع
+// [EN] Habit board — compact rows with expand-in-place stats
+import { useState } from 'react'
 import { titleCase } from '../lib/formatters'
 import type { HabitBoardItem } from '../lib/types'
 
@@ -17,6 +20,8 @@ function describeTarget(item: HabitBoardItem) {
 }
 
 export function HabitBoard({ items, pendingHabitId, onToggle, onDelete, deletingHabitId }: HabitBoardProps) {
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+
   if (items.length === 0) {
     return <p className="muted">No habits are defined yet.</p>
   }
@@ -25,22 +30,43 @@ export function HabitBoard({ items, pendingHabitId, onToggle, onDelete, deleting
     <div className="habit-board">
       {items.map((item) => {
         const isPending = pendingHabitId === item.habit.id
-        const todayState = item.today_log == null ? 'Pending' : item.today_log.done ? 'Done' : 'Missed'
+        const isDone = item.today_log?.done === true
+        const isMissed = item.today_log != null && !item.today_log.done
+        const isExpanded = expandedId === item.habit.id
 
         return (
-          <article key={item.habit.id} className="habit-card">
-            <div className="habit-card-header">
-              <div>
-                <h3>{item.habit.name}</h3>
-                <p className="muted">{describeTarget(item)}</p>
+          <article key={item.habit.id} className="habit-row-item">
+            <div
+              className="habit-row-header"
+              onClick={() => setExpandedId(p => p === item.habit.id ? null : item.habit.id)}
+            >
+              <div className="habit-row-main">
+                <span className={`habit-row-dot${isDone ? ' done' : isMissed ? ' missed' : ''}`} />
+                <span className="habit-row-name">{item.habit.name}</span>
+                <span className="habit-row-target">{describeTarget(item)}</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span className={`status-pill ${item.today_log?.done ? 'success' : item.today_log ? 'warning' : ''}`}>
-                  {todayState}
-                </span>
+              <div className="habit-row-actions" onClick={e => e.stopPropagation()}>
+                <button
+                  className={`habit-log-btn${isDone ? ' active-done' : ''}`}
+                  disabled={isPending}
+                  type="button"
+                  title="Done"
+                  onClick={() => onToggle(item, true)}
+                >
+                  {isPending && isDone ? '…' : '✓'}
+                </button>
+                <button
+                  className={`habit-log-btn${isMissed ? ' active-missed' : ''}`}
+                  disabled={isPending}
+                  type="button"
+                  title="Missed"
+                  onClick={() => onToggle(item, false)}
+                >
+                  {isPending && isMissed ? '…' : '✗'}
+                </button>
                 {onDelete && (
                   <button
-                    className="btn-ghost-sm"
+                    className="habit-log-btn habit-log-btn--delete"
                     disabled={deletingHabitId === item.habit.id}
                     title="Delete habit"
                     onClick={() => {
@@ -48,47 +74,21 @@ export function HabitBoard({ items, pendingHabitId, onToggle, onDelete, deleting
                         onDelete(item)
                       }
                     }}
-                    style={{ color: 'var(--text-muted)', opacity: 0.6 }}
                   >
-                    {deletingHabitId === item.habit.id ? '…' : '✕'}
+                    {deletingHabitId === item.habit.id ? '…' : '·'}
                   </button>
                 )}
+                <span className="habit-row-chevron">{isExpanded ? '▴' : '▾'}</span>
               </div>
             </div>
 
-            <div className="summary-strip">
-              <div>
-                <strong>{item.completion_rate_7d ?? 0}%</strong>
-                <p className="muted">7d completion</p>
+            {isExpanded && (
+              <div className="habit-row-stats">
+                <span className="habit-stat-chip">{item.completion_rate_7d ?? 0}% <em>7d</em></span>
+                <span className="habit-stat-chip">{item.completion_rate_30d ?? 0}% <em>30d</em></span>
+                <span className="habit-stat-chip">{item.current_streak} <em>day streak</em></span>
               </div>
-              <div>
-                <strong>{item.completion_rate_30d ?? 0}%</strong>
-                <p className="muted">30d completion</p>
-              </div>
-              <div>
-                <strong>{item.current_streak} days</strong>
-                <p className="muted">Current streak</p>
-              </div>
-            </div>
-
-            <div className="button-row">
-              <button
-                className={item.today_log?.done ? 'button-muted active' : 'button-muted'}
-                disabled={isPending}
-                type="button"
-                onClick={() => onToggle(item, true)}
-              >
-                {isPending && item.today_log?.done ? 'Saving...' : 'Done'}
-              </button>
-              <button
-                className={item.today_log && !item.today_log.done ? 'button-muted active' : 'button-muted'}
-                disabled={isPending}
-                type="button"
-                onClick={() => onToggle(item, false)}
-              >
-                {isPending && item.today_log && !item.today_log.done ? 'Saving...' : 'Missed'}
-              </button>
-            </div>
+            )}
           </article>
         )
       })}

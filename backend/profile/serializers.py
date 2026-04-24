@@ -37,6 +37,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "financial_target_currency",
             "total_debt",
             "debt_currency",
+            "theme_preference",
             "sections",
             "ai_context",
             "updated_at",
@@ -106,8 +107,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 
 class NorthStarSerializer(serializers.ModelSerializer):
-    # [AR] تسلسل بيانات النجمة الشمالية — الهدف المحوري مع نسبة التقدم
-    # [EN] North star serializer — primary goal metric with computed progress
+    # [AR] تسلسل بيانات النجمة الشمالية — الهدف المحوري مع نسبة التقدم وإسقاط خط الأنابيب
+    # [EN] North star serializer — primary goal metric with progress and pipeline projection
     label = serializers.SerializerMethodField()
     target_amount = serializers.SerializerMethodField()
     currency = serializers.SerializerMethodField()
@@ -117,10 +118,16 @@ class NorthStarSerializer(serializers.ModelSerializer):
     )
     progress_percent = serializers.SerializerMethodField()
     configured = serializers.SerializerMethodField()
+    weighted_pipeline_eur = serializers.SerializerMethodField()
+    pipeline_progress_percent = serializers.SerializerMethodField()
 
     class Meta:
         model = UserProfile
-        fields = ["label", "target_amount", "currency", "unit", "current_amount", "progress_percent", "configured"]
+        fields = [
+            "label", "target_amount", "currency", "unit", "current_amount",
+            "progress_percent", "configured",
+            "weighted_pipeline_eur", "pipeline_progress_percent",
+        ]
 
     def get_label(self, obj) -> str:
         return obj.north_star_label or "Monthly independent income"
@@ -140,3 +147,26 @@ class NorthStarSerializer(serializers.ModelSerializer):
 
     def get_configured(self, obj) -> bool:
         return bool(obj.north_star_label or obj.north_star_target_amount)
+
+    def get_weighted_pipeline_eur(self, obj) -> str:
+        # [EN] Import here to avoid circular imports; STAGE_WEIGHTS live in pipeline.services
+        from decimal import Decimal as D  # noqa: PLC0415
+        from pipeline.models import Opportunity  # noqa: PLC0415
+        from pipeline.services import PipelineWorkspaceService  # noqa: PLC0415
+
+        total = D("0")
+        for opp in Opportunity.objects.exclude(
+            status__in=[Opportunity.Status.WON, Opportunity.Status.LOST, Opportunity.Status.REJECTED],
+        ):
+            weight = PipelineWorkspaceService.STAGE_WEIGHTS.get(opp.status, D("0"))
+            total += opp.monthly_value_eur * weight
+        return str(total)
+
+    def get_pipeline_progress_percent(self, obj) -> float:
+        from decimal import Decimal as D  # noqa: PLC0415
+
+        target = obj.north_star_target_amount or obj.financial_target_monthly
+        if not target or target == 0:
+            return 0.0
+        weighted = D(self.get_weighted_pipeline_eur(obj))
+        return round(float(weighted / target * 100), 1)

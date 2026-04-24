@@ -98,14 +98,18 @@ export function HomeNorthStarSection({ milestones }: HomeNorthStarSectionProps) 
   const current = parseFloat(ns?.current_amount ?? '0')
   const target = parseFloat(ns?.target_amount ?? '0')
   const pct = ns?.progress_percent ?? 0
+  const pipelinePct = ns?.pipeline_progress_percent ?? 0
+  const weightedPipeline = parseFloat(ns?.weighted_pipeline_eur ?? '0')
   const currency = ns?.currency ?? 'EUR'
   const unit = ns?.unit ?? 'per month'
   const label = ns?.label ?? 'Monthly independent income'
+  // Combined fill capped at 100%
+  const totalPct = Math.min(pct + pipelinePct, 100)
 
   return (
     <>
-      {/* [AR] شريط النجمة الشمالية — يعرض التقدم نحو الهدف الرئيسي */}
-      {/* [EN] North star bar — progress toward primary configurable goal */}
+      {/* [AR] شريط النجمة الشمالية — يعرض التقدم المؤكد وإسقاط خط الأنابيب */}
+      {/* [EN] North star bar — confirmed progress + pipeline projection segment */}
       <div className="unlock-bar">
         <p className="unlock-eyebrow">{label}</p>
         <div className="unlock-numbers">
@@ -113,13 +117,28 @@ export function HomeNorthStarSection({ milestones }: HomeNorthStarSectionProps) 
           <span className="unlock-sep"> / </span>
           <span className="unlock-target">{currency}{target} {unit} {ns?.configured ? '' : '(not set)'}</span>
         </div>
-        <div className="unlock-track">
-          <div className="unlock-fill" style={{ width: `${pct}%` }} />
+        <div className="unlock-track" style={{ position: 'relative' }}>
+          {/* Pipeline projection segment (behind confirmed) */}
+          {pipelinePct > 0 && (
+            <div
+              style={{
+                position: 'absolute', left: 0, top: 0, bottom: 0,
+                width: `${totalPct}%`,
+                background: 'var(--accent)',
+                opacity: 0.3,
+                borderRadius: 'inherit',
+                transition: 'width 0.6s ease',
+              }}
+            />
+          )}
+          <div className="unlock-fill" style={{ width: `${pct}%`, position: 'relative' }} />
         </div>
         <p className="unlock-sub">
-          {pct === 0
+          {pct === 0 && weightedPipeline === 0
             ? 'First outreach message → first client → first income'
-            : `${pct}% of target reached`}
+            : pct > 0
+            ? `${pct}% confirmed${weightedPipeline > 0 ? ` · €${weightedPipeline.toFixed(0)} in pipeline` : ''}`
+            : `€${weightedPipeline.toFixed(0)} weighted pipeline`}
           {' · '}
           {ns?.configured
             ? <Link to="/finance" style={{ color: 'inherit', opacity: 0.7 }}>Finance →</Link>

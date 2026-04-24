@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { MetricCard } from '../components/MetricCard'
 import { HabitBoard } from '../components/HabitBoard'
+import { CollapsibleSection } from '../components/CollapsibleSection'
 import { Panel } from '../components/Panel'
 import {
   createHabit,
@@ -294,7 +295,7 @@ export function HabitsPage() {
         {habitMutation.isError ? <p className="error-text">We could not save that habit update.</p> : null}
       </Panel>
 
-      <Panel title="Habit heatmap" description="Last 52 weeks of daily completion per habit.">
+      <CollapsibleSection title="Habit heatmap" storageKey="habits-heatmap" defaultOpen={false}>
         {heatmapQuery.isLoading ? (
           <p className="muted" style={{ textAlign: 'center', padding: '20px 0' }}>Loading heatmap…</p>
         ) : heatmapQuery.data ? (
@@ -302,7 +303,7 @@ export function HabitsPage() {
         ) : (
           <p className="muted">Could not load heatmap data.</p>
         )}
-      </Panel>
+      </CollapsibleSection>
     </section>
   )
 }

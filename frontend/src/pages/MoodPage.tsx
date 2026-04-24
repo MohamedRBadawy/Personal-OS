@@ -2,9 +2,11 @@
  * MoodPage — dedicated mood tracking with form, history, and metrics.
  */
 
+import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { MetricCard } from '../components/MetricCard'
 import { MoodLogForm } from '../components/MoodLogForm'
+import { CollapsibleSection } from '../components/CollapsibleSection'
 import { Panel } from '../components/Panel'
 import {
   createMoodLog,
@@ -13,7 +15,28 @@ import {
   updateMoodLog,
 } from '../lib/api'
 import { formatDate } from '../lib/formatters'
-import type { MoodLogPayload } from '../lib/types'
+import type { MoodLog, MoodLogPayload } from '../lib/types'
+
+// [AR] صف سجل المزاج — يتوسع لإظهار الملاحظات عند النقر
+// [EN] Mood entry row — expands in-place to show notes on click
+function MoodEntryRow({ log }: { log: MoodLog }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <li
+      className={`mood-entry-row${open ? ' open' : ''}`}
+      onClick={() => setOpen(p => !p)}
+    >
+      <div className="mood-entry-header">
+        <strong className="mood-entry-date">{formatDate(log.date)}</strong>
+        <span className="mood-entry-score">{log.mood_score} / 5</span>
+        {log.notes && <span className="mood-entry-chevron">{open ? '▴' : '▾'}</span>}
+      </div>
+      {open && log.notes && (
+        <p className="mood-entry-notes">{log.notes}</p>
+      )}
+    </li>
+  )
+}
 
 export function MoodPage() {
   const queryClient = useQueryClient()
@@ -84,58 +107,50 @@ export function MoodPage() {
         />
       </div>
 
-      <div className="two-column">
-        <Panel
-          title="Log today's mood"
-          description="Quick capture so patterns become visible."
-          aside={
-            <span className={`status-pill ${summary.low_mood_streak >= 1 ? 'warning' : 'success'}`}>
-              {summary.low_mood_streak >= 1 ? `${summary.low_mood_streak}-day low-mood streak` : 'Mood steady'}
-            </span>
-          }
-        >
-          <MoodLogForm
-            key={todayQuery.data.mood_log?.id ?? `mood-${todayQuery.data.date}`}
-            initialValue={todayQuery.data.mood_log}
-            isSubmitting={moodMutation.isPending}
-            today={todayQuery.data.date}
-            onSubmit={(payload) => moodMutation.mutate(payload)}
-          />
-          {moodMutation.isError ? <p className="error-text">We could not save today's mood log.</p> : null}
-        </Panel>
+      <Panel
+        title="Log today's mood"
+        description="Quick capture so patterns become visible."
+        aside={
+          <span className={`status-pill ${summary.low_mood_streak >= 1 ? 'warning' : 'success'}`}>
+            {summary.low_mood_streak >= 1 ? `${summary.low_mood_streak}-day low-mood streak` : 'Mood steady'}
+          </span>
+        }
+      >
+        <MoodLogForm
+          key={todayQuery.data.mood_log?.id ?? `mood-${todayQuery.data.date}`}
+          initialValue={todayQuery.data.mood_log}
+          isSubmitting={moodMutation.isPending}
+          today={todayQuery.data.date}
+          onSubmit={(payload) => moodMutation.mutate(payload)}
+        />
+        {moodMutation.isError ? <p className="error-text">We could not save today's mood log.</p> : null}
+      </Panel>
 
-        <Panel title="Recent mood history" description="Last entries for quick review.">
-          {hasMoodTrend && (
-            <div className="mood-trend-note">
-              <span className={`mood-trend-indicator mood-trend-indicator--${moodTrendDir}`}>
-                {moodTrendDir === 'better' ? '↑' : moodTrendDir === 'lower' ? '↓' : '→'}
-              </span>
-              <p className="mood-trend-text">
-                {moodTrendDir === 'better'
-                  ? `This week (${mood7d}/5) is above your 30-day average (${mood30d}/5) — trending better.`
-                  : moodTrendDir === 'lower'
-                  ? `This week (${mood7d}/5) is below your 30-day average (${mood30d}/5) — notice what's different.`
-                  : `This week (${mood7d}/5) is in line with your 30-day average (${mood30d}/5) — mood is stable.`}
-              </p>
-            </div>
-          )}
-          {moodLogsQuery.data.results.length === 0 ? (
-            <p className="muted">No mood history yet.</p>
-          ) : (
-            <ul className="plain-list">
-              {moodLogsQuery.data.results.slice(0, 10).map((log) => (
-                <li key={log.id} className="context-item">
-                  <strong>{formatDate(log.date)}</strong>
-                  <p className="muted">
-                    {log.mood_score} / 5
-                    {log.notes ? ` - ${log.notes}` : ''}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Panel>
-      </div>
+      <CollapsibleSection title="Recent mood history" storageKey="mood-history" defaultOpen={false}>
+        {hasMoodTrend && (
+          <div className="mood-trend-note">
+            <span className={`mood-trend-indicator mood-trend-indicator--${moodTrendDir}`}>
+              {moodTrendDir === 'better' ? '↑' : moodTrendDir === 'lower' ? '↓' : '→'}
+            </span>
+            <p className="mood-trend-text">
+              {moodTrendDir === 'better'
+                ? `This week (${mood7d}/5) is above your 30-day average (${mood30d}/5) — trending better.`
+                : moodTrendDir === 'lower'
+                ? `This week (${mood7d}/5) is below your 30-day average (${mood30d}/5) — notice what's different.`
+                : `This week (${mood7d}/5) is in line with your 30-day average (${mood30d}/5) — mood is stable.`}
+            </p>
+          </div>
+        )}
+        {moodLogsQuery.data.results.length === 0 ? (
+          <p className="muted">No mood history yet.</p>
+        ) : (
+          <ul className="mood-history-list">
+            {moodLogsQuery.data.results.slice(0, 10).map((log) => (
+              <MoodEntryRow key={log.id} log={log} />
+            ))}
+          </ul>
+        )}
+      </CollapsibleSection>
     </section>
   )
 }

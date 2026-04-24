@@ -90,10 +90,12 @@
 
 /* Home sections */
 .home-section {
-  background: var(--surface);
+  background: color-mix(in srgb, var(--hub-accent, var(--color-accent)) 6%, var(--surface));
   border: 1px solid var(--border);
+  border-top: 3px solid color-mix(in srgb, var(--hub-accent, var(--color-accent)) 45%, transparent);
   border-radius: var(--radius);
   padding: 20px 24px;
+  box-shadow: var(--shadow-elevated);
 }
 .section-header {
   display: flex;
@@ -105,7 +107,7 @@
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
   font-family: var(--heading);
-  color: var(--text);
+  color: var(--hub-accent, var(--color-text-primary));
   margin: 0;
 }
 .empty-hint {
@@ -398,7 +400,7 @@
 /* Home section wrapper (compact version used on command center) */
 .home-section { display:grid; gap:6px; }
 .home-section-header { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:2px; }
-.home-section-title { font-size: var(--text-xs); font-weight: var(--weight-bold); text-transform:uppercase; letter-spacing: var(--tracking-widest); color:var(--text-muted); margin:0; }
+.home-section-title { font-size: var(--text-xs); font-weight: var(--weight-bold); text-transform:uppercase; letter-spacing: var(--tracking-widest); color: var(--hub-accent, var(--color-accent)); margin:0; }
 .home-section-link { font-size: var(--text-sm); color:var(--accent); text-decoration:none; }
 .home-section-link:hover { text-decoration:underline; }
 
@@ -621,6 +623,77 @@
 .cc-win-title { font-size: var(--text-sm); font-weight: var(--weight-medium); line-height: var(--leading-snug); }
 .cc-win-detail { font-size: var(--text-xs); color: var(--text-muted); }
 .cc-win-meta { font-size: var(--text-xs); color: var(--text-muted); white-space: nowrap; flex-shrink: 0; }
+
+/* ── Top Priority Card (T023) ────────────────────────────────── */
+.top-priority-card {
+  background: color-mix(in srgb, var(--color-accent) 6%, var(--color-bg-raised));
+  border: 1px solid color-mix(in srgb, var(--color-accent) 35%, var(--color-border));
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-elevated);
+  padding: var(--space-4);
+  cursor: pointer;
+  margin-bottom: var(--space-3);
+  position: relative;
+  transition: background 0.15s;
+}
+.top-priority-card:hover {
+  background: color-mix(in srgb, var(--color-accent) 10%, var(--color-bg-raised));
+}
+.top-priority-eyebrow {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--color-accent);
+  font-weight: var(--font-semibold);
+  margin: 0 0 var(--space-1);
+}
+.top-priority-title {
+  font-size: var(--text-xl);
+  color: var(--color-accent);
+  font-weight: var(--font-semibold);
+  line-height: var(--line-tight);
+  margin: 0 0 var(--space-2);
+}
+.top-priority-notes {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--space-2);
+  line-height: var(--line-normal);
+}
+.top-priority-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* ── Empty priorities state (T025) ──────────────────────────── */
+.home-empty-priorities {
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  background: var(--color-bg-raised);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+}
+.home-empty-message {
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  margin: 0 0 var(--space-3);
+}
+.home-empty-cta {
+  display: inline-block;
+  color: var(--color-accent);
+  text-decoration: none;
+  font-weight: var(--font-medium);
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 35%, var(--color-border));
+  border-radius: var(--radius-md);
+  transition: background 0.15s;
+}
+.home-empty-cta:hover {
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+}
 
 /* ── Kyrgyzstan Readiness Widget ─────────────────────────────── */
 .readiness-card {

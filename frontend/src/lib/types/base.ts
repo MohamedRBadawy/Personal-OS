@@ -109,6 +109,7 @@ export type UserProfile = {
   financial_target_currency: string
   total_debt: string | null
   debt_currency: string
+  theme_preference: 'dark' | 'light' | 'system'
   sections: ProfileSection[]
   ai_context: string
   updated_at: string

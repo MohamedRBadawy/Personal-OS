@@ -4,6 +4,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { MetricCard } from '../components/MetricCard'
+import { CollapsibleSection } from '../components/CollapsibleSection'
 import { Panel } from '../components/Panel'
 import { SpiritualLogForm } from '../components/SpiritualLogForm'
 import {
@@ -174,7 +175,7 @@ export function SpiritualPage() {
         {spiritualMutation.isError ? <p className="error-text">We could not save today's spiritual log.</p> : null}
       </Panel>
 
-      <Panel title="30-day prayer grid" description="Prayer completion at a glance — 5 prayers × last 30 days.">
+      <CollapsibleSection title="30-day prayer grid" storageKey="spiritual-prayer-grid" defaultOpen={false}>
         {heatmapQuery.isLoading ? (
           <p className="muted" style={{ textAlign: 'center', padding: '20px 0' }}>Loading prayer grid…</p>
         ) : heatmapQuery.data ? (
@@ -182,7 +183,7 @@ export function SpiritualPage() {
         ) : (
           <p className="muted">Could not load prayer data.</p>
         )}
-      </Panel>
+      </CollapsibleSection>
     </section>
   )
 }

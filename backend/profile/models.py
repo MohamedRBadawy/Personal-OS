@@ -61,6 +61,7 @@ class UserProfile(models.Model):
         max_length=50, default="per month",
         help_text="Unit label shown after the amount (e.g. 'per month')",
     )
+    theme_preference = models.CharField(max_length=10, default="system")
 
     updated_at = models.DateTimeField(auto_now=True)
 

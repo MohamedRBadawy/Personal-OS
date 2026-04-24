@@ -1,20 +1,25 @@
 """URL routing for the Pipeline domain.
 
 Registers:
-  /api/pipeline/clients/                    — Client CRUD
-  /api/pipeline/opportunities/              — Opportunity CRUD
-  /api/pipeline/marketing/                  — MarketingAction CRUD
-  /api/pipeline/channels/                   — MarketingChannel CRUD
-  /api/pipeline/campaigns/                  — MarketingCampaign CRUD
-  /api/pipeline/workspace/                  — Composite pipeline workspace
-  /api/pipeline/marketing-workspace/        — Composite marketing workspace
-  /api/pipeline/webhook/opportunities/      — n8n scraper ingest endpoint
+  /api/pipeline/clients/                             — Client CRUD
+  /api/pipeline/opportunities/                       — Opportunity CRUD
+  /api/pipeline/opportunities/{id}/steps/            — OutreachStep list + create
+  /api/pipeline/marketing/                           — MarketingAction CRUD
+  /api/pipeline/channels/                            — MarketingChannel CRUD
+  /api/pipeline/campaigns/                           — MarketingCampaign CRUD
+  /api/pipeline/partnerships/                        — EquityPartnership CRUD
+  /api/pipeline/partnerships/{id}/actions/           — PartnershipAction list + create
+  /api/pipeline/partnerships/{id}/actions/{pk}/complete/ — Mark action complete
+  /api/pipeline/workspace/                           — Composite pipeline workspace
+  /api/pipeline/marketing-workspace/                 — Composite marketing workspace
+  /api/pipeline/webhook/opportunities/               — n8n scraper ingest endpoint
 """
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from pipeline.views import (
     ClientViewSet,
+    EquityPartnershipViewSet,
     MarketingActionViewSet,
     MarketingCampaignViewSet,
     MarketingChannelViewSet,
@@ -31,6 +36,7 @@ router.register("opportunities", OpportunityViewSet, basename="opportunity")
 router.register("marketing", MarketingActionViewSet, basename="marketingaction")
 router.register("channels", MarketingChannelViewSet, basename="marketingchannel")
 router.register("campaigns", MarketingCampaignViewSet, basename="marketingcampaign")
+router.register("partnerships", EquityPartnershipViewSet, basename="equitypartnership")
 
 urlpatterns = [
     path("workspace/", PipelineWorkspaceAPIView.as_view(), name="pipeline-workspace"),

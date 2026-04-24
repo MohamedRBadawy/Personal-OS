@@ -1,15 +1,13 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { HealthImpactCard } from '../components/health/HealthImpactCard'
 import {
   listMealPlans, createMealPlan, updateMealPlan, deleteMealPlan,
   getMealTotals, saveMealLog, updateMealLog,
   listMealTemplates, createMealTemplate, copyMealDay, getMealWeekSummary,
   listFoodItems, createFoodItem, deleteFoodItem,
   createMealIngredient, updateMealIngredient, deleteMealIngredient,
-  getHealthOverview,
 } from '../lib/api'
-import type { MealPlan, MealTotals, MealTemplate, FoodItem, MealIngredient, HealthGoalProfile } from '../lib/types'
+import type { MealPlan, MealTotals, MealTemplate, FoodItem, MealIngredient } from '../lib/types'
 import { CollapsibleSection } from '../components/CollapsibleSection'
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
@@ -53,18 +51,6 @@ function computeIngMacros(ing: { quantity_g: string; calories_per_100g: string |
 // ── Nutrition targets (localStorage) ─────────────────────────────────────────
 
 type NutritionTargets = { calories: number; protein_g: number; fat_g: number; carbs_g: number; fiber_g: number }
-
-function deriveTargets(goals: HealthGoalProfile): NutritionTargets {
-  const byBodyGoal: Record<HealthGoalProfile['body_goal'], Omit<NutritionTargets, 'protein_g'>> = {
-    lose_fat: { calories: 1900, fat_g: 60, carbs_g: 180, fiber_g: 32 },
-    maintain: { calories: 2200, fat_g: 70, carbs_g: 230, fiber_g: 30 },
-    gain_muscle: { calories: 2600, fat_g: 75, carbs_g: 290, fiber_g: 30 },
-  }
-  return {
-    protein_g: goals.protein_g_target,
-    ...byBodyGoal[goals.body_goal],
-  }
-}
 
 const DEFAULT_TARGETS: NutritionTargets = { calories: 2200, protein_g: 150, fat_g: 70, carbs_g: 230, fiber_g: 30 }
 const TARGETS_KEY = 'nutrition_targets_v1'

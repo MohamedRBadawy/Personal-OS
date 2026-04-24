@@ -1,18 +1,31 @@
 // [AR] قشرة التطبيق الرئيسية — الشريط الجانبي بالمحاور السبعة والمحتوى الرئيسي
-// [EN] Main app shell — 7-hub flat sidebar + main content wrapper
+// [EN] Main app shell — 7-hub sidebar with icons + grouped nav + main content wrapper
 // Connects to: AppRoutes (renders children), QuickCaptureModal, BottomNav, ChatPanel
 
 import { useCallback, useEffect, useState, type PropsWithChildren } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
-import { BottomNav } from '../components/BottomNav'
-import { ChatPanel } from '../components/chat/ChatPanel'
-import { CommandPalette } from '../components/CommandPalette'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
+import {
+  BarChart3,
+  BookOpen,
+  ChevronLeft,
+  Hammer,
+  Heart,
+  Menu,
+  Target,
+  User,
+  X,
+  Zap,
+  type LucideIcon,
+} from 'lucide-react'
 import { AlertPanel } from '../components/AlertPanel'
+import { BottomNav } from '../components/BottomNav'
+import { CommandPalette } from '../components/CommandPalette'
 import { ExportButton } from '../components/ExportButton'
 import { QuickCaptureModal } from '../components/QuickCaptureModal'
+import { ThemeToggle } from '../components/ThemeToggle'
+import { ChatPanel } from '../components/chat/ChatPanel'
 import { getFinanceOverview, getHealthOverview } from '../lib/api'
-import { useTheme } from '../lib/useTheme'
 
 // [AR] طبقات التنقل الثلاث: تنفيذ / وعي / توجيه
 // [EN] Three navigation layers driving hub organisation
@@ -22,136 +35,201 @@ type Hub = {
   id: string
   label: string
   layer: HubLayer
-  icon: string
+  color: string
   href: string
   subRoutes: string[]
+  icon: LucideIcon
 }
 
-// [AR] المحاور السبعة — مرتبة بحسب مبدأ الطبقات الثلاث
-// [EN] Seven flat hubs — ordered by the three-layer principle (do / see / plan)
+// [AR] المحاور السبعة — مرتبة بحسب مبدأ الطبقات الثلاث، كل محور بأيقونة ولون مميز
+// [EN] Seven hubs — ordered by layer (execution → awareness → direction), each with an icon and accent color
 const HUBS: Hub[] = [
-  { id: 'now',          label: 'Now',          layer: 'execution', icon: '⚡', href: '/',          subRoutes: ['/', '/focus', '/daily', '/schedule'] },
-  { id: 'goals',        label: 'Goals',        layer: 'direction', icon: '🎯', href: '/goals',      subRoutes: ['/goals'] },
-  { id: 'build',        label: 'Build',        layer: 'execution', icon: '🏗',  href: '/business',  subRoutes: ['/business'] },
-  { id: 'life',         label: 'Life',         layer: 'awareness', icon: '💚', href: '/health',     subRoutes: ['/health', '/finance', '/journal'] },
-  { id: 'learn',        label: 'Learn',        layer: 'direction', icon: '📚', href: '/learn',      subRoutes: ['/learn'] },
-  { id: 'intelligence', label: 'Intelligence', layer: 'awareness', icon: '🔍', href: '/analytics',  subRoutes: ['/analytics', '/data-bridge'] },
-  { id: 'profile',      label: 'Profile',      layer: 'direction', icon: '👤', href: '/profile',    subRoutes: ['/profile', '/contacts'] },
+  // execution — active work
+  { id: 'now',          label: 'Now',          layer: 'execution', color: 'var(--color-hub-now)',          href: '/',         subRoutes: ['/', '/focus', '/daily', '/schedule'], icon: Zap },
+  { id: 'build',        label: 'Build',        layer: 'execution', color: 'var(--color-hub-build)',        href: '/business',  subRoutes: ['/business'],                         icon: Hammer },
+  // awareness — monitoring
+  { id: 'life',         label: 'Life',         layer: 'awareness', color: 'var(--color-hub-life)',         href: '/health',    subRoutes: ['/health', '/finance', '/journal'],    icon: Heart },
+  {
+    id: 'intelligence',
+    label: 'Intelligence',
+    layer: 'awareness',
+    color: 'var(--color-hub-intelligence)',
+    href: '/analytics',
+    subRoutes: ['/analytics', '/data-bridge'],
+    icon: BarChart3,
+  },
+  // direction — planning
+  { id: 'goals',        label: 'Goals',        layer: 'direction', color: 'var(--color-hub-goals)',        href: '/goals',     subRoutes: ['/goals'],                            icon: Target },
+  { id: 'learn',        label: 'Learn',        layer: 'direction', color: 'var(--color-hub-learn)',        href: '/learn',     subRoutes: ['/learn'],                            icon: BookOpen },
+  { id: 'profile',      label: 'Profile',      layer: 'direction', color: 'var(--color-hub-profile)',      href: '/profile',   subRoutes: ['/profile', '/contacts'],             icon: User },
 ]
 
 // [AR] جلب مسبق للصفحات الثقيلة عند تحريك المؤشر
 // [EN] Prefetch heavy pages on hub hover to reduce perceived latency
 const PREFETCH_FN: Partial<Record<string, () => Promise<unknown>>> = {
   '/finance': getFinanceOverview,
-  '/health':  getHealthOverview,
-}
-const PREFETCH_KEYS: Partial<Record<string, string[]>> = {
-  '/finance': ['finance-overview'],
-  '/health':  ['health-overview'],
+  '/health': getHealthOverview,
 }
 
-// [AR] تسميات الطبقات المعروضة بجانب كل محور
-// [EN] Short layer labels shown beside each hub item
-const LAYER_LABELS: Record<HubLayer, string> = {
-  execution: 'do',
-  awareness: 'see',
-  direction: 'plan',
+const PREFETCH_KEYS: Partial<Record<string, string[]>> = {
+  '/finance': ['finance-overview'],
+  '/health': ['health-overview'],
+}
+
+// [AR] تسميات الطبقات — مختصرة للشريط الجانبي، كاملة لرأس الصفحة
+// [EN] Layer labels — short for nav groups, long for page header eyebrow
+const LAYER_SHORT: Record<HubLayer, string> = {
+  execution: 'DO',
+  awareness: 'SEE',
+  direction: 'PLAN',
+}
+
+const LAYER_LONG: Record<HubLayer, string> = {
+  execution: 'Active Work',
+  awareness: 'Awareness',
+  direction: 'Direction',
+}
+
+const LAYER_ORDER: HubLayer[] = ['execution', 'awareness', 'direction']
+
+const HUB_GROUPS = LAYER_ORDER.map((layer) => ({
+  layer,
+  label: LAYER_SHORT[layer],
+  hubs: HUBS.filter((h) => h.layer === layer),
+}))
+
+// [AR] مطابقة المحور النشط — يدعم مسارات التفاصيل الفرعية
+// [EN] Active hub matching — supports sub-routes like /goals/123 → Goals hub
+function resolveActiveHub(pathname: string): Hub | undefined {
+  return HUBS.find((hub) =>
+    hub.subRoutes.some((route) =>
+      route === '/'
+        ? pathname === '/'
+        : pathname === route || pathname.startsWith(route + '/')
+    )
+  )
 }
 
 export function AppShell({ children }: PropsWithChildren) {
   const location = useLocation()
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [quickCaptureOpen, setQuickCaptureOpen] = useState(false)
-  const { theme, toggleTheme } = useTheme()
 
-  // [AR] المحور النشط — الذي يحتوي المسار الحالي في قائمة مساراته
-  // [EN] Active hub resolved by matching current pathname against each hub's subRoutes
-  const activeHub = HUBS.find(h => h.subRoutes.includes(location.pathname))
+  // [AR] المحور النشط — يطابق المسار الكامل بما فيه مسارات التفاصيل الفرعية
+  // [EN] Active hub — prefix-matches including detail routes (/goals/123 → Goals)
+  const activeHub = resolveActiveHub(location.pathname)
+
+  // [AR] صفحة فرعية — يظهر زر الرجوع عندما يكون المسار أعمق من مستوى واحد
+  // [EN] Sub-page — back button shown when path is deeper than one segment (/goals/123, not /goals)
+  const isSubPage = location.pathname.split('/').filter(Boolean).length > 1
+
+  // Close drawer when route changes
+  useEffect(() => {
+    setDrawerOpen(false)
+  }, [location.pathname])
 
   useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.ctrlKey && e.shiftKey && e.key === 'I') {
-        e.preventDefault()
-        setQuickCaptureOpen(o => !o)
+    function onKey(event: KeyboardEvent) {
+      if (event.ctrlKey && event.shiftKey && event.key === 'I') {
+        event.preventDefault()
+        setQuickCaptureOpen((open) => !open)
       }
     }
+
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
   const handlePrefetch = useCallback((href: string) => {
-    const fn  = PREFETCH_FN[href]
-    const key = PREFETCH_KEYS[href]
-    if (fn && key) queryClient.prefetchQuery({ queryKey: key, queryFn: fn, staleTime: 30_000 })
+    const queryFn = PREFETCH_FN[href]
+    const queryKey = PREFETCH_KEYS[href]
+    if (queryFn && queryKey) {
+      queryClient.prefetchQuery({ queryKey, queryFn, staleTime: 30_000 })
+    }
   }, [queryClient])
 
   return (
-    <div className={`app-shell${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}>
-      {/* Mobile drawer toggle */}
-      <button
-        aria-expanded={drawerOpen}
-        className="sidebar-toggle"
-        type="button"
-        onClick={() => setDrawerOpen(c => !c)}
-      >
-        {drawerOpen ? 'Close navigation' : 'Open navigation'}
-      </button>
-
+    <div className="app-shell" data-hub={activeHub?.id}>
       <aside className={drawerOpen ? 'app-sidebar open' : 'app-sidebar'}>
-        <button
-          className="sidebar-collapse-btn"
-          type="button"
-          title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          onClick={() => setSidebarCollapsed(c => !c)}
-        >
-          {sidebarCollapsed ? '›' : '‹'}
-        </button>
+        {/* Sidebar brand */}
+        <div className="sidebar-brand">
+          <p className="eyebrow">Personal OS</p>
+          <h1 className="app-title">One clear surface for everything.</h1>
+        </div>
 
-        {!sidebarCollapsed && (
-          <>
-            <div className="sidebar-brand">
-              <p className="eyebrow">Personal OS</p>
-              <h1 className="app-title">One clear surface for everything.</h1>
+        {/* [AR] قائمة التنقل — مجمعة بحسب طبقات DO/SEE/PLAN
+            [EN] Nav — grouped by DO/SEE/PLAN layers */}
+        <nav aria-label="Primary" className="hub-nav">
+          {HUB_GROUPS.map(({ layer, label, hubs }) => (
+            <div key={layer} className="nav-group">
+              <p className="nav-group-label">{label}</p>
+              <div className="nav-group-links">
+                {hubs.map((hub) => {
+                  const Icon = hub.icon
+                  return (
+                    <NavLink
+                      key={hub.id}
+                      className={activeHub?.id === hub.id ? 'hub-item active' : 'hub-item'}
+                      data-hub={hub.id}
+                      style={{ '--hub-color': hub.color } as React.CSSProperties}
+                      to={hub.href}
+                      onMouseEnter={() => handlePrefetch(hub.href)}
+                    >
+                      <Icon
+                        className="hub-icon"
+                        size={16}
+                        color="currentColor"
+                        strokeWidth={activeHub?.id === hub.id ? 2.5 : 1.75}
+                        aria-hidden="true"
+                      />
+                      <span className="hub-label">{hub.label}</span>
+                    </NavLink>
+                  )
+                })}
+              </div>
             </div>
+          ))}
+        </nav>
 
-            {/* [AR] قائمة المحاور السبعة المسطحة — بلا مجموعات قابلة للطي
-                [EN] Flat 7-hub list — no collapsible groups, no nesting */}
-            <nav aria-label="Primary" className="hub-nav">
-              {HUBS.map(hub => (
-                <NavLink
-                  key={hub.id}
-                  to={hub.href}
-                  className={activeHub?.id === hub.id ? 'hub-item active' : 'hub-item'}
-                  data-layer={hub.layer}
-                  onClick={() => setDrawerOpen(false)}
-                  onMouseEnter={() => handlePrefetch(hub.href)}
-                >
-                  <span className="hub-icon">{hub.icon}</span>
-                  <span className="hub-label">{hub.label}</span>
-                  <span className="hub-layer-badge">{LAYER_LABELS[hub.layer]}</span>
-                </NavLink>
-              ))}
-            </nav>
-
-            <div className="sidebar-footer">
-              <button className="theme-toggle" type="button" onClick={toggleTheme}>
-                {theme === 'dark' ? '☀ Light mode' : '☾ Dark mode'}
-              </button>
-              <ExportButton />
-              <p className="sidebar-shortcut-hint">⌘K · Ctrl+Shift+I capture</p>
-            </div>
-          </>
-        )}
+        {/* Sidebar footer */}
+        <div className="sidebar-footer">
+          <ThemeToggle />
+          <ExportButton className="sidebar-export-btn" />
+        </div>
       </aside>
 
       <div className="app-main">
         <header className="app-header">
-          <div>
-            <p className="eyebrow">{activeHub ? LAYER_LABELS[activeHub.layer] : 'home'}</p>
+          {/* [AR] زر القائمة — يظهر فقط على الشاشات الصغيرة
+              [EN] Menu button — mobile only, hidden on desktop */}
+          <button
+            className="nav-toggle"
+            type="button"
+            aria-label={drawerOpen ? 'Close menu' : 'Open menu'}
+            onClick={() => setDrawerOpen((v) => !v)}
+          >
+            {drawerOpen ? <X size={20} strokeWidth={2} /> : <Menu size={20} strokeWidth={2} />}
+          </button>
+
+          <div className="app-header__identity">
+            {/* [AR] زر الرجوع — يظهر على الصفحات الفرعية مثل /goals/123
+                [EN] Back button — appears on detail pages like /goals/123 */}
+            {isSubPage && (
+              <button
+                className="header-back-btn"
+                type="button"
+                onClick={() => navigate(-1)}
+              >
+                <ChevronLeft size={13} strokeWidth={2.5} aria-hidden="true" />
+                Back
+              </button>
+            )}
+            <p className="eyebrow">{activeHub ? LAYER_LONG[activeHub.layer] : 'Dashboard'}</p>
             <h2 className="header-title">{activeHub?.label ?? 'Home'}</h2>
           </div>
+
           <AlertPanel />
         </header>
         <main className="page-grid">{children}</main>
@@ -166,9 +244,10 @@ export function AppShell({ children }: PropsWithChildren) {
       <button
         className="quick-capture-fab"
         title="Capture (Ctrl+Shift+I)"
+        style={{ '--hub-color': activeHub?.color } as React.CSSProperties}
         onClick={() => setQuickCaptureOpen(true)}
       >
-        💡
+        +
       </button>
 
       {quickCaptureOpen && <QuickCaptureModal onClose={() => setQuickCaptureOpen(false)} />}

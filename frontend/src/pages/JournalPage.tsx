@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PageSkeleton } from '../components/PageSkeleton'
 import { Panel } from '../components/Panel'
@@ -156,6 +157,7 @@ export function JournalPage() {
 
   return (
     <section className="page">
+      <Link to="/daily" className="focused-view-back">← Daily</Link>
       <div className="page-header">
         <div>
           <p className="eyebrow">Journal</p>
