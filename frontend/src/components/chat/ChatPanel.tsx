@@ -14,18 +14,33 @@ import type { ChatMessage as ChatMessageType } from '../../lib/types'
 import { ChatInput } from './ChatInput'
 import { ChatMessage } from './ChatMessage'
 
-const WELCOME: ChatMessageType = {
-  role: 'assistant',
-  content: "Hey Mohamed. Tell me what to log, what to create, or ask me anything about your system.",
-  actions: [],
+const DEFAULT_WELCOME = "Hey Mohamed. Tell me what to log, what to create, or ask me anything about your system."
+
+function makeWelcome(content: string): ChatMessageType {
+  return { role: 'assistant', content, actions: [] }
 }
 
 export function ChatPanel() {
   const [open, setOpen] = useState(false)
-  const [messages, setMessages] = useState<ChatMessageType[]>([WELCOME])
+  const [messages, setMessages] = useState<ChatMessageType[]>([makeWelcome(DEFAULT_WELCOME)])
   const [loading, setLoading] = useState(false)
+  const [chatMode, setChatMode] = useState<string | null>(null)
+  const [customPlaceholder, setCustomPlaceholder] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const pageContext = usePageContext()
+
+  // Listen for external open requests (e.g. "Think this through" button, Ctrl+Shift+T)
+  useEffect(() => {
+    function onOpenChat(e: CustomEvent<{ mode?: string; welcome?: string; placeholder?: string }>) {
+      const { mode, welcome, placeholder } = e.detail ?? {}
+      setChatMode(mode ?? null)
+      setCustomPlaceholder(placeholder ?? null)
+      setMessages([makeWelcome(welcome ?? DEFAULT_WELCOME)])
+      setOpen(true)
+    }
+    window.addEventListener('chat:open', onOpenChat as EventListener)
+    return () => window.removeEventListener('chat:open', onOpenChat as EventListener)
+  }, [])
 
   // Scroll to bottom whenever messages update or panel opens
   useEffect(() => {
@@ -53,7 +68,8 @@ export function ChatPanel() {
           return { role: m.role, content: m.content }
         })
 
-      const result = await sendChatMessage(history)
+      const context = chatMode ? { mode: chatMode } : undefined
+      const result = await sendChatMessage(history, context)
 
       const assistantMsg: ChatMessageType = {
         role: 'assistant',
@@ -89,8 +105,12 @@ export function ChatPanel() {
       {open && (
         <div className="chat-panel">
           <div className="chat-panel__header">
-            <span className="chat-panel__title">AI Assistant</span>
-            <span className="chat-panel__hint">{pageContext.domain} · Can log, create, and answer.</span>
+            <span className="chat-panel__title">{chatMode === 'thinking_companion' ? 'Thinking Mode' : 'AI Assistant'}</span>
+            <span className="chat-panel__hint">
+              {chatMode === 'thinking_companion'
+                ? 'Guided idea refinement · 5 stages to a decision'
+                : `${pageContext.domain} · Can log, create, and answer.`}
+            </span>
           </div>
 
           <div className="chat-panel__thread">
@@ -108,7 +128,7 @@ export function ChatPanel() {
             <div ref={bottomRef} />
           </div>
 
-          <ChatInput onSend={handleSend} disabled={loading} placeholder={pageContext.placeholder} />
+          <ChatInput onSend={handleSend} disabled={loading} placeholder={customPlaceholder ?? pageContext.placeholder} />
         </div>
       )}
     </>

@@ -32,7 +32,7 @@ const STATUS_COLORS: Record<CommandCenterStatusCard['status'], { bg: string; bor
   warning:   { bg: 'color-mix(in srgb, #dc2626 10%, var(--surface))', border: '#fecaca', text: '#dc2626' },
 }
 
-function StatusStrip({ cards }: { cards: CommandCenterStatusCard[] }) {
+export function StatusStrip({ cards }: { cards: CommandCenterStatusCard[] }) {
   if (!cards.length) return null
   return (
     <div className="cc-status-strip">

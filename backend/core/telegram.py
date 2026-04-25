@@ -28,19 +28,21 @@ def is_configured() -> bool:
     return bool(token and chat_id)
 
 
-def send_message(text: str, parse_mode: str = "HTML") -> bool:
+def send_message(text: str, parse_mode: str = "HTML", chat_id: str | None = None) -> bool:
     """Send a Telegram message. Returns True on success, False otherwise.
 
     Silently skips if credentials are not configured.
+    `chat_id` overrides the env-var default (used for webhook reply routing).
     """
-    token, chat_id = _get_config()
+    token, default_chat_id = _get_config()
+    chat_id = chat_id or default_chat_id
     if not token or not chat_id:
         logger.debug("Telegram not configured — skipping send_message.")
         return False
 
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = json.dumps({
-        "chat_id": chat_id,
+        "chat_id": chat_id,  # noqa: F821 — resolved above
         "text": text,
         "parse_mode": parse_mode,
         "disable_web_page_preview": True,

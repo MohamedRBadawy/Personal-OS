@@ -2,7 +2,9 @@
 import logging
 from datetime import date
 
-from schedule.models import ScheduleBlock, ScheduleLog
+from django.utils import timezone
+
+from schedule.models import RoutineBlock, RoutineLog, ScheduleBlock, ScheduleLog
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +18,19 @@ SCHEMAS = [
             "properties": {
                 "block_label": {"type": "string", "description": "Partial or full label of the schedule block"},
                 "status": {"type": "string", "enum": ["done", "partial", "late", "skipped"]},
+                "note": {"type": "string"},
+            },
+        },
+    },
+    {
+        "name": "complete_routine_block",
+        "description": "Create or update today's routine log for a named block.",
+        "input_schema": {
+            "type": "object",
+            "required": ["block"],
+            "properties": {
+                "block": {"type": "string", "description": "Partial or full routine block label"},
+                "status": {"type": "string", "enum": ["done", "partial", "late", "skipped"], "default": "done"},
                 "note": {"type": "string"},
             },
         },
@@ -38,6 +53,27 @@ def log_schedule_status(inputs: dict) -> dict:
     return {"status": "logged", "block": block.label, "log_status": status, "date": str(today), "created": created}
 
 
+def complete_routine_block(inputs: dict) -> dict:
+    label = inputs.get("block", "")
+    block = RoutineBlock.objects.filter(label__icontains=label, active=True).first()
+    if not block:
+        return {"error": f"No routine block found matching '{label}'"}
+    status = inputs.get("status", RoutineLog.LogStatus.DONE)
+    log, created = RoutineLog.objects.update_or_create(
+        date=timezone.localdate(),
+        block_time=block.time,
+        defaults={"status": status, "note": inputs.get("note", "")},
+    )
+    return {
+        "status": "completed",
+        "block": block.label,
+        "log_status": log.status,
+        "date": log.date.isoformat(),
+        "created": created,
+    }
+
+
 EXECUTORS = {
     "log_schedule_status": log_schedule_status,
+    "complete_routine_block": complete_routine_block,
 }

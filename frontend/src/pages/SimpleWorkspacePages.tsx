@@ -163,6 +163,11 @@ export function IdeasPage() {
 }
 
 export function DecisionsPage() {
+  function isPendingReview(item: DecisionLog) {
+    const todayText = new Date().toLocaleDateString('en-CA')
+    return Boolean(item.outcome_date && item.outcome_date <= todayText && item.outcome_result === '')
+  }
+
   return (
     <RecordWorkspace<DecisionLog>
       createRecord={(payload) => createDecision(payload as never)}
@@ -174,6 +179,9 @@ export function DecisionsPage() {
         reasoning: item.reasoning,
         alternatives_considered: item.alternatives_considered,
         outcome: item.outcome,
+        trade_off_cost: item.trade_off_cost,
+        outcome_date: item.outcome_date ?? '',
+        outcome_result: item.outcome_result,
       })}
       emptyState={{
         title: 'No decisions yet',
@@ -184,6 +192,19 @@ export function DecisionsPage() {
         { name: 'decision', label: 'Decision', type: 'text', required: true },
         { name: 'date', label: 'Date', type: 'date', required: true },
         { name: 'reasoning', label: 'Reasoning', type: 'textarea', required: true },
+        { name: 'trade_off_cost', label: "Trade-off: what you're NOT doing", type: 'textarea' },
+        { name: 'outcome_date', label: 'Outcome date', type: 'date' },
+        {
+          name: 'outcome_result',
+          label: 'Outcome result',
+          type: 'select',
+          options: [
+            { value: '', label: 'Not yet' },
+            { value: 'right', label: 'Right' },
+            { value: 'wrong', label: 'Wrong' },
+            { value: 'too_early', label: 'Too early' },
+          ],
+        },
         { name: 'alternatives_considered', label: 'Alternatives', type: 'textarea' },
         { name: 'outcome', label: 'Outcome', type: 'textarea' },
       ]}
@@ -198,6 +219,9 @@ export function DecisionsPage() {
         reasoning: '',
         alternatives_considered: '',
         outcome: '',
+        trade_off_cost: '',
+        outcome_date: '',
+        outcome_result: '',
       }}
       invalidateKeys={[['analytics-overview'], ['pipeline-workspace']]}
       itemLabel="Decision"
@@ -209,7 +233,11 @@ export function DecisionsPage() {
         reasoning: values.reasoning,
         alternatives_considered: values.alternatives_considered,
         outcome: values.outcome,
+        trade_off_cost: values.trade_off_cost,
+        outcome_date: values.outcome_date || null,
+        outcome_result: values.outcome_result,
       })}
+      getStatusLabel={(item) => isPendingReview(item) ? 'Pending review' : null}
       updateRecord={(id, payload) => updateDecision(id, payload as never)}
     />
   )

@@ -67,6 +67,13 @@ export type DecisionLog = {
   reasoning: string
   alternatives_considered: string
   outcome: string
+  trade_off_cost: string
+  outcome_date: string | null
+  outcome_result: 'right' | 'wrong' | 'too_early' | ''
+  enabled_node: string | null
+  enabled_node_title: string | null
+  killed_node: string | null
+  killed_node_title: string | null
   date: string
   created_at: string
 }
@@ -76,6 +83,11 @@ export type DecisionLogPayload = {
   reasoning: string
   alternatives_considered: string
   outcome: string
+  trade_off_cost: string
+  outcome_date: string | null
+  outcome_result: DecisionLog['outcome_result']
+  enabled_node?: string | null
+  killed_node?: string | null
   date: string
 }
 

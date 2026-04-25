@@ -13,7 +13,7 @@ continue to work unchanged.
 """
 import logging
 
-from core.tools import analytics, finance, goals, health, pipeline, schedule
+from core.tools import analytics, contacts, finance, goals, health, journal, pipeline, schedule
 
 logger = logging.getLogger(__name__)
 
@@ -24,8 +24,10 @@ logger = logging.getLogger(__name__)
 TOOL_SCHEMAS = (
     health.SCHEMAS
     + goals.SCHEMAS
+    + journal.SCHEMAS
     + finance.SCHEMAS
     + pipeline.SCHEMAS
+    + contacts.SCHEMAS
     + analytics.SCHEMAS
     + schedule.SCHEMAS
 )
@@ -37,8 +39,10 @@ TOOL_SCHEMAS = (
 _EXECUTORS: dict = {
     **health.EXECUTORS,
     **goals.EXECUTORS,
+    **journal.EXECUTORS,
     **finance.EXECUTORS,
     **pipeline.EXECUTORS,
+    **contacts.EXECUTORS,
     **analytics.EXECUTORS,
     **schedule.EXECUTORS,
 }

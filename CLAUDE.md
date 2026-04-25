@@ -402,7 +402,7 @@ He is not in crisis. He has stable income, a clear goal, a structured schedule, 
 <!-- SPECKIT START -->
 ## Active Feature Plan
 
-**Current feature**: Business Development Depth (`003-biz-dev-depth`)  
-**Plan**: [specs/003-biz-dev-depth/plan.md](specs/003-biz-dev-depth/plan.md)  
-**Spec**: [specs/003-biz-dev-depth/spec.md](specs/003-biz-dev-depth/spec.md)
+**Current feature**: AI Intelligence Layer (`004-ai-intelligence-layer`)  
+**Plan**: [specs/004-ai-intelligence-layer/plan.md](specs/004-ai-intelligence-layer/plan.md)  
+**Spec**: [specs/004-ai-intelligence-layer/spec.md](specs/004-ai-intelligence-layer/spec.md)
 <!-- SPECKIT END -->

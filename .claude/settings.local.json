@@ -287,7 +287,9 @@
       "Bash(python manage.py shell -c \"from pipeline.models import Opportunity, OutreachStep, EquityPartnership, PartnershipAction, MarketingAction, Client, ServiceOffering; print\\('All imports OK'\\)\")",
       "Bash(python manage.py shell -c \"from django.contrib.auth import get_user_model; U = get_user_model\\(\\); print\\(U, U.objects.count\\(\\)\\)\")",
       "Bash(python manage.py migrate pipeline)",
-      "Bash(node -e \"require\\('lucide-react'\\)\")"
+      "Bash(node -e \"require\\('lucide-react'\\)\")",
+      "mcp__Claude_in_Chrome__read_console_messages",
+      "Bash(python manage.py makemigrations core --name telegramconversation)"
     ]
   }
 }

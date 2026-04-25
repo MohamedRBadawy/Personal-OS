@@ -199,6 +199,22 @@ export type NodeCreatePayload = {
 
 export type NodeUpdatePayload = Partial<NodeCreatePayload>
 
+export type ActiveGoalSummary = {
+  id: string
+  title: string
+  category: string
+  dependency_unblock_count: number
+  progress_pct: number
+}
+
+export type ActiveGoalContext = {
+  active_goal_count: number
+  active_goals: ActiveGoalSummary[]
+  overwhelm_score: number
+  max_safe_active: number
+  recommendation: string
+}
+
 export type NodePriorityEntry = {
   id: string
   title: string

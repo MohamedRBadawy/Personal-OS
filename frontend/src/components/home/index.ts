@@ -2,6 +2,7 @@
 // [EN] Barrel export for home page sub-components — import all from here
 
 export { HomeAISection } from './HomeAISection'
+export { IntelligenceSurface } from './IntelligenceSurface'
 export { HomeNorthStarSection } from './HomeNorthStarSection'
 export { HomeNowSection } from './HomeNowSection'
 export { HomePrioritiesSection } from './HomePrioritiesSection'

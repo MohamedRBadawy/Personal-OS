@@ -6,8 +6,9 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { createNode, updateNode } from '../../lib/api'
-import type { CommandCenterPriorityItem, NodeCreatePayload, NodeStatus, NodeUpdatePayload } from '../../lib/types'
+import { createNode, getActiveGoalContext, updateNode } from '../../lib/api'
+import type { ActiveGoalContext, CommandCenterPriorityItem, NodeCreatePayload, NodeStatus, NodeUpdatePayload } from '../../lib/types'
+import { TradeoffPromptModal } from '../goals/TradeoffPromptModal'
 
 interface HomePrioritiesSectionProps {
   priorities: CommandCenterPriorityItem[]
@@ -28,6 +29,7 @@ const CATEGORIES = ['Life', 'Work', 'Finance', 'Health', 'Spiritual', 'Family', 
 // [EN] Status change popover for priority items
 function PriorityStatusPopover({ item, onClose }: { item: CommandCenterPriorityItem; onClose: () => void }) {
   const qc = useQueryClient()
+  const [tradeoffContext, setTradeoffContext] = useState<ActiveGoalContext | null>(null)
   const mut = useMutation({
     mutationFn: (status: NodeStatus) => updateNode(item.id, { status } as NodeUpdatePayload),
     onSuccess: () => {
@@ -37,20 +39,41 @@ function PriorityStatusPopover({ item, onClose }: { item: CommandCenterPriorityI
       onClose()
     },
   })
+
+  async function handleStatus(status: NodeStatus) {
+    if (status === 'active' && item.status !== 'active') {
+      const context = await getActiveGoalContext()
+      if (context.active_goal_count >= context.max_safe_active) {
+        setTradeoffContext(context)
+        return
+      }
+    }
+    mut.mutate(status)
+  }
+
   return (
     <div className="status-popover" onClick={e => e.stopPropagation()}>
       {NODE_STATUSES.map(s => (
         <button key={s} className={`status-popover-btn ${s === item.status ? 'active' : ''}`}
           style={{ '--status-color': NODE_STATUS_COLORS[s] } as React.CSSProperties}
-          disabled={mut.isPending} onClick={() => mut.mutate(s)}>{s}</button>
+          disabled={mut.isPending} onClick={() => handleStatus(s)}>{s}</button>
       ))}
+      {tradeoffContext && (
+        <TradeoffPromptModal
+          context={tradeoffContext}
+          targetNodeId={item.id}
+          targetTitle={item.title}
+          onClose={() => setTradeoffContext(null)}
+          onComplete={onClose}
+        />
+      )}
     </div>
   )
 }
 
 // [AR] بطاقة الأولوية الأولى — العنصر البصري الأبرز في القسم
 // [EN] Top priority card — the most visually dominant element in the section
-function TopPriorityCard({ item, isActive, onToggle }: {
+export function TopPriorityCard({ item, isActive, onToggle }: {
   item: CommandCenterPriorityItem; isActive: boolean; onToggle: () => void
 }) {
   return (

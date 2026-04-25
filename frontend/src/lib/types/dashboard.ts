@@ -91,6 +91,7 @@ export type CommandCenterPriorityItem = {
   blocked_by_titles: string[]
   ancestor_titles: string[]
   progress_pct: number
+  effort?: string
   due_date: string | null
   manual_priority: GoalNodeManualPriority
   dependency_unblock_count: number
@@ -136,6 +137,13 @@ export type CommandCenterSuggestionItem = {
   shown_at: string
 }
 
+export type PriorCommitmentItem = {
+  id: string
+  action_type: 'stop' | 'change' | 'start'
+  description: string
+  from_week: string
+}
+
 export type CommandCenterPayload = {
   date: string
   profile: Profile | null
@@ -167,6 +175,7 @@ export type CommandCenterPayload = {
   }
   status_cards: CommandCenterStatusCard[]
   recent_progress: CommandCenterRecentProgressItem[]
+  prior_commitments_due: PriorCommitmentItem[]
   latest_checkin: {
     id: string
     date: string

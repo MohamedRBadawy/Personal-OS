@@ -3,6 +3,7 @@ from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from analytics.services import OverwhelmService
 from goals.models import Attachment, GoalAttachmentProfile, LearningItem, Node, TimeLog
 from goals.serializers import (
     GoalAttachmentProfileSerializer,
@@ -59,6 +60,62 @@ class NodeViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         instance.delete()
         NodeStatusService.refresh_all()
+
+    @staticmethod
+    def _active_goal_queryset():
+        return Node.objects.filter(
+            type__in=[Node.NodeType.GOAL, Node.NodeType.PROJECT],
+            status=Node.Status.ACTIVE,
+        ).prefetch_related("dependents")
+
+    @action(detail=False, methods=["get"], url_path="active-context")
+    def active_context(self, request):
+        active_goals = self._active_goal_queryset()
+        overwhelm = OverwhelmService.summary()
+        max_safe_active = overwhelm["max_priorities"]
+        active_goal_count = active_goals.count()
+        recommendation = (
+            f"You have {active_goal_count} active goals. Activating another would exceed the safe limit."
+            if active_goal_count >= max_safe_active
+            else f"You have {active_goal_count} active goals. There is room to activate one more."
+        )
+        return Response(
+            {
+                "active_goal_count": active_goal_count,
+                "active_goals": [
+                    {
+                        "id": str(node.id),
+                        "title": node.title,
+                        "category": node.category,
+                        "dependency_unblock_count": node.dependents.exclude(status=Node.Status.DONE).count(),
+                        "progress_pct": NodeStatusService.progress_pct(node),
+                    }
+                    for node in active_goals
+                ],
+                "overwhelm_score": overwhelm["overwhelm_score"],
+                "max_safe_active": max_safe_active,
+                "recommendation": recommendation,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        status_before = instance.status
+        active_count_before = self._active_goal_queryset().exclude(pk=instance.pk).count()
+
+        response = super().partial_update(request, *args, **kwargs)
+
+        requested_status = request.data.get("status")
+        if requested_status == Node.Status.ACTIVE and status_before != Node.Status.ACTIVE:
+            overwhelm = OverwhelmService.summary()
+            active_count_after = active_count_before + 1
+            response.data["trade_off_context"] = {
+                "active_count_before": active_count_before,
+                "active_count_after": active_count_after,
+                "exceeded_safe_limit": active_count_after > overwhelm["max_priorities"],
+            }
+        return response
 
     @action(detail=False, methods=["post"])
     def reorder(self, request):

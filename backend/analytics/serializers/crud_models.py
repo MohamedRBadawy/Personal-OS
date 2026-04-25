@@ -42,12 +42,21 @@ class LearningSerializer(serializers.ModelSerializer):
 
 
 class DecisionLogSerializer(serializers.ModelSerializer):
+    enabled_node_title = serializers.SerializerMethodField()
+    killed_node_title = serializers.SerializerMethodField()
+
     """Serializer for DecisionLog — big decisions with reasoning."""
 
     class Meta:
         model = DecisionLog
         fields = "__all__"
-        read_only_fields = ["id", "created_at"]
+        read_only_fields = ["id", "created_at", "enabled_node_title", "killed_node_title"]
+
+    def get_enabled_node_title(self, obj):
+        return obj.enabled_node.title if obj.enabled_node else None
+
+    def get_killed_node_title(self, obj):
+        return obj.killed_node.title if obj.killed_node else None
 
 
 class AchievementSerializer(serializers.ModelSerializer):

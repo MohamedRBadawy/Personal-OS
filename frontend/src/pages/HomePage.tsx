@@ -6,10 +6,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CollapsibleSection } from '../components/CollapsibleSection'
 import { HubTabBar } from '../components/HubTabBar'
 import {
-  HomeAISection,
+  IntelligenceSurface,
   HomeNorthStarSection,
   HomeNowSection,
-  HomePrioritiesSection,
   HomeStatusSection,
 } from '../components/home'
 import {
@@ -92,8 +91,8 @@ export function HomePage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['app-settings'] }),
   })
 
-  if (dvLoading && ccLoading) return <PageSkeleton />
-  if (error || !data) return <div className="page-error">Could not load dashboard.</div>
+  if (dvLoading || ccLoading) return <PageSkeleton />
+  if (error || !data || !cc) return <div className="page-error">Could not load dashboard.</div>
 
   // [AR] القيم المحسوبة — تُشتق من بيانات CC وDashboardV2
   // [EN] Computed values — derived from CC and DashboardV2 data
@@ -109,20 +108,10 @@ export function HomePage() {
     healthAlerts.push(...(data.health_pulse.alerts ?? []))
   }
 
-  const hp = cc ? cc.health_today.summary : data.health_pulse
-  const priorities   = cc?.priorities ?? []
-  const blockedGoals = priorities.filter(p => p.status === 'blocked')
-  const suggestions  = cc?.weekly_review.pending_suggestions ?? []
-  const recentProgress = cc?.recent_progress ?? []
+  const hp = cc.health_today.summary
 
   // [AR] النطاق الزمني — يحدد ترتيب الأقسام بناءً على وقت اليوم
   // [EN] Time band — determines section order based on time of day
-  const nowHour = new Date().getHours()
-  const timeBand: 'morning' | 'afternoon' | 'evening' =
-    nowHour >= 5 && nowHour < 12 ? 'morning'
-    : nowHour >= 12 && nowHour < 18 ? 'afternoon'
-    : 'evening'
-
   const nowSection = (
     <HomeNowSection
       routineBlocks={routineBlocks}
@@ -136,29 +125,12 @@ export function HomePage() {
       appSettings={appSettings}
       onToggleBadDay={() => badDayMutation.mutate()}
       badDayMutating={badDayMutation.isPending}
-      pipelineSummary={cc?.pipeline.summary}
-      pipelineActiveCount={cc?.pipeline.active_opportunities.length ?? 0}
+      pipelineSummary={cc.pipeline.summary}
+      pipelineActiveCount={cc.pipeline.active_opportunities.length}
       journalStatus={data.journal_status}
       healthPulse={hp as { avg_sleep_7d: number | null; avg_mood_7d: number | null; full_prayer_streak: number; health_logged_today: boolean } | null}
       healthAlerts={healthAlerts}
       contactsDue={data.contacts_due}
-    />
-  )
-
-  const prioritiesSection = (
-    <HomePrioritiesSection
-      priorities={priorities}
-      blockedGoals={blockedGoals}
-      tomorrowFocus={data.journal_status.tomorrow_focus}
-    />
-  )
-
-  const aiSection = (
-    <HomeAISection
-      statusCards={cc?.status_cards ?? []}
-      suggestions={suggestions}
-      recentProgress={recentProgress}
-      reentry={cc?.reentry}
     />
   )
 
@@ -169,46 +141,14 @@ export function HomePage() {
     <div className="home-page">
       <HubTabBar tabs={NOW_SECTIONS} />
 
-      {timeBand === 'morning' && (
-        <>
-          {nowSection}
-          {prioritiesSection}
-          <CollapsibleSection title="Intelligence" storageKey="home-ai-morning" defaultOpen={false}>
-            {aiSection}
-          </CollapsibleSection>
-          <CollapsibleSection title="North Star" storageKey="home-north-star" defaultOpen={false}>
-            {northStarSection}
-          </CollapsibleSection>
-          {statusSection}
-        </>
-      )}
-
-      {timeBand === 'afternoon' && (
-        <>
-          {prioritiesSection}
-          {aiSection}
-          <CollapsibleSection title="Today" storageKey="home-now-afternoon" defaultOpen={false}>
-            {nowSection}
-          </CollapsibleSection>
-          <CollapsibleSection title="North Star" storageKey="home-north-star" defaultOpen={false}>
-            {northStarSection}
-          </CollapsibleSection>
-          {statusSection}
-        </>
-      )}
-
-      {timeBand === 'evening' && (
-        <>
-          {aiSection}
-          {prioritiesSection}
-          {northStarSection}
-          <CollapsibleSection title="Today" storageKey="home-now-evening" defaultOpen={false}>
-            {nowSection}
-          </CollapsibleSection>
-          {statusSection}
-        </>
-      )}
+      <IntelligenceSurface cc={cc} />
+      <CollapsibleSection title="Today" storageKey="home-now" defaultOpen={false}>
+        {nowSection}
+      </CollapsibleSection>
+      <CollapsibleSection title="North Star" storageKey="home-north-star" defaultOpen={false}>
+        {northStarSection}
+      </CollapsibleSection>
+      {statusSection}
     </div>
   )
 }
-

@@ -183,6 +183,23 @@ export function IdeasThinkingPage() {
 
       {activeTab === 'thinking' ? (
         <Panel title="Structured thinking workspace" description="Open a deliberate AI thinking session without leaving the ideas surface.">
+          <div className="button-row" style={{ marginBottom: '1rem' }}>
+            <button
+              className="btn-primary"
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('chat:open', {
+                  detail: {
+                    mode: 'thinking_companion',
+                    welcome: "Drop your raw thought here. I'll guide you through it — one question at a time — until we reach a clear decision.",
+                    placeholder: "Dump your raw thought here — I'll help you figure out what it is and what to do with it.",
+                  },
+                }))
+              }}
+            >
+              Think this through with AI
+            </button>
+          </div>
           <form
             className="stack"
             onSubmit={(event) => {

@@ -918,3 +918,72 @@
     min-width: 260px;
   }
 }
+.tradeoff-modal {
+  max-width: 560px;
+}
+.tradeoff-target {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+.tradeoff-active-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
+}
+.tradeoff-active-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+}
+.tradeoff-active-row span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.tradeoff-active-row small {
+  color: var(--text-muted);
+}
+.wr-commitment-groups {
+  display: grid;
+  gap: 14px;
+}
+.wr-commitment-group {
+  display: grid;
+  gap: 6px;
+}
+.wr-commitment-label {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0;
+}
+.wr-commitment-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+.wr-commitment-list {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.wr-commitment-list li {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+}
+.wr-commitment-list strong {
+  color: var(--accent);
+  font-size: var(--text-xs);
+}

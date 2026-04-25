@@ -12,6 +12,7 @@ import type {
   ExchangeRates,
   FinanceSummaryV2,
   Node,
+  ActiveGoalContext,
   NodeCreatePayload,
   NodeUpdatePayload,
   RoutineLogEntry,
@@ -67,6 +68,8 @@ import type {
   ProjectRetrospectivePayload,
   Relationship,
   RelationshipPayload,
+  ReviewCommitment,
+  ReviewCommitmentPayload,
   ScheduleBlockPayload,
   ScheduleBlockLog,
   ScheduleLogPayload,
@@ -462,6 +465,24 @@ export function updateWeeklyReview(id: string, payload: WeeklyReviewUpdatePayloa
   return updateResource<WeeklyReview, WeeklyReviewUpdatePayload>(`/analytics/reviews/${id}/`, payload)
 }
 
+export function listReviewCommitments(reviewId: string) {
+  return request<ReviewCommitment[]>(`/analytics/reviews/${reviewId}/commitments/`)
+}
+
+export function createReviewCommitments(reviewId: string, items: ReviewCommitmentPayload[]) {
+  return request<ReviewCommitment[]>(`/analytics/reviews/${reviewId}/commitments/`, {
+    method: 'POST',
+    body: JSON.stringify(items),
+  })
+}
+
+export function updateReviewCommitment(id: string, payload: Partial<Pick<ReviewCommitment, 'was_kept'>>) {
+  return request<ReviewCommitment>(`/analytics/reviews/commitments/${id}/`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
 export function listSuggestions() {
   return listResource<AISuggestion>('/analytics/suggestions/')
 }
@@ -606,6 +627,10 @@ export function convertIdeaToNode(id: string, payload: { type: string; parent?: 
 
 export function listDecisions() {
   return listResource<DecisionLog>('/analytics/decisions/')
+}
+
+export function listDueDecisions() {
+  return request<DecisionLog[]>('/analytics/decisions/due/')
 }
 
 export function createDecision(payload: DecisionLogPayload) {
@@ -773,6 +798,10 @@ export function updateNode(id: string, payload: NodeUpdatePayload) {
     method: 'PATCH',
     body: JSON.stringify(payload),
   })
+}
+
+export function getActiveGoalContext() {
+  return request<ActiveGoalContext>('/nodes/active-context/')
 }
 
 export function deleteNode(id: string) {

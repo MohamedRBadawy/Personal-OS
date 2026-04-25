@@ -1,15 +1,13 @@
-"""Telegram bot command handlers for Personal OS.
-
-Incoming messages from Mohamed are dispatched here via the webhook view.
-Only messages from TELEGRAM_CHAT_ID are processed — all others are ignored silently.
-
-Commands:
-  /brief   — Morning brief (routine plan + top priorities)
-  /next    — AI-powered next action recommendation
-  /capture — Save an idea: /capture <text>
-  /status  — Today's completion stats + node counts
-  /help    — List commands
-"""
+# [AR] معالجات أوامر بوت تيليغرام — يستقبل الرسائل ويوجهها إلى المعالج المناسب
+# [EN] Telegram bot command handlers — receives messages and routes to the correct handler
+#
+# Commands:
+#   /brief   — Morning brief (routine plan + top priorities)
+#   /next    — AI-powered next action recommendation
+#   /capture — Save an idea: /capture <text>
+#   /status  — Today's completion stats + node counts
+#   /help    — List commands
+# Free text — routed to conversational AI with rolling history
 import logging
 import os
 
@@ -49,8 +47,10 @@ def handle_webhook(update: dict) -> None:
             _handle_capture(idea_text)
         elif text.startswith("/status"):
             _handle_status()
-        else:
+        elif text.startswith("/help"):
             _handle_help()
+        else:
+            _handle_conversation(chat_id, text)
 
     except Exception:  # noqa: BLE001
         logger.exception("Unhandled error in Telegram webhook handler.")
@@ -184,6 +184,46 @@ def _handle_help() -> None:
         "/status — Today's completion stats\n"
         "/help — Show this message"
     )
+
+
+# [AR] المحادثة الحرة — يوجه الرسائل غير الأوامر إلى الذكاء الاصطناعي مع سجل المحادثة
+# [EN] Free-form conversation — routes non-command messages to AI with rolling history
+
+def _format_actions(actions: list[dict]) -> str:
+    """Format a list of tool actions into a short confirmation string."""
+    if not actions:
+        return ""
+    parts = []
+    for action in actions:
+        summary = action.get("summary") or action.get("tool") or "action taken"
+        parts.append(summary)
+    return "Done: " + "; ".join(parts)
+
+
+def _handle_conversation(chat_id: str, text: str) -> None:
+    """Route free-form text to the AI with rolling conversation history."""
+    from core.chat_service import run_chat  # noqa: PLC0415
+    from core.models import TelegramConversation  # noqa: PLC0415
+    from core.telegram import send_message  # noqa: PLC0415
+
+    try:
+        messages = TelegramConversation.get_recent(chat_id, limit=10)
+        messages.append({"role": "user", "content": text})
+
+        result = run_chat(messages, context={"mode": "telegram"})
+        reply = result.get("reply", "")
+
+        actions = result.get("actions", [])
+        if actions:
+            action_text = _format_actions(actions)
+            if action_text:
+                reply = f"{reply}\n\n{action_text}".strip()
+
+        TelegramConversation.append(chat_id, text, result.get("reply", reply))
+        send_message(reply, chat_id=chat_id)
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("_handle_conversation failed.")
+        send_message(f"⚠ Something went wrong: {exc}", chat_id=chat_id)
 
 
 def _build_priorities_text() -> str:

@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { getActiveGoalContext } from '../../lib/api'
 import { titleCase } from '../../lib/formatters'
-import type { CommandCenterPriorityItem, GoalNodeManualPriority } from '../../lib/types'
+import type { ActiveGoalContext, CommandCenterPriorityItem, GoalNodeManualPriority } from '../../lib/types'
+import { TradeoffPromptModal } from '../goals/TradeoffPromptModal'
 import { StatusPill } from '../StatusPill'
 
 type CommandPriorityCardProps = {
@@ -28,7 +30,19 @@ export function CommandPriorityCard({
   const [status, setStatus] = useState(priority.status)
   const [dueDate, setDueDate] = useState(priority.due_date ?? '')
   const [manualPriority, setManualPriority] = useState<GoalNodeManualPriority>(priority.manual_priority)
+  const [tradeoffContext, setTradeoffContext] = useState<ActiveGoalContext | null>(null)
   const canPlanTask = priority.type === 'task' || priority.type === 'sub_task'
+
+  async function handleStatusChange(nextStatus: CommandCenterPriorityItem['status']) {
+    if (nextStatus === 'active' && priority.status !== 'active') {
+      const context = await getActiveGoalContext()
+      if (context.active_goal_count >= context.max_safe_active) {
+        setTradeoffContext(context)
+        return
+      }
+    }
+    setStatus(nextStatus)
+  }
 
   return (
     <article className="command-priority-card">
@@ -77,7 +91,7 @@ export function CommandPriorityCard({
           <select
             id={`priority-status-${priority.id}`}
             value={status}
-            onChange={(event) => setStatus(event.target.value as CommandCenterPriorityItem['status'])}
+            onChange={(event) => handleStatusChange(event.target.value as CommandCenterPriorityItem['status'])}
           >
             {['active', 'available', 'blocked', 'done'].map((value) => (
               <option key={value} value={value}>
@@ -138,6 +152,15 @@ export function CommandPriorityCard({
           </button>
         ) : null}
       </div>
+      {tradeoffContext && (
+        <TradeoffPromptModal
+          context={tradeoffContext}
+          targetNodeId={priority.id}
+          targetTitle={priority.title}
+          onClose={() => setTradeoffContext(null)}
+          onComplete={() => setStatus('active')}
+        />
+      )}
     </article>
   )
 }

@@ -4,6 +4,7 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.utils import timezone
 
 from analytics.models.achievement import Achievement
 from analytics.models.decision_log import DecisionLog
@@ -22,6 +23,7 @@ from analytics.serializers.crud_models import (
     RelationshipSerializer,
 )
 from analytics.services import suggest_domain
+from analytics.services.decisions import DecisionService
 
 
 class RelationshipViewSet(viewsets.ModelViewSet):
@@ -50,6 +52,12 @@ class DecisionLogViewSet(viewsets.ModelViewSet):
 
     queryset = DecisionLog.objects.all()
     serializer_class = DecisionLogSerializer
+
+    @action(detail=False, methods=["get"], url_path="due")
+    def due(self, request):
+        decisions = DecisionService.due_for_review(timezone.localdate())
+        serializer = self.get_serializer(decisions, many=True)
+        return Response(serializer.data)
 
 
 class AchievementViewSet(viewsets.ModelViewSet):

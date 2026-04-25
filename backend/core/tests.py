@@ -11,6 +11,7 @@ from rest_framework.test import APIClient
 
 from analytics.models.ai_suggestion import AISuggestion
 from analytics.models.idea import Idea
+from contacts.models import Contact
 from config import settings as project_settings
 from core.ai import AnthropicAIProvider, DeterministicAIProvider, get_ai_provider
 from core.models import AppSettings, DailyCheckIn, Profile
@@ -19,8 +20,9 @@ from finance.services import FinanceMetricsService
 from goals.models import Node
 from health.models.health_log import HealthLog
 from health.models.habit import Habit
+from journal.models import JournalEntry
 from pipeline.models import MarketingAction
-from schedule.models import ScheduleTemplate
+from schedule.models import RoutineBlock, RoutineLog, ScheduleTemplate
 
 
 class CoreFlowTests(TestCase):
@@ -600,6 +602,40 @@ class CommandCenterTests(TestCase):
         self.assertEqual(confirm_response.data["affected_modules"], ["finance", "analytics"])
         self.assertEqual(FinanceEntry.objects.count(), 1)
         self.assertEqual(Idea.objects.count(), 1)
+
+    def test_ai_chat_tools_capture_daily_updates(self):
+        today = timezone.localdate()
+        node = Node.objects.create(
+            title="Build outreach engine",
+            type=Node.NodeType.GOAL,
+            status=Node.Status.ACTIVE,
+        )
+        RoutineBlock.objects.create(
+            time="09:00",
+            label="Deep work outreach",
+            type=RoutineBlock.BlockType.WORK,
+        )
+        contact = Contact.objects.create(name="Ahmed Client", relation=Contact.Relation.CLIENT)
+        from core.chat_tools import TOOL_SCHEMAS, execute_tool
+
+        schema_names = {schema["name"] for schema in TOOL_SCHEMAS}
+
+        self.assertTrue({"log_journal_entry", "complete_routine_block", "update_goal_progress", "update_contact_followup"}.issubset(schema_names))
+
+        journal_result = execute_tool("log_journal_entry", {"wins": "Sent the proposal.", "tomorrow_focus": "Follow up."})
+        routine_result = execute_tool("complete_routine_block", {"block": "outreach", "status": "done", "note": "One strong block."})
+        progress_result = execute_tool("update_goal_progress", {"title": "outreach engine", "progress_pct": 35})
+        followup_result = execute_tool("update_contact_followup", {"name": "Ahmed", "next_followup": today.isoformat()})
+
+        self.assertEqual(journal_result["status"], "logged")
+        self.assertEqual(JournalEntry.objects.get(date=today).wins, "Sent the proposal.")
+        self.assertEqual(routine_result["status"], "completed")
+        self.assertEqual(RoutineLog.objects.get(date=today).status, RoutineLog.LogStatus.DONE)
+        node.refresh_from_db()
+        self.assertEqual(node.progress, 35)
+        contact.refresh_from_db()
+        self.assertEqual(contact.next_followup, today)
+        self.assertEqual(followup_result["status"], "updated")
 
     def test_progress_report_endpoint_returns_grouped_sections(self):
         call_command("seed_initial_data")

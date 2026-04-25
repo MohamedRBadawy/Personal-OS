@@ -48,6 +48,18 @@ SCHEMAS = [
             },
         },
     },
+    {
+        "name": "update_goal_progress",
+        "description": "Set progress percentage on a goal, project, or task found by partial title.",
+        "input_schema": {
+            "type": "object",
+            "required": ["title", "progress_pct"],
+            "properties": {
+                "title": {"type": "string", "description": "Partial or full node title"},
+                "progress_pct": {"type": "number", "minimum": 0, "maximum": 100},
+            },
+        },
+    },
 ]
 
 
@@ -91,8 +103,20 @@ def update_node_notes(inputs: dict) -> dict:
     return {"status": "updated", "title": node.title, "notes_length": len(node.notes)}
 
 
+def update_goal_progress(inputs: dict) -> dict:
+    title = inputs.get("title", "")
+    node = Node.objects.filter(title__icontains=title).first()
+    if not node:
+        return {"error": f"No goal/task found matching '{title}'"}
+    progress = max(0, min(100, int(inputs["progress_pct"])))
+    node.progress = progress
+    node.save()
+    return {"status": "updated", "title": node.title, "progress_pct": progress}
+
+
 EXECUTORS = {
     "create_node": create_node,
     "update_node_status": update_node_status,
     "update_node_notes": update_node_notes,
+    "update_goal_progress": update_goal_progress,
 }

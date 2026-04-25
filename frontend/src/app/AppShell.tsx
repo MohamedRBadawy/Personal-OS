@@ -136,6 +136,16 @@ export function AppShell({ children }: PropsWithChildren) {
         event.preventDefault()
         setQuickCaptureOpen((open) => !open)
       }
+      if (event.ctrlKey && event.shiftKey && event.key === 'T') {
+        event.preventDefault()
+        window.dispatchEvent(new CustomEvent('chat:open', {
+          detail: {
+            mode: 'thinking_companion',
+            welcome: "Drop your raw thought here. I'll guide you through it — one question at a time — until we reach a clear decision.",
+            placeholder: "Dump your raw thought here — I'll help you figure out what it is and what to do with it.",
+          },
+        }))
+      }
     }
 
     window.addEventListener('keydown', onKey)

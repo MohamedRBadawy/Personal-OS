@@ -111,3 +111,23 @@ export type TimelineOverviewPayload = {
     notes: string
   }>
 }
+
+export type ReviewCommitmentAction = 'stop' | 'change' | 'start'
+
+export type ReviewCommitment = {
+  id: string
+  review: string
+  action_type: ReviewCommitmentAction
+  description: string
+  node_update: string | null
+  node_update_title: string | null
+  checked_in_review: string | null
+  was_kept: boolean | null
+  created_at: string
+}
+
+export type ReviewCommitmentPayload = {
+  action_type: ReviewCommitmentAction
+  description: string
+  node_update?: string | null
+}

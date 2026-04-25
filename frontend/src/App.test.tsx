@@ -2,9 +2,15 @@ import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/re
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import * as api from './lib/api'
-import { renderRoute } from './test/test-utils'
+import { renderRoute, renderWithProviders } from './test/test-utils'
+import { DecisionsPage } from './pages/SimpleWorkspacePages'
 
 vi.mock('./lib/api', () => ({
+  getAlertCount: vi.fn(),
+  listAlerts: vi.fn(),
+  markAlertRead: vi.fn(),
+  markAllAlertsRead: vi.fn(),
+  dismissAlert: vi.fn(),
   getCommandCenter: vi.fn(),
   getDashboard: vi.fn(),
   submitCheckIn: vi.fn(),
@@ -12,6 +18,7 @@ vi.mock('./lib/api', () => ({
   getGoalTree: vi.fn(),
   getGoalMap: vi.fn(),
   getGoalContext: vi.fn(),
+  getActiveGoalContext: vi.fn(),
   createGoalNode: vi.fn(),
   updateGoalNode: vi.fn(),
   deleteGoalNode: vi.fn(),
@@ -81,6 +88,7 @@ vi.mock('./lib/api', () => ({
   updateIdea: vi.fn(),
   deleteIdea: vi.fn(),
   listDecisions: vi.fn(),
+  listDueDecisions: vi.fn(),
   createDecision: vi.fn(),
   updateDecision: vi.fn(),
   deleteDecision: vi.fn(),
@@ -863,6 +871,13 @@ const decisions = [
     reasoning: 'Stabilize contracts before polish.',
     alternatives_considered: 'Prototype-first',
     outcome: '',
+    trade_off_cost: 'Delay polish work.',
+    outcome_date: '2026-04-03',
+    outcome_result: '',
+    enabled_node: 'goal-1',
+    enabled_node_title: 'Reach EUR 1,000/month independent income',
+    killed_node: 'task-1',
+    killed_node_title: 'Build command center backend',
     date: '2026-04-02',
     created_at: '2026-04-02T08:00:00Z',
   },
@@ -915,6 +930,11 @@ beforeEach(() => {
   vi.resetAllMocks()
 
   vi.mocked(api.getCommandCenter).mockResolvedValue(commandCenterPayload as never)
+  vi.mocked(api.getAlertCount).mockResolvedValue({ unread_count: 0, critical_count: 0 } as never)
+  vi.mocked(api.listAlerts).mockResolvedValue({ alerts: [] } as never)
+  vi.mocked(api.markAlertRead).mockResolvedValue({} as never)
+  vi.mocked(api.markAllAlertsRead).mockResolvedValue({} as never)
+  vi.mocked(api.dismissAlert).mockResolvedValue({} as never)
   vi.mocked(api.getDashboard).mockResolvedValue({} as never)
   vi.mocked(api.sendChatMessage).mockResolvedValue({
     reply: 'Captured that and updated the system.',
@@ -927,6 +947,13 @@ beforeEach(() => {
   vi.mocked(api.getGoalTree).mockResolvedValue(goalTree as never)
   vi.mocked(api.getGoalMap).mockResolvedValue(goalMap as never)
   vi.mocked(api.getGoalContext).mockResolvedValue(goalContext as never)
+  vi.mocked(api.getActiveGoalContext).mockResolvedValue({
+    active_goal_count: 1,
+    active_goals: [],
+    overwhelm_score: 0,
+    max_safe_active: 3,
+    recommendation: 'There is room to activate one more.',
+  } as never)
   vi.mocked(api.createGoalNode).mockResolvedValue(taskNode as never)
   vi.mocked(api.updateGoalNode).mockResolvedValue(taskNode as never)
   vi.mocked(api.deleteGoalNode).mockResolvedValue(null as never)
@@ -1081,6 +1108,7 @@ beforeEach(() => {
   vi.mocked(api.updateIdea).mockResolvedValue(ideas[0] as never)
   vi.mocked(api.deleteIdea).mockResolvedValue(null as never)
   vi.mocked(api.listDecisions).mockResolvedValue(paginated(decisions) as never)
+  vi.mocked(api.listDueDecisions).mockResolvedValue(decisions as never)
   vi.mocked(api.createDecision).mockResolvedValue(decisions[0] as never)
   vi.mocked(api.updateDecision).mockResolvedValue(decisions[0] as never)
   vi.mocked(api.deleteDecision).mockResolvedValue(null as never)
@@ -1336,6 +1364,15 @@ describe('grouped workspace flows', () => {
       ),
     )
     expect(await screen.findByText(/break the idea into trigger/i)).toBeInTheDocument()
+  })
+
+  test('shows decision trade-off fields and pending review badge', async () => {
+    renderWithProviders(<DecisionsPage />)
+
+    expect(await screen.findByLabelText(/trade-off: what you're not doing/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/outcome date/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/outcome result/i)).toBeInTheDocument()
+    expect(screen.getByText(/pending review/i)).toBeInTheDocument()
   })
 
   test('shows future-day preparation notes in the timeline strip', async () => {

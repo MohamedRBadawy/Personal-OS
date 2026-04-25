@@ -243,3 +243,53 @@ class GoalReadModelTests(TestCase):
         self.assertEqual(context_response.status_code, 200)
         self.assertEqual(context_response.data["attachment_profile"]["habits"], ["Daily outreach"])
         self.assertEqual(context_response.data["attachment_profile"]["tools"], ["Codex", "Django shell"])
+
+    def test_active_context_endpoint_returns_safe_capacity_payload(self):
+        for index in range(3):
+            Node.objects.create(
+                title=f"Active goal {index + 1}",
+                type=Node.NodeType.GOAL,
+                category=Node.Category.CAREER,
+                status=Node.Status.ACTIVE,
+                progress=20,
+            )
+        Node.objects.create(
+            title="Active task should not count",
+            type=Node.NodeType.TASK,
+            category=Node.Category.CAREER,
+            status=Node.Status.ACTIVE,
+        )
+
+        response = self.client.get("/api/goals/nodes/active-context/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["active_goal_count"], 3)
+        self.assertEqual(len(response.data["active_goals"]), 3)
+        self.assertEqual(response.data["max_safe_active"], 3)
+        self.assertIn("Activating", response.data["recommendation"])
+
+    def test_patch_to_active_includes_tradeoff_context(self):
+        for index in range(3):
+            Node.objects.create(
+                title=f"Already active {index + 1}",
+                type=Node.NodeType.GOAL,
+                category=Node.Category.CAREER,
+                status=Node.Status.ACTIVE,
+            )
+        target = Node.objects.create(
+            title="New service offer",
+            type=Node.NodeType.GOAL,
+            category=Node.Category.CAREER,
+            status=Node.Status.AVAILABLE,
+        )
+
+        response = self.client.patch(
+            f"/api/goals/nodes/{target.id}/",
+            {"status": Node.Status.ACTIVE},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["trade_off_context"]["active_count_before"], 3)
+        self.assertEqual(response.data["trade_off_context"]["active_count_after"], 4)
+        self.assertTrue(response.data["trade_off_context"]["exceeded_safe_limit"])

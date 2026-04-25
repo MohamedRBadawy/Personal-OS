@@ -16,6 +16,7 @@ from analytics.models.learning import Learning
 from analytics.models.project_retrospective import ProjectRetrospective
 from analytics.models.weekly_review import WeeklyReview
 from analytics.services import OverwhelmService
+from core.services.command_center import CommandCenterService
 from finance.models import FinanceEntry
 from core.models import DailyCheckIn
 from goals.models import Node
@@ -76,6 +77,106 @@ class AnalyticsReadModelTests(TestCase):
 
     def setUp(self):
         self.client = APIClient()
+
+    def test_review_commitments_flow_into_prior_commitments_and_command_center(self):
+        today = timezone.localdate()
+        prior_week_start = today - timedelta(days=today.weekday() + 7)
+        prior_review = WeeklyReview.objects.create(
+            week_start=prior_week_start,
+            week_end=prior_week_start + timedelta(days=6),
+            ai_report="Prior week review",
+        )
+        node = Node.objects.create(
+            title="Publish one useful update",
+            type=Node.NodeType.TASK,
+            status=Node.Status.AVAILABLE,
+        )
+
+        create_response = self.client.post(
+            f"/api/analytics/reviews/{prior_review.id}/commitments/",
+            [
+                {
+                    "action_type": "start",
+                    "description": "Write one public learning note.",
+                    "node_update": str(node.id),
+                },
+            ],
+            format="json",
+        )
+
+        self.assertEqual(create_response.status_code, 201)
+        self.assertEqual(create_response.data[0]["node_update_title"], "Publish one useful update")
+
+        due_response = self.client.get("/api/analytics/reviews/prior-commitments/")
+
+        self.assertEqual(due_response.status_code, 200)
+        self.assertEqual(len(due_response.data), 1)
+        self.assertEqual(due_response.data[0]["description"], "Write one public learning note.")
+        self.assertEqual(due_response.data[0]["from_week"], prior_week_start.isoformat())
+
+        with patch("core.services.command_center.get_ai_provider") as provider_factory:
+            provider_factory.return_value.generate_morning_briefing.return_value = {"briefing_text": "", "observations": []}
+            with patch("analytics.services.reviews.WeeklyReviewService.preview") as preview:
+                preview.return_value = {
+                    "week_start": today - timedelta(days=today.weekday()),
+                    "week_end": today - timedelta(days=today.weekday()) + timedelta(days=6),
+                    "report": "Current week preview",
+                    "context": {},
+                }
+                payload = CommandCenterService.payload(today)
+
+        self.assertEqual(len(payload["prior_commitments_due"]), 1)
+        commitment_id = create_response.data[0]["id"]
+        self.assertEqual(payload["prior_commitments_due"][0]["id"], commitment_id)
+
+        patch_response = self.client.patch(
+            f"/api/analytics/reviews/commitments/{commitment_id}/",
+            {"was_kept": True},
+            format="json",
+        )
+
+        self.assertEqual(patch_response.status_code, 200)
+        self.assertTrue(patch_response.data["was_kept"])
+        self.assertEqual(self.client.get("/api/analytics/reviews/prior-commitments/").data, [])
+
+    def test_decisions_due_endpoint_returns_pending_tradeoff_reviews(self):
+        today = timezone.localdate()
+        enabled = Node.objects.create(
+            title="Build independent income engine",
+            type=Node.NodeType.GOAL,
+            status=Node.Status.ACTIVE,
+        )
+        killed = Node.objects.create(
+            title="Polish low-leverage admin",
+            type=Node.NodeType.GOAL,
+            status=Node.Status.DEFERRED,
+        )
+        due_decision = DecisionLog.objects.create(
+            decision="Prioritize outreach before internal cleanup",
+            reasoning="Income movement matters more this week.",
+            trade_off_cost="Delay admin polish.",
+            outcome_date=today - timedelta(days=1),
+            outcome_result="",
+            enabled_node=enabled,
+            killed_node=killed,
+            date=today - timedelta(days=7),
+        )
+        DecisionLog.objects.create(
+            decision="Reviewed decision",
+            reasoning="Already judged.",
+            outcome_date=today - timedelta(days=1),
+            outcome_result="right",
+            date=today - timedelta(days=6),
+        )
+
+        response = self.client.get("/api/analytics/decisions/due/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["id"], str(due_decision.id))
+        self.assertEqual(response.data[0]["trade_off_cost"], "Delay admin polish.")
+        self.assertEqual(response.data[0]["enabled_node_title"], "Build independent income engine")
+        self.assertEqual(response.data[0]["killed_node_title"], "Polish low-leverage admin")
 
     def test_overview_endpoint_returns_cross_domain_payload(self):
         today = timezone.localdate()

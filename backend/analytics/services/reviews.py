@@ -158,3 +158,18 @@ class WeeklyReviewService:
             "current_review_id": str(current_review.id) if current_review else None,
             "latest_review_id": str(latest_review.id) if latest_review else None,
         }
+
+    @classmethod
+    def get_prior_commitments(cls, reference_date=None):
+        """Return unchecked commitments from the previous weekly review."""
+        reference_date = reference_date or timezone.localdate()
+        week_start, _week_end = cls.week_bounds(reference_date)
+        prior_week_start = week_start - timedelta(days=7)
+        prior_week_end = week_start - timedelta(days=1)
+        prior_review = WeeklyReview.objects.filter(
+            week_start=prior_week_start,
+            week_end=prior_week_end,
+        ).first()
+        if not prior_review:
+            return []
+        return prior_review.commitments.filter(was_kept__isnull=True).select_related("node_update", "review")

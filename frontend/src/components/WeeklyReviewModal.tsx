@@ -1,15 +1,20 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { generateWeeklyReview, getRoutineMetrics, listNodes, updateWeeklyReview } from '../lib/api'
-import type { Node, RoutineMetrics } from '../lib/types'
+import { createReviewCommitments, generateWeeklyReview, getRoutineMetrics, listNodes, updateWeeklyReview } from '../lib/api'
+import type { Node, ReviewCommitmentAction, ReviewCommitmentPayload, RoutineMetrics } from '../lib/types'
 
 interface Props {
   onClose: () => void
   onDone: () => void
 }
 
-const STEPS = ['Wins', 'Challenges', 'Focus', 'Generate']
+const STEPS = ['Wins', 'Challenges', 'Focus', 'Generate', 'Commitments']
+const COMMITMENT_ACTIONS: Array<{ value: ReviewCommitmentAction; label: string }> = [
+  { value: 'stop', label: 'STOP' },
+  { value: 'change', label: 'CHANGE' },
+  { value: 'start', label: 'START' },
+]
 
 export function WeeklyReviewModal({ onClose, onDone }: Props) {
   const [step, setStep] = useState(0)
@@ -18,6 +23,12 @@ export function WeeklyReviewModal({ onClose, onDone }: Props) {
   const [focusIds, setFocusIds] = useState<string[]>([])
   const [generatedId, setGeneratedId] = useState<string | null>(null)
   const [generatedReport, setGeneratedReport] = useState('')
+  const [commitments, setCommitments] = useState<ReviewCommitmentPayload[]>([])
+  const [draftCommitments, setDraftCommitments] = useState<Record<ReviewCommitmentAction, string>>({
+    stop: '',
+    change: '',
+    start: '',
+  })
   const qc = useQueryClient()
 
   const { data: metrics } = useQuery<RoutineMetrics>({
@@ -48,6 +59,14 @@ export function WeeklyReviewModal({ onClose, onDone }: Props) {
       qc.invalidateQueries({ queryKey: ['weekly-review-preview'] })
     },
   })
+  const commitmentsMut = useMutation({
+    mutationFn: ({ reviewId, items }: { reviewId: string; items: ReviewCommitmentPayload[] }) =>
+      createReviewCommitments(reviewId, items),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['command-center'] })
+      qc.invalidateQueries({ queryKey: ['weekly-reviews'] })
+    },
+  })
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
@@ -63,6 +82,21 @@ export function WeeklyReviewModal({ onClose, onDone }: Props) {
 
   function handleGenerate() {
     generateMut.mutate()
+  }
+
+  function addCommitment(action_type: ReviewCommitmentAction) {
+    const description = draftCommitments[action_type].trim()
+    if (!description) return
+    setCommitments(current => [...current, { action_type, description }])
+    setDraftCommitments(current => ({ ...current, [action_type]: '' }))
+  }
+
+  async function handleDone() {
+    if (generatedId && commitments.length > 0) {
+      await commitmentsMut.mutateAsync({ reviewId: generatedId, items: commitments })
+    }
+    onDone()
+    onClose()
   }
 
   return createPortal(
@@ -171,6 +205,41 @@ export function WeeklyReviewModal({ onClose, onDone }: Props) {
           </div>
         )}
 
+        {/* Step 4 - Commitments */}
+        {step === 4 && (
+          <div className="wr-body">
+            <h3 className="wr-title">What are you committing to?</h3>
+            <p className="wr-sub">Turn the review into stop, change, and start promises for next week.</p>
+            <div className="wr-commitment-groups">
+              {COMMITMENT_ACTIONS.map(action => (
+                <div className="wr-commitment-group" key={action.value}>
+                  <label className="wr-commitment-label" htmlFor={`commitment-${action.value}`}>{action.label}</label>
+                  <div className="wr-commitment-row">
+                    <input
+                      id={`commitment-${action.value}`}
+                      className="form-input"
+                      value={draftCommitments[action.value]}
+                      onChange={e => setDraftCommitments(current => ({ ...current, [action.value]: e.target.value }))}
+                      placeholder={`${action.label.toLowerCase()} one pattern or behavior`}
+                    />
+                    <button className="btn-ghost" type="button" onClick={() => addCommitment(action.value)}>Add</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {commitments.length > 0 && (
+              <ul className="wr-commitment-list">
+                {commitments.map((item, index) => (
+                  <li key={`${item.action_type}-${index}`}>
+                    <strong>{item.action_type.toUpperCase()}</strong>
+                    <span>{item.description}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
         {/* Footer */}
         <div className="wr-footer">
           <button className="btn-ghost" onClick={onClose}>Cancel</button>
@@ -184,7 +253,12 @@ export function WeeklyReviewModal({ onClose, onDone }: Props) {
             </button>
           )}
           {step === 3 && generatedId && (
-            <button className="btn-primary" onClick={() => { onDone(); onClose() }}>
+            <button className="btn-primary" onClick={() => setStep(4)}>
+              Next →
+            </button>
+          )}
+          {step === 4 && (
+            <button className="btn-primary" disabled={commitmentsMut.isPending} onClick={handleDone}>
               Done ✓
             </button>
           )}

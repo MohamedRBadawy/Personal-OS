@@ -270,3 +270,33 @@ class Alert(BaseModel):
 
     def __str__(self):
         return f"[{self.priority.upper()}] {self.title}"
+
+
+# [AR] محادثات تيليغرام — تخزن سجل الرسائل لكل دردشة للذاكرة السياقية
+# [EN] Telegram conversations — stores message history per chat for context window
+class TelegramConversation(BaseModel):
+    """Rolling message log for a single Telegram chat_id (10-message window)."""
+
+    # TODO: add user FK when multi-user auth is active (Constitution VII controlled deviation)
+    chat_id = models.CharField(max_length=64, db_index=True)
+    role = models.CharField(max_length=16)  # "user" or "assistant"
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at"]
+
+    def __str__(self):
+        return f"{self.chat_id} [{self.role}] {self.content[:60]}"
+
+    @classmethod
+    def get_recent(cls, chat_id, limit=10):
+        """Return last `limit` messages for this chat as a list of dicts."""
+        qs = cls.objects.filter(chat_id=str(chat_id)).order_by("-created_at")[:limit]
+        return [{"role": m.role, "content": m.content} for m in reversed(list(qs))]
+
+    @classmethod
+    def append(cls, chat_id, user_text, assistant_reply):
+        """Persist one user+assistant exchange."""
+        cls.objects.create(chat_id=str(chat_id), role="user", content=user_text)
+        cls.objects.create(chat_id=str(chat_id), role="assistant", content=assistant_reply)
